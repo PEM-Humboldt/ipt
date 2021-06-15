@@ -111,7 +111,7 @@ public class UserAccountsAction extends POSTAction {
    * @return the restricted resources
    */
   public List<Resource> getRestrictedResources() {
-	  return restrictedResources;
+    return restrictedResources;
   }
 
   public String list() {
@@ -215,8 +215,8 @@ public class UserAccountsAction extends POSTAction {
     // && users == null
     String accessTo = StringUtils.trimToNull(req.getParameter("user.grantedAccessTo"));
 	  if (accessTo == null) { // Should we use an interceptor here?
-		  user.setGrantedAccessTo(""); 
-	  }
+      user.setGrantedAccessTo(""); 
+    }
     validator.validate(this, user);
     // check 2nd password
     if (newUser && StringUtils.trimToNull(user.getPassword()) != null && !user.getPassword().equals(password2)) {
