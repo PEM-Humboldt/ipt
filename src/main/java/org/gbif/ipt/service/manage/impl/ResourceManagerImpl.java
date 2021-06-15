@@ -100,6 +100,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -938,6 +939,20 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     }
     return result;
   }
+
+  public List<Resource> list(List<String> intellectualRightsList) {
+    List<Resource> result = new ArrayList<Resource>();
+    for (Resource r : resources.values()) {
+      Eml eml = r.getEml();
+      for (String intellectualRights : intellectualRightsList) {
+        if (Objects.equals(eml.getIntellectualRights(), intellectualRights)) {
+          result.add(r);
+          break;
+        }
+      }
+    }
+    return result;
+  };
 
   public List<Resource> listPublishedPublicVersions() {
     List<Resource> result = new ArrayList<Resource>();
