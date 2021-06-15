@@ -137,10 +137,11 @@ public interface ResourceManager {
 
   /**
    * list all resources in the IPT.
+   * @param intellectualRightsList
    *
    * @return list of resources, or an empty list if none were found
    */
-  List<Resource> list();
+  List<Resource> list(List<String> intellectualRightsList);
 
   /**
    * list all resources in the IPT having a certain publication status.
