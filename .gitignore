@@ -17,4 +17,4 @@ target/
 .factorypath
 .settings/
 *.log
-**/datadir.location
+src/main/webapp/WEB-INF/datadir.location
