@@ -31,6 +31,15 @@ table {
     vertical-align: middle;
 }
 
+.logo-iavh {
+    left: -15em;
+    top: -6.5em;
+    position: absolute;
+    height: 32px;
+    transition: all .3s;
+    z-index: -1;
+}
+
 header, .dropdown-menu {
     font-size: 0.875rem !important;
 }
