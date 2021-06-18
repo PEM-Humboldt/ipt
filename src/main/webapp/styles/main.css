@@ -21,7 +21,7 @@ table {
 
 /* Logo, header, menu etc. START */
 .gbif-logo {
-    height: 32px;
+    height: 100px;
     position: relative;
     line-height: 32px;
     padding-right: 8px;
@@ -31,13 +31,17 @@ table {
     vertical-align: middle;
 }
 
+.div-iavh{
+    float: left;
+
+}
 .logo-iavh {
-    left: -15em;
-    top: -6.5em;
-    position: absolute;
-    height: 32px;
+    position: relative;
     transition: all .3s;
     z-index: -1;
+    max-height: 100px;
+    max-width: 100%;
+    object-fit: cover;
 }
 
 header, .dropdown-menu {
