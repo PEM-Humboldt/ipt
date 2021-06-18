@@ -133,7 +133,7 @@ a:not(.btn, .button, .navbar-brand, .nav-link, .menu-link, .popover-link):hover 
     border-color: #61a861 !important;
 }
 .btn-check:focus + .btn-outline-gbif-primary, .btn-outline-gbif-primary:focus {
-    box-shadow: 0 0 0 0.25rem rgba(113, 177, 113, 0.25); !important;
+    box-shadow: 0 0 0 0.25rem rgba(113, 177, 113, 0.25) !important;
 }
 .btn-check:checked + .btn-outline-gbif-primary, .btn-check:active + .btn-outline-gbif-primary, .btn-outline-gbif-primary:active, .btn-outline-gbif-primary.active, .btn-outline-gbif-primary.dropdown-toggle.show {
     color: #fff !important;
