@@ -137,6 +137,13 @@ public interface ResourceManager {
 
   /**
    * list all resources in the IPT.
+   *
+   * @return list of resources, or an empty list if none were found
+   */
+  List<Resource> list();
+
+  /**
+   * list all resources in the IPT by intellectualRightsList.
    * @param intellectualRightsList
    *
    * @return list of resources, or an empty list if none were found
