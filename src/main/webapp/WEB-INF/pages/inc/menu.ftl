@@ -29,7 +29,10 @@
 <header>
     <nav class="navbar navbar-expand-xl navbar-dark bg-gbif-green-gradient fixed-top py-1 [#if !auxTopNavbar]shadow-sm[/#if]">
         <div class="container">
-            <a href="${baseURL}/" rel="home" title="GBIF Logo" class="navbar-brand" >
+            <div class="div-iavh">
+                <a href="http://www.humboldt.org.co" rel="home" title="IAvH"><img src="${baseURL}/images/logo-IAvH.png" class="logo-iavh"></a>
+            </div>
+            <a href="${baseURL}/" rel="home" title="CEIBA IPT" class="navbar-brand" >
                 <img src="${baseURL}/images/logo.png" alt="CEIBA IPT" class="gbif-logo"/>
                 [#if !cfg.devMode() && cfg.getRegistryType()?has_content && cfg.getRegistryType()=='PRODUCTION']
                 [#else]
@@ -118,7 +121,7 @@
         </div>
     </nav>
 
-    <div>
+    <div style="margin-top: 50px;">
     </div>
 
 
