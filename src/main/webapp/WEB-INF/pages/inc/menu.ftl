@@ -61,8 +61,7 @@
                         <li class="nav-item">
                             <a class="nav-link [#if currentMenu=='admin']active[/#if]" href="${baseURL}/admin/">[@s.text name="menu.admin"/]</a>
                         </li>
-                    [/#if]
-                    [#if !adminRights && !managerRights]
+                    [#else]
                         <li class="nav-item">
                             <a class="nav-link [#if currentMenu=='faq']active[/#if]" href="${baseURL}/faq.do" target="_blank"><img src="${baseURL}/images/icons/about.png">[@s.text name="menu.faq"/]</a>
                         </li>
