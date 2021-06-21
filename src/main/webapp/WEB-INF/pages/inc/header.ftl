@@ -27,12 +27,14 @@
 
     <!-- Jquery CSS -->
     <link media="all" type="text/css" href="${baseURL}/styles/jquery/jquery-ui.min.css" rel="stylesheet"/>
+    <link href="${baseURL}/styles/jquery/multi-select.css" media="screen" rel="stylesheet" type="text/css">
 
     <!-- for support of old browsers, like IE8. See http://modernizr.com/docs/#html5inie -->
     <script type="text/javascript" src="${baseURL}/js/modernizr.js"></script>
     <script type="text/javascript" src="${baseURL}/js/jquery/jquery-3.5.1.min.js"></script>
     <script type="text/javascript" src="${baseURL}/js/jquery/jquery-ui.min.js"></script>
     <script type="text/javascript" src="${baseURL}/js/global.js"></script>
+    <script src="${baseURL}/js/jquery.multi-select.js" type="text/javascript"></script>
 
 
     [#-- GOOGLE ANALYTICS - asynchroneous: http://code.google.com/apis/analytics/docs/tracking/asyncTracking.html --]
