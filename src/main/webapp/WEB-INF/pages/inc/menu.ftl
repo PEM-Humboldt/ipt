@@ -43,10 +43,14 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarCollapse">
+            [#if (Session.curr_user)??]
                 <!-- Navbar -->
                 <ul class="navbar-nav me-auto mb-md-0">
                     <li class="nav-item">
                         <a class="nav-link [#if currentMenu=='home']active[/#if]" href="${baseURL}/"><img src="${baseURL}/images/icons/home.png">[@s.text name="menu.home"/]</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link [#if currentMenu=='data']active[/#if]" href="http://goo.gl/8VC1cg" target="_blank"><img src="${baseURL}/images/icons/data.png">[@s.text name="menu.data"/]</a>
                     </li>
                     [#if managerRights]
                         <li class="nav-item">
@@ -58,22 +62,34 @@
                             <a class="nav-link [#if currentMenu=='admin']active[/#if]" href="${baseURL}/admin/">[@s.text name="menu.admin"/]</a>
                         </li>
                     [/#if]
-
+                    [#if !adminRights && !managerRights]
+                        <li class="nav-item">
+                            <a class="nav-link [#if currentMenu=='faq']active[/#if]" href="${baseURL}/faq.do" target="_blank"><img src="${baseURL}/images/icons/about.png">[@s.text name="menu.faq"/]</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link [#if currentMenu=='manual']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/ceiba-manual/ceiba-consulta" target="_blank"><img src="${baseURL}/images/icons/usermanu.png">[@s.text name="menu.usermanual"/]</a>
+                        </li>
+                    [/#if]
+                 </ul>
+            [#else]
+                 <ul class="navbar-nav me-auto mb-md-0">
+                    <li class="nav-item">
+                        <a class="nav-link [#if currentMenu=='home']active[/#if]" href="${baseURL}/"><img src="${baseURL}/images/icons/home.png">[@s.text name="menu.home"/]</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link [#if currentMenu=='inventory']active[/#if]" href="http://goo.gl/is7UaG" target="_blank"><img src="${baseURL}/images/icons/inventory.png">[@s.text name="menu.inventory"/]</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link [#if currentMenu=='data']active[/#if]" href="http://goo.gl/8VC1cg" target="_blank"><img src="${baseURL}/images/icons/data.png">[@s.text name="menu.data"/]</a>
                     </li>
-                     <li class="nav-item">
+                    <li class="nav-item">
                         <a class="nav-link [#if currentMenu=='faq']active[/#if]" href="${baseURL}/faq.do" target="_blank"><img src="${baseURL}/images/icons/about.png">[@s.text name="menu.faq"/]</a>
                     </li>
-                     <li class="nav-item">
-                        <a class="nav-link [#if currentMenu=='current']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/ceiba-manual/ceiba-consulta" target="_blank"><img src="${baseURL}/images/icons/usermanu.png">[@s.text name="menu.usermanual"/]</a>
+                    <li class="nav-item">
+                        <a class="nav-link [#if currentMenu=='manual']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/ceiba-manual/ceiba-consulta" target="_blank"><img src="${baseURL}/images/icons/usermanu.png">[@s.text name="menu.usermanual"/]</a>
                     </li>
-
-
                 </ul>
+             [/#if]
 
                 <div class="d-xl-flex align-content-between">
                     <!-- Health -->
