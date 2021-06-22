@@ -128,6 +128,35 @@
                 <div>
                     <@text name="eml.additionalInfo" i18nkey="eml.additionalInfo" help="i18n"/>
                 </div>
+
+                <!-- IAvH Customization about licences rights-->
+                <div>
+                    <@s.text name="rtf.license" i18nkey="rtf.license" help="i18n"/>
+                </div>
+                <select class="form-select" name="licenseList" id="licenseList" label="rtf.license">
+                    <#list licenses?keys as licenseN>
+                        <option value="${licenses[licenseN]}">
+                            ${licenseN}
+                        </option>
+                    </#list>
+                </select>
+            </div>
+
+     	<label for="eml.intellectualRights.simple"><@s.text name='eml.intellectualRights.simple'/></label>
+			<img class="infoImg" src="http://localhost:8080/ceiba/images/info.gif">
+			<div class="info" style="display: block;">
+				<@s.text name='eml.intellectualRights.simple.help'/>
+			</div>
+
+     	<select class="form-select" id="eml.intellectualRights" name="eml.intellectualRights" value="${eml.intellectualRights}" i18nkey="eml.intellectualRights" help="i18n" javaGetter=false >
+	     	<option><@s.text name='eml.intellectualRights.license.text.externalInternal'/></option>
+	     	<option><@s.text name='eml.intellectualRights.license.text.internal'/></option>
+	     	<option><@s.text name='eml.intellectualRights.license.text.internalNotification'/></option>
+	     	<option><@s.text name='eml.intellectualRights.license.text.temporalRestriction'/></option>
+     	</select>
+     	<!-- We are selecting the default value via JavaScript, look at the bottom of the $(document).ready function. -->
+
+			<br /><br /><br />
             </div>
 
         </div>
