@@ -103,12 +103,12 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                         if (visibility && visibility.toLowerCase() == '${deletedString?lower_case}') {
                             oSettings.aoData[i].nTr.className += " text-gbif-danger";
                         }
-                                
+
                         // Set tooltips
                         $('#rtable thead th').each( function() {
                             var	sTitle,
                                 sColumnTitle = this.textContent;
-                            
+
                             if ( sColumnTitle == "<@s.text name="manage.home.name" />" )
                                 sTitle = "<@s.text name="manage.home.name.title" />";
                             else if (sColumnTitle == "<@s.text name="manage.home.organisation" />")
@@ -123,13 +123,17 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                                 sTitle = "<@s.text name="manage.home.last.modified.title" />";
                             else if (sColumnTitle == "<@s.text name="manage.home.last.publication" />")
                                 sTitle = "<@s.text name="manage.home.last.publication.title" />";
+                            else if (sColumnTitle == "<@s.text name="manage.home.visible" />")
+	        	                sTitle = "<@s.text name="manage.home.visible.title" />";
+	                        else if (sColumnTitle == "<@s.text name="portal.home.author" />")
+	        	                sTitle = "<@s.text name="portal.home.author.title" />";
                             this.setAttribute( 'title', sTitle );
                         } );
                         // TODO: Define title for the other fields
-                        
+
                         // Set tooltip to filter text field
                         $('#rtable_filter input')[0].setAttribute('title', "<@s.text name="manage.mapping.filter.title" />");
-                        
+
                         // Tooltip initialization
                         $('#rtable, #rtable_filter input').tooltip( {
                             "delay": 100,
@@ -138,9 +142,9 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                             position: {
                                 my: "center bottom-20",
                                 at: "center top"
-                            }			
+                            }
                         } );
-                        
+
                     }
                 }
             } );
