@@ -145,6 +145,7 @@
                         <option><@s.text name='eml.intellectualRights.license.text.temporalRestriction'/></option>
                     </select>
                 </div>
+                <!-- /IAvH Customization about licences rights-->
             </div>
 
         </div>
