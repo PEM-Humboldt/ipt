@@ -279,6 +279,64 @@
         <#assign coreExt = action.getExtensionManager().get(coreRowType)!/>
         <#assign coreCount = recordsByExtensionOrdered.get(coreRowType)!recordsPublishedForVersion!0?c/>
 
+        <!-- IAvH Customization -->
+        <#function elemInArray array elem sep>
+            <#list array?split(sep) as arrayElem>
+                <#if arrayElem == elem>
+                    <#return true>
+                </#if>
+            </#list>
+            <#return false>
+        </#function>
+
+        <#-- ...Testing... -->
+        <#assign showDwCA=false/>
+        <#if eml.intellectualRights?has_content>
+        <#if eml.intellectualRights=='Libre a nivel interno.'><h1 class="minuscular">Protegido!</h1>
+            <#if (Session.curr_user)??>
+                <#if Session.curr_user.grantedAccessTo?has_content >
+                    <h1 class="minuscular">(${resource.shortname}) --&gt; ${Session.curr_user.grantedAccessTo}</h1>
+                    <#if elemInArray(Session.curr_user.grantedAccessTo, resource.shortname, ", ")>
+                        <#assign showDwCA=true/>
+                    <#else><h1 class="minuscular">Permiso denegado!</h1>
+                    </#if>
+                <#else>	
+                <h1 class="minuscular">No se encontró 'grantedAccessTo'... </h1>
+                </#if>
+            <#else>	
+                <h1 class="minuscular">Usuario invitado. </h1>
+            </#if>
+            <#else>	
+            <#assign showDwCA=true/>
+            </#if>	
+        <#else>	
+            <#assign showDwCA=true/>	
+        </#if>
+
+        <#if showDwCA><h1 class="minuscular">Mostrar Enlace!!!</h1><#else><h1 class="minuscular">NO Mostrar Enlace!</h1></#if>
+
+        <#if showDwCA>
+        <#if metadataOnly>
+            <#-- Archive, EML, and RTF download links include Google Analytics event tracking -->
+            <#-- e.g. Archive event tracking includes components: _trackEvent method, category, action, label, (int) value -->
+            <#-- EML and RTF versions can always be retrieved by version number but DWCA versions are only stored if IPT Archive Mode is on -->
+            <tr>
+                <th><@s.text name='portal.resource.published.archive'/></th>
+                <td><a href="${baseURL}/archive.do?r=${resource.shortname}<#if version??>&v=${version}</#if>"
+                        onClick="_gaq.push(['_trackEvent', 'Archive', 'Download', '${resource.shortname}', ${resource.recordsPublished?c!0} ]);"><@s.text name='portal.resource.download'/></a>
+                    (${dwcaFormattedSize}
+                    ) <#if version?? && version!=resource.emlVersion>
+                        <#if recordsPublishedForVersion?? && recordsPublishedForVersion!= 0>
+                        ${recordsPublishedForVersion?c} <@s.text name='portal.resource.records'/>
+                        </#if>
+                    <#else>
+                        ${resource.recordsPublished?c!0} <@s.text name='portal.resource.records'/>
+                    </#if>
+                </td>
+            </tr>
+        </#if>
+                    <!-- /IAvH Customization-->
+
         <#if metadataOnly != true>
             <div id="dataRecords" class="my-3 p-3 bg-body rounded shadow-sm">
                 <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header">
