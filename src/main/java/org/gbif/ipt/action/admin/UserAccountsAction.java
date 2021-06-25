@@ -21,6 +21,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import org.gbif.ipt.config.Constants;
+import org.gbif.ipt.model.Resource;
+import org.gbif.ipt.service.manage.ResourceManager;
+import java.util.Arrays;
+
 /**
  * The Action responsible for all user input relating to the user accounts in the IPT.
  */
@@ -34,18 +39,22 @@ public class UserAccountsAction extends POSTAction {
 
   private final UserAccountManager userManager;
   private final UserValidator validator = new UserValidator();
+  private final ResourceManager resourceManager;
 
   private User user;
   private String password2;
   private boolean resetPassword;
   private boolean newUser;
   private List<User> users;
+  private List<Resource> restrictedResources;
 
   @Inject
   public UserAccountsAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
+    ResourceManager resourceManager,
     UserAccountManager userManager) {
     super(textProvider, cfg, registrationManager);
     this.userManager = userManager;
+    this.resourceManager = resourceManager;
   }
 
   @Override
@@ -98,6 +107,13 @@ public class UserAccountsAction extends POSTAction {
     return users;
   }
 
+  /**
+   * @return the restricted resources
+   */
+  public List<Resource> getRestrictedResources() {
+    return restrictedResources;
+  }
+
   public String list() {
     users = userManager.list();
     return SUCCESS;
@@ -131,6 +147,9 @@ public class UserAccountsAction extends POSTAction {
         LOG.error("An exception occurred while retrieving user: " + e.getMessage(), e);
       }
     }
+
+    List<String> intellectualRightsList = Arrays.asList(getText("/org/gbif/metadata/eml/licenses.properties"));
+    restrictedResources = resourceManager.list(intellectualRightsList);
   }
 
   @Override
@@ -194,6 +213,10 @@ public class UserAccountsAction extends POSTAction {
   public void validateHttpPostOnly() {
     // only validate on form submit ignoring list views
     // && users == null
+    String accessTo = StringUtils.trimToNull(req.getParameter("user.grantedAccessTo"));
+	  if (accessTo == null) { // Should we use an interceptor here?
+      user.setGrantedAccessTo(""); 
+    }
     validator.validate(this, user);
     // check 2nd password
     if (newUser && StringUtils.trimToNull(user.getPassword()) != null && !user.getPassword().equals(password2)) {

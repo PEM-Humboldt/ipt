@@ -3,6 +3,7 @@
     <title><#if "${newUser!}"=="no"><@s.text name="admin.user.title.edit"/><#else><@s.text name="admin.user.title.new"/></#if></title>
     <script type="text/javascript" src="${baseURL}/js/jconfirmation.jquery.js"></script>
     <script type="text/javascript">
+
         $(document).ready(function(){
             initHelp();
             $('.confirm').jConfirmAction({question : "<@s.text name="basic.confirm"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>"});
@@ -56,6 +57,34 @@
                             <@input name="password2" i18nkey="user.password2" type="password"/>
                         </div>
                     </#if>
+                    <#if "${newUser!}"=="no">
+                        </br></br>
+                        <select multiple="multiple" id="user.grantAccessTo" name="user.grantAccessTo">
+                            <#if restrictedResources?has_content>
+                                <#list restrictedResources?sort_by("shortname") as rR>
+                                    <option value='${rR.shortname}'>${rR.shortname}</option>
+                                </#list>
+                            </#if>
+                        </select>
+                            <script type="text/javascript" charset="utf-8">
+                                $('#user\\.grantedAccessTo').multiSelect({
+                                    selectableHeader: "<div class='custom-header'><@s.text name="admin.user.restrictedResources" /></div>",
+                                    selectionHeader: "<div class='custom-header'><@s.text name="admin.user.grantAccessTo" /></div>"
+                                    });
+                                $('#user\\.grantedAccessTo').multiSelect('select', [
+                                    <#if user.grantedAccessTo?has_content >
+                                        ${ "'"+user.grantedAccessTo?split(", ")?join("', '")+"'" }
+                                    </#if>
+                                ]);
+                            </script>
+                            <div style="margin:auto; padding-top:10px; text-align: center;">
+                                <button type="button" cssClass="button" onClick="$('#user\\.grantedAccessTo').multiSelect('select_all');"><@s.text name="admin.user.grantAccessToAll" /></button>
+                                <button type="button" cssClass="button" onClick="$('#user\\.grantedAccessTo').multiSelect('deselect_all');"><@s.text name="admin.user.removeAccessToAll" /></button>
+                            </div>
+                            </br></br>
+                            
+                    </#if>
+
                 </div>
 
                 <div class="mx-md-4 mx-2 mt-3">

@@ -7,15 +7,19 @@ import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.config.DataDir;
 import org.gbif.ipt.model.FileSource;
 import org.gbif.ipt.model.Source;
+import org.gbif.ipt.model.User;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
+import org.gbif.metadata.eml.Eml;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
@@ -55,6 +59,24 @@ public class ResourceFileAction extends PortalBaseAction {
   public String dwca() {
     if (resource == null) {
       return NOT_FOUND;
+    }
+
+    // see if DwCA is restricted and logged user has been granted access to it
+    Eml eml = resource.getEml();
+    List<String> intellectualRightsList = Arrays.asList(getText("eml.intellectualRights.license.text.internal"));
+    if (intellectualRightsList.contains(eml.getIntellectualRights())) {
+      User user = (User) session.get(Constants.SESSION_USER);
+      if (user == null) {
+        return NOT_ALLOWED;
+      } else {
+        if (!Strings.isNullOrEmpty(user.getGrantedAccessTo())) {
+          if (!Arrays.asList(user.getGrantedAccessTo().split(", ")).contains(resource.getShortname())) {
+            return NOT_ALLOWED;
+          }
+        } else {
+          return NOT_ALLOWED;
+        }
+      }
     }
     // see if we have a conditional get with If-Modified-Since header
     try {
