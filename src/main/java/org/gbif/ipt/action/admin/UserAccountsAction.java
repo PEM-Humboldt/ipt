@@ -14,7 +14,9 @@ import org.gbif.ipt.validation.UserValidator;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
 
+import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -46,7 +48,9 @@ public class UserAccountsAction extends POSTAction {
   private boolean resetPassword;
   private boolean newUser;
   private List<User> users;
-  private List<Resource> restrictedResources;
+  private List<Resource> restrictedResourcesForAllButIAvHUsers;
+  private List<Resource> restrictedResourcesForIAvHUsers;
+
 
   @Inject
   public UserAccountsAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
@@ -108,10 +112,17 @@ public class UserAccountsAction extends POSTAction {
   }
 
   /**
-   * @return the restricted resources
+   * @return the restricted resources for all but IAvH users
    */
-  public List<Resource> getRestrictedResources() {
-    return restrictedResources;
+  public List<Resource> getRestrictedResourcesForAllButIAvHUsers() {
+    return restrictedResourcesForAllButIAvHUsers;
+  }
+
+  /**
+   * @return the restricted resources for IAvH users
+   */
+  public List<Resource> getRestrictedResourcesForIAvHUsers() {
+    return restrictedResourcesForIAvHUsers;
   }
 
   public String list() {
@@ -148,8 +159,10 @@ public class UserAccountsAction extends POSTAction {
       }
     }
 
-    List<String> intellectualRightsList = Arrays.asList(getText("/org/gbif/metadata/eml/licenses.properties"));
-    restrictedResources = resourceManager.list(intellectualRightsList);
+    List<String> intellectualRightsListForIAvHUsers = Arrays.asList(getText("eml.intellectualRights.license.text.temporalRestriction"), getText("eml.intellectualRights.license.text.internalNotification"));
+    List<String> intellectualRightsListForAllButIAvHUsers = Arrays.asList(getText("eml.intellectualRights.license.text.internal"));
+    restrictedResourcesForIAvHUsers = resourceManager.list(intellectualRightsListForIAvHUsers);
+    restrictedResourcesForAllButIAvHUsers = resourceManager.list(intellectualRightsListForAllButIAvHUsers);
   }
 
   @Override
@@ -215,7 +228,7 @@ public class UserAccountsAction extends POSTAction {
     // && users == null
     String accessTo = StringUtils.trimToNull(req.getParameter("user.grantedAccessTo"));
 	  if (accessTo == null) { // Should we use an interceptor here?
-      user.setGrantedAccessTo(""); 
+      user.setGrantedAccessTo("");
     }
     validator.validate(this, user);
     // check 2nd password
