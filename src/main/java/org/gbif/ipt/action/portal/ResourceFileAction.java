@@ -63,21 +63,32 @@ public class ResourceFileAction extends PortalBaseAction {
 
     // see if DwCA is restricted and logged user has been granted access to it
     Eml eml = resource.getEml();
-    List<String> intellectualRightsList = Arrays.asList(getText("eml.intellectualRights.license.text.internal"));
+    List<String> intellectualRightsList = Arrays.asList(
+      getText("eml.intellectualRights.license.text.internal"),
+      getText("eml.intellectualRights.license.text.temporalRestriction"),
+      getText("eml.intellectualRights.license.text.internalNotification")
+    );
+
     if (intellectualRightsList.contains(eml.getIntellectualRights())) {
       User user = (User) session.get(Constants.SESSION_USER);
       if (user == null) {
         return NOT_ALLOWED;
       } else {
-        if (!Strings.isNullOrEmpty(user.getGrantedAccessTo())) {
-          if (!Arrays.asList(user.getGrantedAccessTo().split(", ")).contains(resource.getShortname())) {
-            return NOT_ALLOWED;
-          }
-        } else {
-          return NOT_ALLOWED;
+        // Humboldt users have access to restricted internal resources, so just check the rest
+        if ((user.getEmail().endsWith(Constants.HUMBOLDT_MAIL_DOMAIN) &&
+          !eml.getIntellectualRights().equals(getText("eml.intellectualRights.license.text.internal"))) ||
+          !user.getEmail().endsWith(Constants.HUMBOLDT_MAIL_DOMAIN)){
+            if (!Strings.isNullOrEmpty(user.getGrantedAccessTo())){
+              if (!Arrays.asList(user.getGrantedAccessTo().split(", ")).contains(resource.getShortname())){
+                return NOT_ALLOWED;
+              }
+            } else {
+                return NOT_ALLOWED;
+            }
         }
       }
     }
+
     // see if we have a conditional get with If-Modified-Since header
     try {
       long since = req.getDateHeader("If-Modified-Since");
