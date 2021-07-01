@@ -291,32 +291,36 @@
 
         <#-- ...Testing... -->
         <#assign showDwCA=false/>
-        <#if eml.intellectualRights?has_content>
-        <#if eml.intellectualRights=='Libre a nivel interno.'><h1 class="minuscular">Protegido!</h1>
-            <#if (Session.curr_user)??>
-                <#if Session.curr_user.grantedAccessTo?has_content >
-                    <h1 class="minuscular">(${resource.shortname}) --&gt; ${Session.curr_user.grantedAccessTo}</h1>
-                    <#if elemInArray(Session.curr_user.grantedAccessTo, resource.shortname, ", ")>
-                        <#assign showDwCA=true/>
-                    <#else><h1 class="minuscular">Permiso denegado!</h1>
+            <#if eml.intellectualRights?has_content>
+                <#if elemInArray('Libre a nivel interno., Libre a nivel interno con notificación previa., Restringido temporalmente.', eml.intellectualRights, ", ") >
+                    <h1 class="minuscular">Protegido!</h1>
+                    <#if (Session.curr_user)??>
+                         <#if Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights == "Libre a nivel interno." >
+					        <#assign showDwCA=true/>
+				        </#if>
+                        <#if (Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights != "Libre a nivel interno.") || !Session.curr_user.email?ends_with("@humboldt.org.co") >
+                            <#if Session.curr_user.grantedAccessTo?has_content >
+                                <h1 class="minuscular">(${resource.shortname}) --&gt; ${Session.curr_user.grantedAccessTo}</h1>
+                                <#if elemInArray(Session.curr_user.grantedAccessTo, resource.shortname, ", ")>
+                                    <#assign showDwCA=true/>
+                                <#else><h1 class="minuscular">Permiso denegado!</h1>
+                                </#if>
+                            <#else>
+                                <h1 class="minuscular">No se encontró 'grantedAccessTo'... </h1>
+                            </#if>
+                        </#if>
+                    <#else>
+                        <h1 class="minuscular">Usuario invitado. </h1>
                     </#if>
-                <#else>	
-                <h1 class="minuscular">No se encontró 'grantedAccessTo'... </h1>
+                 <#else>
+                    <#assign showDwCA=true/>
                 </#if>
-            <#else>	
-                <h1 class="minuscular">Usuario invitado. </h1>
+            <#else>
+                <#assign showDwCA=true/>
             </#if>
-            <#else>	
-            <#assign showDwCA=true/>
-            </#if>	
-        <#else>	
-            <#assign showDwCA=true/>	
-        </#if>
-
-        <#if showDwCA><h1 class="minuscular">Mostrar Enlace!!!</h1><#else><h1 class="minuscular">NO Mostrar Enlace!</h1></#if>
 
         <#if showDwCA>
-        <#if metadataOnly>
+            <#if metadataOnly>
             <#-- Archive, EML, and RTF download links include Google Analytics event tracking -->
             <#-- e.g. Archive event tracking includes components: _trackEvent method, category, action, label, (int) value -->
             <#-- EML and RTF versions can always be retrieved by version number but DWCA versions are only stored if IPT Archive Mode is on -->
@@ -334,8 +338,9 @@
                     </#if>
                 </td>
             </tr>
+            </#if>
         </#if>
-                    <!-- /IAvH Customization-->
+        <!-- /IAvH Customization-->
 
         <#if metadataOnly != true>
             <div id="dataRecords" class="my-3 p-3 bg-body rounded shadow-sm">

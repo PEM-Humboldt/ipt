@@ -974,7 +974,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
 
   public List<Resource> list(User user) {
     List<Resource> result = new ArrayList<Resource>();
-    // select basedon user rights - for testing return all resources for now
+    // select based on user rights - for testing return all resources for now
     for (Resource res : resources.values()) {
       if (RequireManagerInterceptor.isAuthorized(user, res)) {
         result.add(res);
