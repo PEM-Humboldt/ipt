@@ -61,7 +61,7 @@
                     </#if>
                 </div>
 
-                <div class="row g-3 mx-md-3 mx-1 mt-2">
+                <div class="row mx-auto" style="width: 400px;">
                     <select multiple="multiple" id="user.grantedAccessTo" name="user.grantedAccessTo">
                         <#if "${newUser!}"=="yes" || ("${newUser!}"=="no" && !user.email?ends_with("@humboldt.org.co"))>
                             <#if restrictedResourcesForAllButIAvHUsers?has_content || restrictedResourcesForIAvHUsers?has_content >
