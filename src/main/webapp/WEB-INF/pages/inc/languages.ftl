@@ -1,12 +1,6 @@
 [#ftl]
 [#assign interfaceLanguges = {
-"en": "English",
-"fr": "Française",
-"es": "Español",
-"zh": "繁體中文",
-"pt": "Português",
-"ja": "日本語",
-"ru": "Русский"
+"es": "Español"
 }]
 
 <ul class="navbar-nav">
