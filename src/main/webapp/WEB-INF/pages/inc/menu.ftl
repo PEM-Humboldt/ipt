@@ -98,11 +98,6 @@
                       </a>
                     </div>
 
-                    <!-- Languages -->
-                    <div id="navbarNavDropdown">
-                        [#include "/WEB-INF/pages/inc/languages.ftl"/]
-                    </div>
-
                     <!-- Login, account -->
                     [#if (Session.curr_user)??]
                         <ul class="navbar-nav">
