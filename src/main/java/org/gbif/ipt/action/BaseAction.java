@@ -119,7 +119,6 @@ public class BaseAction extends ActionSupport implements SessionAware, Preparabl
           .path(Strings.nullToEmpty(req.getServletPath()))
           .path(Strings.nullToEmpty(req.getPathInfo()))
           .replaceQuery(req.getQueryString())
-          .replaceQueryParam("request_locale")
           .build().toString();
     } catch (RuntimeException e) {
       LOG.warn("Failed to reconstruct requestURL from " + req.getRequestURL(), e);
@@ -159,13 +158,9 @@ public class BaseAction extends ActionSupport implements SessionAware, Preparabl
    */
   public String getLocaleLanguage() {
     if (getLocale() != null) {
-      String requestedLocale = Strings.emptyToNull(getLocale().getLanguage());
-      if (requestedLocale != null && !XSSUtil.containsXSS(requestedLocale)) {
-        ResourceBundle resourceBundle = textProvider.getTexts(new Locale(requestedLocale));
-        return resourceBundle.getLocale().getLanguage();
-      }
+        return "es";
     }
-    return Locale.ENGLISH.getLanguage();
+    return "es";
   }
 
   /**
