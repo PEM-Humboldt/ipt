@@ -15,15 +15,8 @@ import java.util.Set;
  */
 public class IptI18nInterceptor extends I18nInterceptor {
   private static final Logger LOG = LogManager.getLogger(IptI18nInterceptor.class);
-  private static final Set<Locale> IPT_SUPPORTED_LOCALES = Sets.newHashSet(
-      Locale.ENGLISH,
-      Locale.FRENCH,
-      Locale.CHINESE,
-      Locale.JAPANESE,
+  private static final Set<Locale> IPT_SUPPORTED_LOCALES = Sets.newHashSet
       new Locale("es"),
-      new Locale("pt"),
-      new Locale("ru"),
-      new Locale("fa")
   );
 
   @Override
@@ -31,18 +24,17 @@ public class IptI18nInterceptor extends I18nInterceptor {
     Locale locale = null;
     try {
       if (requestedLocale != null) {
-        locale = (requestedLocale instanceof Locale) ? (Locale) requestedLocale
-            : LocaleUtils.toLocale(requestedLocale.toString());
+        locale = new Locale("es");
         if (locale != null && LOG.isDebugEnabled()) {
-          LOG.debug("Applied request locale: " + locale.getLanguage());
+          LOG.debug("Applied request locale: " + "es");
         }
       }
     } catch (IllegalArgumentException e) {
       LOG.debug("Invalid request locale: {}", requestedLocale);
-      locale = Locale.getDefault();
+      locale = new Locale("es");
     }
     if (locale != null && !IPT_SUPPORTED_LOCALES.contains(locale)) {
-      locale = Locale.getDefault();
+      locale = new Locale("es");
     }
     return locale;
   }
