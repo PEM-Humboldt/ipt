@@ -9,7 +9,7 @@
         // checkboxText: a text for the checkbox needed to confirm for Yes answer (optional)
         // summary: a textarea to enter a summary for the submit
         var theOptions = jQuery.extend({
-            titleQuestion: "Are you sure?",
+            titleQuestion: "¿Está seguro?",
             question: "Are you sure?",
             yesAnswer: "Yes",
             cancelAnswer: "Cancel",
