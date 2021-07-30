@@ -318,31 +318,9 @@
             <#else>
                 <#assign showDwCA=true/>
             </#if>
-
-        <#if showDwCA>
-            <#if metadataOnly>
-            <#-- Archive, EML, and RTF download links include Google Analytics event tracking -->
-            <#-- e.g. Archive event tracking includes components: _trackEvent method, category, action, label, (int) value -->
-            <#-- EML and RTF versions can always be retrieved by version number but DWCA versions are only stored if IPT Archive Mode is on -->
-            <tr>
-                <th><@s.text name='portal.resource.published.archive'/></th>
-                <td><a href="${baseURL}/archive.do?r=${resource.shortname}<#if version??>&v=${version}</#if>"
-                        onClick="_gaq.push(['_trackEvent', 'Archive', 'Download', '${resource.shortname}', ${resource.recordsPublished?c!0} ]);"><@s.text name='portal.resource.download'/></a>
-                    (${dwcaFormattedSize}
-                    ) <#if version?? && version!=resource.emlVersion>
-                        <#if recordsPublishedForVersion?? && recordsPublishedForVersion!= 0>
-                        ${recordsPublishedForVersion?c} <@s.text name='portal.resource.records'/>
-                        </#if>
-                    <#else>
-                        ${resource.recordsPublished?c!0} <@s.text name='portal.resource.records'/>
-                    </#if>
-                </td>
-            </tr>
-            </#if>
-        </#if>
         <!-- /IAvH Customization-->
 
-        <#if metadataOnly != true>
+        <#if metadataOnly != true && showDwCA>
             <div id="dataRecords" class="my-3 p-3 bg-body rounded shadow-sm">
                 <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header">
                     <@s.text name='portal.resource.dataRecords'/>
