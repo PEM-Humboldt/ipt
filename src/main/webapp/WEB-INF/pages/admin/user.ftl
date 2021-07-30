@@ -49,16 +49,7 @@
                         <@select name="user.role" value=user.role javaGetter=false options={"User":"user.roles.user", "Manager":"user.roles.manager", "Publisher":"user.roles.publisher", "Admin":"user.roles.admin"}/>
                     </div>
 
-                    <#if "${newUser!}"!="no">
-                        <div class="col-md-6">
-                            <@input name="user.password" type="password" />
-                        </div>
-                        <div class="col-md-6">
-                            <@input name="password2" i18nkey="user.password2" type="password"/>
-                        </div>
-                    </#if>
-                    <#if "${newUser!}"=="no">
-                        </br></br>
+                    <div class="row mx-auto mt-3" style="width: 400px;">
                         <select multiple="multiple" id="user.grantAccessTo" name="user.grantAccessTo">
                             <#if "${newUser!}"=="yes" || ("${newUser!}"=="no" && !user.email?ends_with("@humboldt.org.co"))>
                                 <#if restrictedResourcesForAllButIAvHUsers?has_content || restrictedResourcesForIAvHUsers?has_content >
@@ -75,6 +66,7 @@
                                 </#if>
                             </#if>
                         </select>
+                    </div>
 
                     <script type="text/javascript" charset="utf-8">
                         $('#user\\.grantedAccessTo').multiSelect({
@@ -119,8 +111,8 @@
                             </#if>
                     </script>
                     <div style="margin:auto; padding-top:10px; text-align: center;">
-                        <button type="button" cssClass="button" onClick="$('#user\\.grantedAccessTo').multiSelect('select_all');"><@s.text name="admin.user.grantAccessToAll" /></button>
-                        <button type="button" cssClass="button" onClick="$('#user\\.grantedAccessTo').multiSelect('deselect_all');"><@s.text name="admin.user.removeAccessToAll" /></button>
+                        <button type="button" class="button btn btn-outline-gbif-primary mt-1" onClick="$('#user\\.grantedAccessTo').multiSelect('select_all');"><@s.text name="admin.user.grantAccessToAll" /></button>
+                        <button type="button" class="button btn btn-outline-gbif-danger mt-1" onClick="$('#user\\.grantedAccessTo').multiSelect('deselect_all');"><@s.text name="admin.user.removeAccessToAll" /></button>
                     </div>
                     </br></br>
 
