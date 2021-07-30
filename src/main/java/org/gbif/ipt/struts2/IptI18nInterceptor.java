@@ -15,8 +15,8 @@ import java.util.Set;
  */
 public class IptI18nInterceptor extends I18nInterceptor {
   private static final Logger LOG = LogManager.getLogger(IptI18nInterceptor.class);
-  private static final Set<Locale> IPT_SUPPORTED_LOCALES = Sets.newHashSet
-      new Locale("es"),
+  private static final Set<Locale> IPT_SUPPORTED_LOCALES = Sets.newHashSet(
+      new Locale("es")
   );
 
   @Override
