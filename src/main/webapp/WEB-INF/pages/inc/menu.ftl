@@ -91,12 +91,6 @@
              [/#if]
 
                 <div class="d-xl-flex align-content-between">
-                    <!-- Health -->
-                    <div class="navbar-nav">
-                      <a href="${baseURL}/health.do" class="nav-link" title="[@s.text name="portal.health.title"/]">
-                          <img src="${baseURL}/images/gbif-heartbeat.svg" alt="Status">
-                      </a>
-                    </div>
 
                     <!-- Login, account -->
                     [#if (Session.curr_user)??]
