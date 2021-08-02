@@ -1,22 +1,9 @@
 [#ftl]
 [#assign interfaceLanguges = {
-"en": "English",
-"fr": "Française",
-"es": "Español",
-"zh": "繁體中文",
-"pt": "Português",
-"ja": "日本語",
-"ru": "Русский"
+"es": "Español"
 }]
 
 <ul class="navbar-nav">
-    [#if !requestURL?has_content]
-        [#assign requrl = baseURL + "?request_locale="]
-    [#elseif requestURL?contains("?")]
-        [#assign requrl = requestURL + "&request_locale="]
-    [#else]
-        [#assign requrl = requestURL + "?request_locale="]
-    [/#if]
     <!-- add more languages as translations become available. -->
 
     <li class="nav-item dropdown">

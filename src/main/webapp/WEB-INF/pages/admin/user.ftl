@@ -48,14 +48,7 @@
                     <div class="col-md-6">
                         <@select name="user.role" value=user.role javaGetter=false options={"User":"user.roles.user", "Manager":"user.roles.manager", "Publisher":"user.roles.publisher", "Admin":"user.roles.admin"}/>
                     </div>
-
-                    <#if "${newUser!}"=="no">
-                        <div class="userPasswordButtons">
-                            <@label i18nkey="user.password">
-                                <@s.submit cssClass="button" name="resetPassword" key="button.resetPassword" />
-                            </@label>
-                        </div>	
-                    <#else>
+                    <#if "${newUser!}"=="yes">
                         <@input name="user.password" type="password" />
                         <@input name="password2" i18nkey="user.password2" type="password"/>  
                     </#if>
@@ -122,8 +115,8 @@
                             </#if>
                     </script>
                     <div style="margin:auto; padding-top:10px; text-align: center;">
-                        <button type="button" cssClass="button" onClick="$('#user\\.grantedAccessTo').multiSelect('select_all');"><@s.text name="admin.user.grantAccessToAll" /></button>   
-                        <button type="button" cssClass="button" onClick="$('#user\\.grantedAccessTo').multiSelect('deselect_all');"><@s.text name="admin.user.removeAccessToAll" /></button>   
+                        <button type="button" class="button btn btn-outline-gbif-primary mt-1" onClick="$('#user\\.grantedAccessTo').multiSelect('select_all');"><@s.text name="admin.user.grantAccessToAll" /></button>
+                        <button type="button" class="button btn btn-outline-gbif-danger mt-1" onClick="$('#user\\.grantedAccessTo').multiSelect('deselect_all');"><@s.text name="admin.user.removeAccessToAll" /></button>
                     </div>
 
                 <div class="mx-md-4 mx-2 mt-3">
