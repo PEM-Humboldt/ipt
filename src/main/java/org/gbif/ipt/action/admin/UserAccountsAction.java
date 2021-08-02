@@ -167,6 +167,18 @@ public class UserAccountsAction extends POSTAction {
 
   @Override
   public String save() {
+
+    String[] accessTo = req.getParameterValues("user.grantedAccessTo");
+    for (String str : accessTo) {
+      System.out.println(str);
+      System.out.println(user.getEmail());
+      System.out.println(resourceManager.get(str).getShortname());
+      Resource test = resourceManager.get(str);
+      test.addManager(userManager.get(user.getEmail()));
+      resourceManager.save(test);
+    }
+    
+    
     try {
       if (id == null) {
         userManager.create(user);

@@ -79,40 +79,10 @@
                         });
                         $('#user\\.grantedAccessTo').multiSelect('select', [
                             <#if user.grantedAccessTo?has_content >
-                                    ${ "'"+user.grantedAccessTo?split(", ")?join("', '")+"'" } 
-                                </#if>
-                            ]);  	
-                            
-                            <#if "${newUser!}"=="yes">
-                                $("input#user\\.email").on( "focusout", function(){
-                                if ($("input#user\\.email").val().endsWith("@humboldt.org.co")){
-                                    // Remove those restricted resources that are actually not restricted for @humboldt users 
-                                    <#if restrictedResourcesForAllButIAvHUsers?has_content>
-                                        <#list restrictedResourcesForAllButIAvHUsers as rR>		
-                                                $('#user\\.grantedAccessTo').find("option[value='${rR.shortname}']").remove();
-                                                $('#ms-user\\.grantedAccessTo').find("ul.ms-list li").filter(function() {
-                                                    return $(this).text() == "${rR.shortname}";
-                                                }).remove();  
-                                            </#list>
-                                        </#if>
-                                } else { // The user to be created is not @humboldt.org.co, so refresh restricted resources lists
-                                    <#if restrictedResourcesForAllButIAvHUsers?has_content || restrictedResourcesForIAvHUsers?has_content >
-                                            <#list (restrictedResourcesForAllButIAvHUsers + restrictedResourcesForIAvHUsers) as rR>		
-                                                $('#user\\.grantedAccessTo').find("option[value='${rR.shortname}']").remove();
-                                                $('#ms-user\\.grantedAccessTo').find("ul.ms-list li").filter(function() {
-                                                    return $(this).text() == "${rR.shortname}";
-                                                }).remove();  
-                                            </#list>
-                                        </#if>				
-                                        <#if restrictedResourcesForAllButIAvHUsers?has_content || restrictedResourcesForIAvHUsers?has_content >
-                                            <#list (restrictedResourcesForAllButIAvHUsers + restrictedResourcesForIAvHUsers)?sort_by("shortname") as rR>		
-                                                $('#user\\.grantedAccessTo').multiSelect('addOption',{value:'${rR.shortname}',text:'${rR.shortname}'}); 
-                                            </#list>
-                                        </#if>
-                                }
-                                console.log("LISTO!!!");
-                                });
+                                ${ "'"+user.grantedAccessTo?split(", ")?join("', '")+"'" } 
                             </#if>
+                        ]);  	
+                            
                     </script>
                     <div style="margin:auto; padding-top:10px; text-align: center;">
                         <button type="button" class="button btn btn-outline-gbif-primary mt-1" onClick="$('#user\\.grantedAccessTo').multiSelect('select_all');"><@s.text name="admin.user.grantAccessToAll" /></button>
