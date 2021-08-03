@@ -118,8 +118,6 @@ public class Resource implements Serializable, Comparable<Resource> {
   private UUID doiOrganisationKey;
 
   public void addManager(User manager) {
-    System.out.println("Pruebaaaa");
-    System.out.println(manager.getEmail());
     if (manager != null) {
       this.managers.add(manager);
     }
