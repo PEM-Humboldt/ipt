@@ -56,6 +56,9 @@
                 return false;
             }
 
+            // Initialize/select the intellectual rights value from current eml file
+            $("select#eml\\.intellectualRights").val("${eml.intellectualRights}"); 
+
         });
     </script>
     <#assign auxTopNavbar=true />
@@ -128,6 +131,21 @@
                 <div>
                     <@text name="eml.additionalInfo" i18nkey="eml.additionalInfo" help="i18n"/>
                 </div>
+
+                <!-- IAvH Customization about licences rights-->
+                <div>
+                    <@select name="rtf.license" help="i18n" options=licenses value="${licenses}" />
+                </div>
+                <div>
+                    <@textinline name="eml.intellectualRights.simple" help="i18n"/>
+                    <select class="form-select" id="eml.intellectualRights" value="${eml.intellectualRights}" i18nkey="eml.intellectualRights" help="i18n" javaGetter=false >
+                        <option><@s.text name='eml.intellectualRights.license.text.externalInternal'/></option>
+                        <option><@s.text name='eml.intellectualRights.license.text.internal'/></option>
+                        <option><@s.text name='eml.intellectualRights.license.text.internalNotification'/></option>
+                        <option><@s.text name='eml.intellectualRights.license.text.temporalRestriction'/></option>
+                    </select>
+                </div>
+                <!-- /IAvH Customization about licences rights-->
             </div>
 
         </div>

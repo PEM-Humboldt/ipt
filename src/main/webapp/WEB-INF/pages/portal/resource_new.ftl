@@ -237,7 +237,7 @@
                             <@s.text name='portal.resource.gbif.page.short'/>
                         </a>
                     </#if>
-                    <#if metadataOnly == false>
+                    <#if metadataOnly == false && managerRights>
                         <a href="${download_dwca_url}" class="btn btn-sm btn-outline-gbif-primary mt-1 bi bi-download">
                             <@s.text name='portal.resource.published.dwca'/>
                         </a>
@@ -329,8 +329,11 @@
                 <div class="mx-md-4 mx-2">
                     <p>
                         <@s.text name='portal.resource.dataRecords.intro'><@s.param>${action.getCoreType()?lower_case}</@s.param></@s.text>
-                        <#if coreExt?? && coreExt.name?has_content && coreCount?has_content>
+                        <#if managerRights && coreExt?? && coreExt.name?has_content && coreCount?has_content>
                             <@s.text name='portal.resource.dataRecords.core'><@s.param>${coreCount}</@s.param></@s.text>
+                        </#if>
+                        <#if (!managerRights)>
+                            <@s.text name='portal.resource.dataRecords.unauthorizedAccess' />
                         </#if>
                     </p>
 
@@ -383,7 +386,7 @@
                         <#-- Archive, EML, and RTF download links include Google Analytics event tracking -->
                         <#-- e.g. Archive event tracking includes components: _trackEvent method, category, action, label, (int) value -->
                         <#-- EML and RTF versions can always be retrieved by version number but DWCA versions are only stored if IPT Archive Mode is on -->
-                        <#if metadataOnly == false>
+                        <#if metadataOnly == false && managerRights>
                             <tr>
                                 <th class="col-4"><@s.text name='portal.resource.dwca.verbose'/></th>
                                 <#if version?? && version.toPlainString() != resource.emlVersion.toPlainString() && recordsPublishedForVersion??>
