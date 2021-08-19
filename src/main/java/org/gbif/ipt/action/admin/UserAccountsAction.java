@@ -50,6 +50,7 @@ public class UserAccountsAction extends POSTAction {
   private List<User> users;
   private List<Resource> restrictedResourcesForAllButIAvHUsers;
   private List<Resource> restrictedResourcesForIAvHUsers;
+  private List<User> potentialManagers;
 
 
   @Inject
@@ -168,12 +169,24 @@ public class UserAccountsAction extends POSTAction {
   @Override
   public String save() {
 
+    List<Resource> resources = resourceManager.list();
     String[] accessTo = req.getParameterValues("user.grantedAccessTo");
+    potentialManagers = userManager.list(Role.Publisher);
+    potentialManagers.addAll(userManager.list(Role.Manager));
+    System.out.println(userManager.getDefaultAdminEmail());
     for (String str : accessTo) {
-      Resource test = resourceManager.get(str);
-      test.addManager(userManager.get(user.getEmail()));
-      resourceManager.save(test);
-    }
+      if (user == null || accessTo!=null) {
+        for (Resource r : resources) {
+          if (!r.getManagers().contains(user) || !potentialManagers.contains(user)) {
+            System.out.println(userManager.get(user.getEmail()));
+            r.getManagers().remove(user);
+          }
+        }
+      }
+      Resource toUpdate = resourceManager.get(str);
+      toUpdate.addManager(userManager.get(user.getEmail()));
+      resourceManager.save(toUpdate);
+    }    
     
     
     try {
