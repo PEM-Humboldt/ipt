@@ -315,9 +315,9 @@
                 <#if elemInArray('Libre a nivel interno., Libre a nivel interno con notificación previa., Restringido temporalmente.', eml.intellectualRights, ", ") >
                     <h1 class="minuscular">Protegido!</h1>
                     <#if (Session.curr_user)??>
-                         <#if Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights == "Libre a nivel interno." >
-					        <#assign showDwCA=true/>
-				        </#if>
+                        <#if Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights == "Libre a nivel interno." >
+                            <#assign showDwCA=true/>
+                        </#if>
                         <#if (Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights != "Libre a nivel interno.") || !Session.curr_user.email?ends_with("@humboldt.org.co") >
                             <#if Session.curr_user.grantedAccessTo?has_content >
                                 <h1 class="minuscular">(${resource.shortname}) --&gt; ${Session.curr_user.grantedAccessTo}</h1>
@@ -332,7 +332,7 @@
                     <#else>
                         <h1 class="minuscular">Usuario invitado. </h1>
                     </#if>
-                 <#else>
+                <#else>
                     <#assign showDwCA=true/>
                 </#if>
             <#else>
