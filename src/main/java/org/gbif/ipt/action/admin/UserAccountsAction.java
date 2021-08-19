@@ -50,7 +50,6 @@ public class UserAccountsAction extends POSTAction {
   private List<User> users;
   private List<Resource> restrictedResourcesForAllButIAvHUsers;
   private List<Resource> restrictedResourcesForIAvHUsers;
-  private List<User> potentialManagers;
 
 
   @Inject
