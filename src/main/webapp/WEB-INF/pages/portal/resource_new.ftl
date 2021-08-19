@@ -279,6 +279,26 @@
         <#assign coreExt = action.getExtensionManager().get(coreRowType)!/>
         <#assign coreCount = recordsByExtensionOrdered.get(coreRowType)!recordsPublishedForVersion!0?c/>
 
+        <!-- rights section -->
+        <#if eml.intellectualRights?has_content>
+            <div id="rights" class="my-3 p-3 bg-body rounded shadow-sm">
+                <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header">
+                    <@s.text name='eml.intellectualRights.simple'/>
+                </h5>
+
+                <div class="mx-md-4 mx-2">
+                    <p><@s.text name='portal.resource.rights.help'/>:</p>
+                    <@licenseLogoClass eml.intellectualRights!/>
+                    <p property="dc:license">
+                        <#if resource.organisation?? && action.getDefaultOrganisation()?? && resource.organisation.key.toString() != action.getDefaultOrganisation().key.toString()>
+                            <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
+                        </#if>
+                        <#noescape>${eml.intellectualRights!}</#noescape>
+                    </p>
+                </div>
+            </div>
+        </#if>
+
         <!-- IAvH Customization -->
         <#function elemInArray array elem sep>
             <#list array?split(sep) as arrayElem>
@@ -453,26 +473,6 @@
                     </p>
                     <p property="dc:bibliographicCitation" class="howtocite mt-3 p-3 border overflow-x-auto">
                         <@textWithFormattedLink eml.citation.citation/>
-                    </p>
-                </div>
-            </div>
-        </#if>
-
-        <!-- rights section -->
-        <#if eml.intellectualRights?has_content>
-            <div id="rights" class="my-3 p-3 bg-body rounded shadow-sm">
-                <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header">
-                    <@s.text name='eml.intellectualRights.simple'/>
-                </h5>
-
-                <div class="mx-md-4 mx-2">
-                    <p><@s.text name='portal.resource.rights.help'/>:</p>
-                    <@licenseLogoClass eml.intellectualRights!/>
-                    <p property="dc:license">
-                        <#if resource.organisation?? && action.getDefaultOrganisation()?? && resource.organisation.key.toString() != action.getDefaultOrganisation().key.toString()>
-                            <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
-                        </#if>
-                        <#noescape>${eml.intellectualRights!}</#noescape>
                     </p>
                 </div>
             </div>
