@@ -171,22 +171,26 @@ public class UserAccountsAction extends POSTAction {
 
     List<Resource> resources = resourceManager.list();
     String[] accessTo = req.getParameterValues("user.grantedAccessTo");
-    potentialManagers = userManager.list(Role.Publisher);
-    potentialManagers.addAll(userManager.list(Role.Manager));
-    System.out.println(userManager.getDefaultAdminEmail());
-    for (String str : accessTo) {
-      if (user == null || accessTo!=null) {
-        for (Resource r : resources) {
-          if (!r.getManagers().contains(user) || !potentialManagers.contains(user)) {
-            System.out.println(userManager.get(user.getEmail()));
-            r.getManagers().remove(user);
-          }
+    if (user == null || accessTo != null) {
+      for (String str : accessTo) {
+        
+        Resource toUpdate = resourceManager.get(str);
+
+        // remove from local resource list all resources to update to avoid replacing managers
+        resources.remove(toUpdate);
+
+        toUpdate.addManager(userManager.get(user.getEmail()));
+        resourceManager.save(toUpdate);
+      }
+
+      // Remove from local resources list this user selected
+      for (Resource r : resources) {
+        if (r.getManagers().contains(user)){
+          r.getManagers().remove(user);
+          resourceManager.save(r);
         }
       }
-      Resource toUpdate = resourceManager.get(str);
-      toUpdate.addManager(userManager.get(user.getEmail()));
-      resourceManager.save(toUpdate);
-    }    
+    }
     
     
     try {
