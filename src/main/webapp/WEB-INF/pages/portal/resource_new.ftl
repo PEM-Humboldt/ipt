@@ -237,7 +237,7 @@
                             <@s.text name='portal.resource.gbif.page.short'/>
                         </a>
                     </#if>
-                    <#if metadataOnly == false && managerRights>
+                    <#if metadataOnly == false && (Session.curr_user)?? && (Session.curr_user.email?ends_with("@humboldt.org.co")) >
                         <a href="${download_dwca_url}" class="btn btn-sm btn-outline-gbif-primary mt-1 bi bi-download">
                             <@s.text name='portal.resource.published.dwca'/>
                         </a>
