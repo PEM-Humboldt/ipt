@@ -293,7 +293,7 @@
                         <#if resource.organisation?? && action.getDefaultOrganisation()?? && resource.organisation.key.toString() != action.getDefaultOrganisation().key.toString()>
                             <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
                         </#if>
-                        <#noescape>${eml.intellectualRights!}</#noescape>
+                        <b><#noescape>${eml.intellectualRights!}</#noescape></b>
                     </p>
                 </div>
             </div>
