@@ -352,9 +352,6 @@
                         <#if coreExt?? && coreExt.name?has_content && coreCount?has_content && (Session.curr_user)?? && (Session.curr_user.email?ends_with("@humboldt.org.co")) >
                             <@s.text name='portal.resource.dataRecords.core'><@s.param>${coreCount}</@s.param></@s.text>
                         </#if>
-                        <#if (!(Session.curr_user)?? && !(Session.curr_user.email?ends_with("@humboldt.org.co")))>
-                            <@s.text name='portal.resource.dataRecords.unauthorizedAccess' />
-                        </#if>
                     </p>
 
                     <#if recordsByExtensionOrderedNumber gt 0>
