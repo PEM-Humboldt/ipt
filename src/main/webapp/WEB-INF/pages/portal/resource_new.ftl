@@ -400,13 +400,17 @@
                 <#else>
                     <p><@s.text name='portal.resource.downloads.verbose'/></p>
                 </#if>
-
+                
+                <#if (Session.curr_user)?? >
+                    ${Session.curr_user!0?c}
+                    ${(Session.curr_user.email?ends_with("@humboldt.org.co"))?string('false', 'true')}
+                </#if>
                 <div class="table-responsive">
                     <table class="downloads text-smaller table table-sm table-borderless">
                         <#-- Archive, EML, and RTF download links include Google Analytics event tracking -->
                         <#-- e.g. Archive event tracking includes components: _trackEvent method, category, action, label, (int) value -->
                         <#-- EML and RTF versions can always be retrieved by version number but DWCA versions are only stored if IPT Archive Mode is on -->
-                        <#if metadataOnly == false && managerRights>
+                        <#if metadataOnly == false && (Session.curr_user)?? && (Session.curr_user.email?ends_with("@humboldt.org.co")) >
                             <tr>
                                 <th class="col-4"><@s.text name='portal.resource.dwca.verbose'/></th>
                                 <#if version?? && version.toPlainString() != resource.emlVersion.toPlainString() && recordsPublishedForVersion??>
