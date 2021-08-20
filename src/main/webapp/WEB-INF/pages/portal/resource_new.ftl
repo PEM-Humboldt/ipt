@@ -349,10 +349,10 @@
                 <div class="mx-md-4 mx-2">
                     <p>
                         <@s.text name='portal.resource.dataRecords.intro'><@s.param>${action.getCoreType()?lower_case}</@s.param></@s.text>
-                        <#if managerRights && coreExt?? && coreExt.name?has_content && coreCount?has_content>
+                        <#if coreExt?? && coreExt.name?has_content && coreCount?has_content && (Session.curr_user)?? && (Session.curr_user.email?ends_with("@humboldt.org.co")) >
                             <@s.text name='portal.resource.dataRecords.core'><@s.param>${coreCount}</@s.param></@s.text>
                         </#if>
-                        <#if (!managerRights)>
+                        <#if (!(Session.curr_user)?? && !(Session.curr_user.email?ends_with("@humboldt.org.co")))>
                             <@s.text name='portal.resource.dataRecords.unauthorizedAccess' />
                         </#if>
                     </p>
@@ -401,10 +401,6 @@
                     <p><@s.text name='portal.resource.downloads.verbose'/></p>
                 </#if>
                 
-                <#if (Session.curr_user)?? >
-                    ${Session.curr_user!0?c}
-                    ${(Session.curr_user.email?ends_with("@humboldt.org.co"))?string('false', 'true')}
-                </#if>
                 <div class="table-responsive">
                     <table class="downloads text-smaller table table-sm table-borderless">
                         <#-- Archive, EML, and RTF download links include Google Analytics event tracking -->
