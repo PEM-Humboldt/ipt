@@ -170,7 +170,7 @@ public class UserAccountsAction extends POSTAction {
 
     List<Resource> resources = resourceManager.list();
     String[] accessTo = req.getParameterValues("user.grantedAccessTo");
-    if (user == null || accessTo != null) {
+    if (accessTo != null) {
       for (String str : accessTo) {
         
         Resource toUpdate = resourceManager.get(str);
