@@ -187,15 +187,11 @@
     <#macro licenseLogoClass rights>
         <#if rights?contains("CC-BY-NC")>
             <a rel="license" id="cc_by_nc" class="cc_logo cc_by_nc"
-               href="http://creativecommons.org/licenses/by-nc/4.0/legalcode"
-               title="Creative Commons Attribution Non Commercial (CC-BY-NC) 4.0 License">&nbsp;</a>
-        <#elseif rights?contains("CC-BY")>
-            <a rel="license" id="cc_by" class="cc_logo cc_by"
-               href="http://creativecommons.org/licenses/by/4.0/legalcode"
-               title="Creative Commons Attribution (CC-BY) 4.0 License">&nbsp;</a>
-        <#elseif rights?contains("CC0")>
-            <a rel="license" id="cc_zero" class="cc_logo cc_zero"
-               href="http://creativecommons.org/publicdomain/zero/1.0/legalcode"
-               title="Creative Commons CCZero (CC0) 1.0 License">&nbsp;</a>
+                href="http://creativecommons.org/licenses/by-nc/4.0/legalcode"
+                title="Creative Commons Attribution Non Commercial (CC-BY-NC) 4.0 License">&nbsp;</a>
+        <#else>
+            <a rel="license" id="i2d" class="cc_logo i2d"
+                href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d"
+                title="Licencia I2D">&nbsp;</a>
         </#if>
     </#macro>

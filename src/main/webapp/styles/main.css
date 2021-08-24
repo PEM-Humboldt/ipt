@@ -397,16 +397,12 @@ td.left_padding {
     width: 88px;
 }
 
-.cc_by {
-    background: url('../images/icons/cc-by.png');
+.i2d {
+    background: url('../images/icons/i2d.png');
 }
 
 .cc_by_nc {
     background: url('../images/icons/cc-by-nc.png');
-}
-
-.cc_zero {
-    background: url('../images/icons/cc-zero.png');
 }
 /* Licence logos styling END */
 
