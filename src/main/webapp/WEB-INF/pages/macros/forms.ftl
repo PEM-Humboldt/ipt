@@ -190,7 +190,7 @@
                 href="http://creativecommons.org/licenses/by-nc/4.0/legalcode"
                 title="Creative Commons Attribution Non Commercial (CC-BY-NC) 4.0 License">&nbsp;</a>
         <#else>
-            <a rel="license" id="i2d" class="cc_logo i2d"
+            <a rel="license" id="i2d" class="i2d_logo"
                 href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d"
                 title="Licencia I2D">&nbsp;</a>
         </#if>
