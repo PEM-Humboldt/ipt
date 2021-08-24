@@ -329,12 +329,12 @@
 
                 <div class="mx-md-4 mx-2">
                     <p><@s.text name='portal.resource.rights.help'/>:</p>
-                    <@licenseLogoClass eml.intellectualRights!/>
+                    <@licenseLogoClass eml.intellectualRights/>
                     <p property="dc:license">
                         <#if resource.organisation?? && action.getDefaultOrganisation()?? && resource.organisation.key.toString() != action.getDefaultOrganisation().key.toString()>
                             <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
                         </#if>
-                        <b><#noescape>${eml.intellectualRights!}</#noescape></b>
+                        <b><#noescape>${eml.intellectualRights}</#noescape></b>
                     </p>
                 </div>
             </div>

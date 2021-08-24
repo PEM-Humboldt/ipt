@@ -111,7 +111,7 @@
                         $("#intellectualRights").val(licenseText);
                         $("#eml\\.intellectualRights").val(licenseText);
 
-                        $("#disclaimerRigths").css('display', '');
+                        $("#disclaimerRigths").css('display', 'none');
                     }
 
                 } else {
@@ -119,7 +119,7 @@
                     $("#intellectualRightsDiv").hide();
 
                     $("#intellectualRights").val('');
-                    $("#disclaimerRigths").css('display', 'none');
+                    $("#disclaimerRigths").css('display', '');
                     $("#eml\\.intellectualRights").val('');
                 }
             });// end intellectual rights
@@ -182,8 +182,8 @@
                 <@select name="eml.intellectualRights.license" i18nkey="eml.intellectualRights.license" help="i18n" options=licenses value="${licenseKeySelected!}" requiredField=true/>
 
                 <div id="intellectualRightsDiv" class="mt-3 p-3 border">
-                    <@licenseLogoClass eml.intellectualRights!/>
-                    <#noescape>${eml.intellectualRights!}</#noescape>
+                    <@licenseLogoClass eml.intellectualRights/>
+                    <#noescape>${eml.intellectualRights}</#noescape>
                 </div>
                 <!-- internal parameter -->
                 <input id="eml.intellectualRights" name="eml.intellectualRights" type="hidden" value="${eml.intellectualRights!}" />
