@@ -69,6 +69,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
@@ -487,10 +488,26 @@ public class OverviewAction extends ManagerBaseAction implements ReportHandler {
       return NOT_FOUND;
     }
     User u = userManager.get(id);
+
     if (u == null || !resource.getManagers().contains(u)) {
       addActionError(getText("manage.overview.manager.not.available", new String[] {id}));
     } else {
+      System.out.println("Para el usuario: " + u.getEmail());
+      
+      // get resources list control inside users.xml
+      String[] accessTo = u.getGrantedAccessTo().split(",");
+      List<String> userAccessTo = Arrays.asList(accessTo);
+      System.out.println("Arreglo original: " + u.getGrantedAccessTo());
+      System.out.println("Tamaño del arreglo: " + userAccessTo.size());
       resource.getManagers().remove(u);
+
+      if (userAccessTo.contains(resource.getShortname())){
+        userAccessTo.remove(resource.getShortname());
+      }
+
+      u.setGrantedAccessTo(userAccessTo.toString());
+      userManager.save(u);
+      System.out.println("Arreglo MODIFICADO: " + userAccessTo.toString());
       addActionMessage(getText("manage.overview.user.removed", new String[] {u.getName()}));
       saveResource();
       potentialManagers.add(u);
