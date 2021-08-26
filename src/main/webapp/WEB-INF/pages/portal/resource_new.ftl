@@ -335,18 +335,12 @@
                             <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
                         </#if>
                         <b><#noescape>${eml.intellectualRights}</#noescape></b>
+                        <b><#noescape>${eml}</#noescape></b>
                     </p>
                 </div>
             </div>
         </#if>
 
-        <#if (eml.intellectualRights)?? >
-            ${eml.intellectualRights}
-            Valor de showDwCA: 
-            <#if (showDwCA)?? >
-                ${showDwCA?c}
-            </#if>
-        </#if>
         <#if metadataOnly != true && showDwCA>
             <div id="dataRecords" class="my-3 p-3 bg-body rounded shadow-sm">
                 <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header">

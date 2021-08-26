@@ -184,6 +184,9 @@
                 <div id="intellectualRightsDiv" class="mt-3 p-3 border">
                     <@licenseLogoClass eml.intellectualRights/>
                     <#noescape>${eml.intellectualRights}</#noescape>
+                    <#if version?? && version.toPlainString() != resource.emlVersion.toPlainString() && recordsPublishedForVersion??>
+                        <@s.text name='version.toPlainString()'/>, <@s.text name='resource.emlVersion.toPlainString()'/>, <@s.text name='recordsPublishedForVersion'/>
+                    </#if>
                 </div>
                 <!-- internal parameter -->
                 <input id="eml.intellectualRights" name="eml.intellectualRights" type="hidden" value="${eml.intellectualRights!}" />
