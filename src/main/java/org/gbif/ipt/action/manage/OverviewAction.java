@@ -492,22 +492,19 @@ public class OverviewAction extends ManagerBaseAction implements ReportHandler {
     if (u == null || !resource.getManagers().contains(u)) {
       addActionError(getText("manage.overview.manager.not.available", new String[] {id}));
     } else {
-      System.out.println("Para el usuario: " + u.getEmail());
       
       // get resources list control inside users.xml
-      String[] accessTo = u.getGrantedAccessTo().split(",");
-      List<String> userAccessTo = Arrays.asList(accessTo);
-      System.out.println("Arreglo original: " + u.getGrantedAccessTo());
-      System.out.println("Tamaño del arreglo: " + userAccessTo.size());
-      resource.getManagers().remove(u);
+      String[] accessTo = u.getGrantedAccessTo().split(", ");
+      List<String> userAccessTo = new ArrayList<String>(Arrays.asList(accessTo));
 
       if (userAccessTo.contains(resource.getShortname())){
         userAccessTo.remove(resource.getShortname());
       }
 
-      u.setGrantedAccessTo(userAccessTo.toString());
+      u.setGrantedAccessTo(String.join(",", userAccessTo));
+      resource.getManagers().remove(u);
       userManager.save(u);
-      System.out.println("Arreglo MODIFICADO: " + userAccessTo.toString());
+
       addActionMessage(getText("manage.overview.user.removed", new String[] {u.getName()}));
       saveResource();
       potentialManagers.add(u);
