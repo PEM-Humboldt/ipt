@@ -335,7 +335,7 @@
                             <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
                         </#if>
                         <b><#noescape>${eml.intellectualRights}</#noescape></b>
-                        <b><#noescape>${eml}</#noescape></b>
+                        <br />
                     </p>
                 </div>
             </div>

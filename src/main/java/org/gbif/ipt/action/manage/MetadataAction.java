@@ -420,7 +420,6 @@ public class MetadataAction extends ManagerBaseAction {
   public String save() throws Exception {
     // before saving, the minimum amount of mandatory metadata must have been provided, and ALL metadata sections must
     // be valid, otherwise an error is displayed
-    System.out.println("Probando si este es el recurso");
     if (emlValidator.areAllSectionsValid(this, resource)) {
       // Save metadata information (eml.xml)
       resourceManager.saveEml(resource);
