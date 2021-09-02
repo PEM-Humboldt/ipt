@@ -10,7 +10,7 @@
 
     .second-nav {
         position: fixed;
-        top: 50px;
+        top: 118px;
         right: 0;
         left: 0;
         z-index: 999 !important; /* less than top nav dropdowns */

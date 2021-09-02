@@ -46,14 +46,19 @@
                     </div>
 
                     <div class="col-md-6">
-                        <@select name="user.role" value=user.role javaGetter=false options={"User":"user.roles.user", "Manager":"user.roles.manager", "Publisher":"user.roles.publisher", "Admin":"user.roles.admin"}/>
+                        <@select name="user.role" value=user.role javaGetter=false options={"User":"user.roles.user", "Manager":"user.roles.manager", "Admin":"user.roles.admin"}/>
                     </div>
                     <#if "${newUser!}"=="yes">
                         <@input name="user.password" type="password" />
                         <@input name="password2" i18nkey="user.password2" type="password"/>  
                     </#if>
                 </div>
-
+                
+                <br />
+                <p class="mx-md-4 mx-2 mb-0">
+                    <@s.text name="admin.user.restrictedResources.help"/>
+                </p>
+                <br />
                 <div class="row mx-auto" style="width: 400px;">
                     <select multiple="multiple" id="user.grantedAccessTo" name="user.grantedAccessTo">
                         <#if "${newUser!}"=="yes" || ("${newUser!}"=="no" && !user.email?ends_with("@humboldt.org.co"))>
@@ -79,7 +84,9 @@
                         });
                         $('#user\\.grantedAccessTo').multiSelect('select', [
                             <#if user.grantedAccessTo?has_content >
-                                ${ "'"+user.grantedAccessTo?split(", ")?join("', '")+"'" } 
+                                ${ "'"+user.grantedAccessTo?split(", ")?join("', '")+"'" }
+                            <#else>
+                                ${ "''" }
                             </#if>
                         ]);  	
                             
