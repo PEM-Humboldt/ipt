@@ -45,7 +45,7 @@
                     </div>
 
                     <div class="col-md-6">
-                        <@select name="user.role" value=user.role javaGetter=false options={"User":"user.roles.user", "Manager":"user.roles.manager", "Publisher":"user.roles.publisher", "Admin":"user.roles.admin"}/>
+                        <@select name="user.role" value=user.role javaGetter=false options={"User":"user.roles.user", "Manager":"user.roles.manager", "Admin":"user.roles.admin"}/>
                     </div>
                     <#if "${newUser!}"=="yes">
                         <@input name="user.password" type="password" />
