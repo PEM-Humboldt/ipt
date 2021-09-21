@@ -10,9 +10,9 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  ***************************************************************************/
-
 package org.gbif.ipt.action.manage;
 
+import org.apache.commons.io.FilenameUtils;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.config.DataDir;
@@ -21,6 +21,7 @@ import org.gbif.ipt.model.Source;
 import org.gbif.ipt.model.SourceBase;
 import org.gbif.ipt.model.SqlSource;
 import org.gbif.ipt.model.TextFileSource;
+import org.gbif.ipt.model.UrlSource;
 import org.gbif.ipt.service.AlreadyExistingException;
 import org.gbif.ipt.service.ImportException;
 import org.gbif.ipt.service.InvalidFilenameException;
@@ -33,6 +34,8 @@ import org.gbif.utils.file.CompressionUtil.UnsupportedCompressionType;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URI;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +52,8 @@ public class SourceAction extends ManagerBaseAction {
   // logging
   private static final Logger LOG = LogManager.getLogger(SourceAction.class);
 
+  private static final String SOURCE_URL = "source-url";
+
   private SourceManager sourceManager;
   private JdbcSupport jdbcSupport;
   private DataDir dataDir;
@@ -56,6 +61,8 @@ public class SourceAction extends ManagerBaseAction {
   private Source source;
   private String rdbms;
   private String problem;
+  // URL
+  private String url;
   // file upload
   private File file;
   private String fileContentType;
@@ -67,6 +74,8 @@ public class SourceAction extends ManagerBaseAction {
   private int peekRows = 10;
   private int analyzeRows = 1000;
 
+  private String sourceType;
+
   @Inject
   public SourceAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
     ResourceManager resourceManager, SourceManager sourceManager, JdbcSupport jdbcSupport, DataDir dataDir) {
@@ -77,11 +86,68 @@ public class SourceAction extends ManagerBaseAction {
   }
 
   public String add() throws IOException {
+    String sessionUrl = (String) session.get(Constants.SESSION_URL);
+
+    if (SOURCE_URL.equals(sourceType) || sessionUrl != null) {
+      // prepare a new, empty url source
+      source = new UrlSource();
+      source.setResource(resource);
+      sourceType = SOURCE_URL;
+      URI urlWrapped = URI.create(url);
+
+      boolean replaceUrl = false;
+
+      // check session URL
+      // if present do not check sources with the same name, already overwriting
+      if (sessionUrl != null) {
+        url = sessionUrl;
+        urlWrapped = URI.create(url);
+        replaceUrl = true;
+      }
+
+      // check if source with the same name already exists
+      // if so store url in the session, and return to ask about overwriting
+      if (!replaceUrl) {
+        String urlSourceName = FilenameUtils.getBaseName(url);
+
+        if (resource.getSource(urlSourceName) != null) {
+          urlToOverwrite();
+          return INPUT;
+        }
+      }
+
+      // check URL is fine otherwise throw an exception
+      try {
+        HttpURLConnection connection = (HttpURLConnection) urlWrapped.toURL().openConnection();
+        int responseCode = connection.getResponseCode();
+
+        // check not found
+        if (responseCode == 404) {
+          addActionError(getText("manage.source.url.notFound", new String[] {url}));
+          return ERROR;
+        }
+
+        // check text file (or no extension)
+        String extension = FilenameUtils.getExtension(url);
+        if (!extension.isEmpty() && !"txt".equals(extension) && !"tsv".equals(extension) && !"csv".equals(extension)) {
+          addActionError(getText("manage.source.url.invalid", new String[] {url}));
+          return ERROR;
+        }
+      } catch (IOException e) {
+        addActionError(getText("manage.source.url.invalid", new String[] {url}));
+        return ERROR;
+      }
+
+      addUrl(urlWrapped);
+      // manually remove any previous data in session
+      removeSessionData();
+    }
+
     boolean replace = false;
     // Are we going to overwrite any source file?
-    File ftest = (File) session.get(Constants.SESSION_FILE);
-    if (ftest != null) {
-      file = ftest;
+    File sessionFile = (File) session.get(Constants.SESSION_FILE);
+    if (sessionFile != null) {
+      file = sessionFile;
       fileFileName = (String) session.get(Constants.SESSION_FILE_NAME);
       fileContentType = (String) session.get(Constants.SESSION_FILE_CONTENT_TYPE);
       replace = true;
@@ -115,7 +181,7 @@ public class SourceAction extends ManagerBaseAction {
             addDataFile(f, f.getName());
           }
           // manually remove any previous file in session and in temporal directory path
-          removeSessionFile();
+          removeSessionData();
         } catch (IOException e) {
           LOG.error(e);
           addActionError(getText("manage.source.filesystem.error", new String[] {e.getMessage()}));
@@ -136,7 +202,7 @@ public class SourceAction extends ManagerBaseAction {
           return INPUT;
         }
         try {
-          // treat as is - hopefully a simple text or excel file
+          // treat as is - hopefully a simple text or Excel file
           addDataFile(file, fileFileName);
         } catch (InvalidFilenameException e) {
           addActionError(getText("manage.source.invalidFileName"));
@@ -144,10 +210,36 @@ public class SourceAction extends ManagerBaseAction {
         }
 
         // manually remove any previous file in session and in temporal directory path
-        removeSessionFile();
+        removeSessionData();
       }
     }
     return SUCCESS;
+  }
+
+  private void addUrl(URI url) {
+    String sourceName = FilenameUtils.getBaseName(url.toString());
+    Source existingSource = resource.getSource(sourceName);
+    boolean replaced = existingSource != null;
+
+    try {
+      source = sourceManager.add(resource, url);
+      resource.setSourcesModified(new Date());
+      saveResource();
+      id = source.getName();
+
+      if (replaced) {
+        addActionMessage(getText("manage.source.replaced.existing", new String[] {source.getName()}));
+        // alert user if the number of columns changed
+        alertColumnNumberChange(resource.hasMappedSource(existingSource), source.getColumns(),
+            existingSource.getColumns());
+      } else {
+        addActionMessage(getText("manage.source.added.new", new String[] {source.getName()}));
+      }
+    } catch (ImportException e) {
+      // even though we have problems with this source we'll keep it for manual corrections
+      LOG.error("Cannot add URL source " + url, e);
+      addActionError(getText("manage.source.cannot.add", new String[]{sourceName, e.getMessage()}));
+    }
   }
 
   /**
@@ -182,7 +274,7 @@ public class SourceAction extends ManagerBaseAction {
       addActionError(getText("manage.source.cannot.add", new String[] {filename, e.getMessage()}));
     } catch (InvalidFilenameException e) {
       // clean session variables used for confirming file overwrite
-      removeSessionFile();
+      removeSessionData();
       throw e;
     }
   }
@@ -209,8 +301,8 @@ public class SourceAction extends ManagerBaseAction {
   }
 
   public String cancelOverwrite() {
-    removeSessionFile();
-    return INPUT;
+    removeSessionData();
+    return SUCCESS;
   }
 
   /**
@@ -222,6 +314,13 @@ public class SourceAction extends ManagerBaseAction {
     session.put(Constants.SESSION_FILE, fileNew);
     session.put(Constants.SESSION_FILE_NAME, fileFileName);
     session.put(Constants.SESSION_FILE_CONTENT_TYPE, fileContentType);
+  }
+
+  /**
+   * Insert temporal session variable SESSION_URL.
+   */
+  private void urlToOverwrite() {
+    session.put(Constants.SESSION_URL, url);
   }
 
   @Override
@@ -295,9 +394,7 @@ public class SourceAction extends ManagerBaseAction {
   @Override
   public void prepare() {
     super.prepare();
-    if (session.containsKey(Constants.SESSION_FILE_NUMBER_COLUMNS)) {
-      session.remove(Constants.SESSION_FILE_NUMBER_COLUMNS);
-    }
+    session.remove(Constants.SESSION_FILE_NUMBER_COLUMNS);
     if (id != null) {
       source = resource.getSource(id);
       if (source == null) {
@@ -323,7 +420,7 @@ public class SourceAction extends ManagerBaseAction {
    * Remove any previous uploaded file in temporal directory.
    * And clean some session variables used to confirm overwrite action.
    */
-  private void removeSessionFile() {
+  private void removeSessionData() {
     File fileNew = (File) session.get(Constants.SESSION_FILE);
     if (fileNew != null && fileNew.exists()) {
       fileNew.delete();
@@ -331,6 +428,7 @@ public class SourceAction extends ManagerBaseAction {
     session.remove(Constants.SESSION_FILE);
     session.remove(Constants.SESSION_FILE_NAME);
     session.remove(Constants.SESSION_FILE_CONTENT_TYPE);
+    session.remove(Constants.SESSION_URL);
   }
 
   @Override
@@ -347,8 +445,7 @@ public class SourceAction extends ManagerBaseAction {
       } else {
         result = SUCCESS;
       }
-    } else {
-      // new one
+    } else { // new one
       if (file == null) {
         try {
           resource.addSource(source, false);
@@ -392,6 +489,14 @@ public class SourceAction extends ManagerBaseAction {
     if (StringUtils.trimToNull(analyze) != null) {
       this.analyze = true;
     }
+  }
+
+  public void setUrl(String url) {
+    this.url = url;
+  }
+
+  public void setSourceType(String sourceType) {
+    this.sourceType = sourceType;
   }
 
   public void setFile(File file) {
@@ -455,7 +560,7 @@ public class SourceAction extends ManagerBaseAction {
       } else if (id == null && resource.getSources().contains(source)) {
         addFieldError("source.name", getText("manage.source.unique"));
       }
-      if (SqlSource.class.isInstance(source)) {
+      if (source instanceof SqlSource) {
         // SQL SOURCE
         SqlSource src = (SqlSource) source;
         // pure ODBC connections need only a DSN, no server

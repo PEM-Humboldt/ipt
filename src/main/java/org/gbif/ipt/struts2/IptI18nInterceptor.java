@@ -33,6 +33,9 @@ public class IptI18nInterceptor extends I18nInterceptor {
       LOG.debug("Invalid request locale: {}", requestedLocale);
       locale = new Locale("es");
     }
+    if (Locale.ENGLISH.equals(locale)) {
+      locale = Locale.UK;
+    }
     if (locale != null && !IPT_SUPPORTED_LOCALES.contains(locale)) {
       locale = new Locale("es");
     }

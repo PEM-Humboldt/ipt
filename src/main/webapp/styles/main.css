@@ -60,10 +60,78 @@ header, .dropdown-menu {
     color: #61a861 !important;
 }
 
-.navbar-button:hover, .admin-item:hover {
+.navbar-button:hover {
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
 /* Logo, header, menu etc. END */
+
+
+/* Admin page styles START */
+.admin-col-listing .admin-col-listing-item {
+    position: relative;
+    display: block;
+    height: 100%;
+    padding: 4rem;
+    color: #4e565f;
+    transition: all .2s ease-in-out;
+    text-decoration: none;
+}
+
+@media (max-width: 1200px) {
+    .admin-col-listing .admin-col-listing-item {
+        padding: 2rem;
+    }
+}
+
+.admin-col-listing.admin-col-listing-hover .admin-col-listing-item:hover {
+    z-index: 2;
+    color: #fff;
+    text-decoration: none;
+    background-color: #61a861;
+}
+
+.admin-col-listing-item-disabled:hover {
+    color: #4e565f !important;
+    background-color: #fff !important;
+}
+
+.admin-col-listing.admin-col-listing-hover .admin-col-listing-item:hover .admin-icon {
+    color: #fff;
+}
+
+.admin-col-listing .admin-col-listing-item .admin-icon {
+    color: #61a861;
+}
+
+.admin-icon {
+    font-size: 36px;
+}
+
+.admin-col-listing .admin-col-listing-item .admin-card-title {
+    margin-top: .5rem;
+}
+
+.admin-card {
+    display: block;
+    padding: 1px 0;
+    background-color: #fff;
+    border: none;
+}
+
+.admin-card .admin-card-title:last-child {
+    margin-bottom: 0;
+}
+
+.admin-card .card-body {
+    padding: 0 1.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.admin-card-title {
+    font-size: 1rem;
+}
+/* Admin page styles END */
 
 
 /* Footer START */
@@ -83,17 +151,36 @@ footer a {
 
 
 /* Links color with exception for some classes START */
-a:not(.btn, .button, .navbar-brand, .nav-link, .menu-link, .popover-link) {
+a:not(.btn, .button, .navbar-brand, .nav-link, .menu-link, .popover-link, .admin-col-listing-item) {
     color: #4BA2CE !important;
     text-decoration: none !important;
 }
 
-a:not(.btn, .button, .navbar-brand, .nav-link, .menu-link, .popover-link):focus,
-a:not(.btn, .button, .navbar-brand, .nav-link, .menu-link, .popover-link):hover {
+a:not(.btn, .button, .navbar-brand, .nav-link, .menu-link, .popover-link, .admin-col-listing-item):focus,
+a:not(.btn, .button, .navbar-brand, .nav-link, .menu-link, .popover-link, .admin-col-listing-item):hover {
     color: #2c79a1 !important;
     text-decoration: underline !important;
 }
 /* Links color with exception for some classes END */
+
+
+/* Datepicker styles START */
+.datepicker table tr td span.active, .datepicker table tr td span.active.disabled, .datepicker table tr td span.active.disabled:hover, .datepicker table tr td span.active:hover {
+    background-image: linear-gradient(to bottom, #61a861, #61a861) !important;
+}
+
+.datepicker table tr td.active, .datepicker table tr td.active.disabled, .datepicker table tr td.active.disabled:hover, .datepicker table tr td.active:hover {
+    background-image: linear-gradient(to bottom, #61a861, #61a861) !important;
+}
+
+.datepicker td, .datepicker th {
+    font-size: 1rem !important;
+}
+
+.datepicker-days td, .datepicker-days th {
+    width: 40px !important;
+}
+/* Datepicker styles END */
 
 
 /* Custom colors */
@@ -120,6 +207,22 @@ a:not(.btn, .button, .navbar-brand, .nav-link, .menu-link, .popover-link):hover 
 .bg-gbif-header {
   background-color: #4E565F !important;
 }
+
+
+/* GBIF gray colored outline button START */
+.btn-outline-secondary {
+    color: #4e565f !important;
+    border-color: #bec6ce !important;
+}
+.btn-outline-secondary:hover, .btn-outline-secondary:active {
+    color: #212529 !important;
+    background-color: #eaecef !important;
+    border-color: #bec6ce !important;
+}
+.btn-outline-secondary:focus, .btn-outline-secondary:active:focus {
+    box-shadow: 0 0 0 0.25rem rgba(190, 198, 206, 0.25); !important;
+}
+/* GBIF gray colored outline button START */
 
 
 /* GBIF green colored outline button START */
@@ -398,15 +501,15 @@ td.left_padding {
 }
 
 .cc_by {
-    background: url('../images/icons/cc-by.png');
+    background: url('../images/icons/cc-by.svg');
 }
 
 .cc_by_nc {
-    background: url('../images/icons/cc-by-nc.png');
+    background: url('../images/icons/cc-by-nc.svg');
 }
 
 .cc_zero {
-    background: url('../images/icons/cc-zero.png');
+    background: url('../images/icons/cc-zero.svg');
 }
 /* Licence logos styling END */
 
@@ -521,6 +624,13 @@ i {
 /* No decoration for popovers */
 a.popover-link, a.popover-link:hover, a.popover-link:focus {
     text-decoration: none !important;
+}
+
+
+/* Resource deletion buttons */
+.confirmDeletion {
+    border: none;
+    color: #212529;
 }
 
 
