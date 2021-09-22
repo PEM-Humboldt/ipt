@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>ipt</artifactId>
-  <version>2.5.1-SNAPSHOT</version>
+  <version>2.5.0-CEIBA</version>
   <packaging>war</packaging>
 
   <name>IPT</name>
@@ -136,7 +136,7 @@
   </repositories>
 
   <build>
-    <finalName>ipt-${project.version}-r${buildNumber}</finalName>
+    <finalName>ipt-${project.version}</finalName>
     <defaultGoal>jetty:run</defaultGoal>
     <plugins>
 

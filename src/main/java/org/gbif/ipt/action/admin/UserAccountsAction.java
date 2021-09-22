@@ -14,7 +14,9 @@ import org.gbif.ipt.validation.UserValidator;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
 
+import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
