@@ -56,9 +56,6 @@
                 return false;
             }
 
-            // Initialize/select the intellectual rights value from current eml file
-            $("select#eml\\.intellectualRights").val("${eml.intellectualRights}"); 
-
         });
     </script>
     <#assign auxTopNavbar=true />
