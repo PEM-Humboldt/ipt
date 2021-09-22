@@ -139,10 +139,10 @@
                 <div>
                     <@textinline name="eml.intellectualRights.simple" help="i18n"/>
                     <select class="form-select" id="eml.intellectualRights" value="${eml.intellectualRights}" i18nkey="eml.intellectualRights" help="i18n" javaGetter=false >
-                        <option><@s.text name='eml.intellectualRights.license.text.externalInternal'/></option>
-                        <option><@s.text name='eml.intellectualRights.license.text.internal'/></option>
-                        <option><@s.text name='eml.intellectualRights.license.text.internalNotification'/></option>
-                        <option><@s.text name='eml.intellectualRights.license.text.temporalRestriction'/></option>
+                        <option><@s.text name='license.name.ccbync'/></option>
+                        <option><@s.text name='license.name.liiavh'/></option>
+                        <option><@s.text name='license.name.npiavh'/></option>
+                        <option><@s.text name='license.name.rt'/></option>
                     </select>
                 </div>
                 <!-- /IAvH Customization about licences rights-->
