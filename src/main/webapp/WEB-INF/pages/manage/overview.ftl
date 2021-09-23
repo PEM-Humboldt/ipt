@@ -87,20 +87,10 @@
 
 <!-- The short form of the license for display in the versions table -->
 <#macro shortLicense licenseUrl="">
-    <#if licenseUrl == "http://creativecommons.org/publicdomain/zero/1.0/legalcode">
-        CC0 1.0
-    <#elseif licenseUrl == "http://creativecommons.org/licenses/by/4.0/legalcode">
-        CC-BY 4.0
+    <#if licenseUrl == "https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d">
+        I2D
     <#elseif licenseUrl == "http://creativecommons.org/licenses/by-nc/4.0/legalcode">
         CC-BY-NC 4.0
-    <#elseif licenseUrl == "http://www.opendatacommons.org/licenses/pddl/1.0">
-        ODC PDDL 1.0
-    <#elseif licenseUrl == "http://www.opendatacommons.org/licenses/by/1.0">
-        ODC-By 1.0
-    <#elseif licenseUrl?has_content>
-        <@s.text name='manage.overview.noGBIFLicense'/>
-    <#else>
-        -
     </#if>
 </#macro>
 <#include "/WEB-INF/pages/inc/header.ftl">
