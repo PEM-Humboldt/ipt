@@ -159,8 +159,8 @@ public class UserAccountsAction extends POSTAction {
       }
     }
 
-    List<String> intellectualRightsListForIAvHUsers = Arrays.asList(getText("license.name.rt"), getText("license.name.npiavh"));
-    List<String> intellectualRightsListForAllButIAvHUsers = Arrays.asList(getText("license.name.liiavh"));
+    List<String> intellectualRightsListForIAvHUsers = Arrays.asList(getText("eml.intellectualRights.license.text.temporalRestriction"), getText("eml.intellectualRights.license.text.internalNotification"));
+    List<String> intellectualRightsListForAllButIAvHUsers = Arrays.asList(getText("eml.intellectualRights.license.text.internal"));
     restrictedResourcesForIAvHUsers = resourceManager.list(intellectualRightsListForIAvHUsers);
     restrictedResourcesForAllButIAvHUsers = resourceManager.list(intellectualRightsListForAllButIAvHUsers);
   }

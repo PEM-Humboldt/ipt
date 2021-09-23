@@ -64,9 +64,9 @@ public class ResourceFileAction extends PortalBaseAction {
     // see if DwCA is restricted and logged user has been granted access to it
     Eml eml = resource.getEml();
     List<String> intellectualRightsList = Arrays.asList(
-      getText("license.name.liiavh"),
-      getText("license.name.rt"),
-      getText("license.name.npiavh")
+      getText("eml.intellectualRights.license.text.internal"),
+      getText("eml.intellectualRights.license.text.temporalRestriction"),
+      getText("eml.intellectualRights.license.text.internalNotification")
     );
 
     if (intellectualRightsList.contains(eml.getIntellectualRights())) {
@@ -76,7 +76,7 @@ public class ResourceFileAction extends PortalBaseAction {
       } else {
         // Humboldt users have access to restricted internal resources, so just check the rest
         if ((user.getEmail().endsWith(Constants.HUMBOLDT_MAIL_DOMAIN) &&
-          !eml.getIntellectualRights().equals(getText("license.name.liiavh"))) ||
+        !eml.getIntellectualRights().equals(getText("eml.intellectualRights.license.text.internal"))) ||
           !user.getEmail().endsWith(Constants.HUMBOLDT_MAIL_DOMAIN)){
             if (!Strings.isNullOrEmpty(user.getGrantedAccessTo())){
               if (!Arrays.asList(user.getGrantedAccessTo().split(", ")).contains(resource.getShortname())){
