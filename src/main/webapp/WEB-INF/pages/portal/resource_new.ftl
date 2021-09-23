@@ -120,7 +120,6 @@
 <#assign showDwCA=false/>
     <#if eml.intellectualRights?has_content>
         <#if elemInArray('Libre a nivel interno, Libre a nivel interno con notificación previa, Restringido temporalmente', eml.intellectualRights, ", ") >
-            <h1>Protegido!</h1>
             <#if (Session.curr_user)??>
                 <#if Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights == "Libre a nivel interno" >
                     <#assign showDwCA=true/>
@@ -130,14 +129,10 @@
                         <h1>(${resource.shortname}) --&gt; ${Session.curr_user.grantedAccessTo}</h1>
                         <#if elemInArray(Session.curr_user.grantedAccessTo, resource.shortname, ", ")>
                             <#assign showDwCA=true/>
-                        <#else><h1>Permiso denegado!</h1>
+                        <#else>
                         </#if>
-                    <#else>
-                        <h1>No se encontró 'grantedAccessTo'... </h1>
                     </#if>
                 </#if>
-            <#else>
-                <h1>Usuario invitado. </h1>
             </#if>
         <#else>
             <#assign showDwCA=true/>
