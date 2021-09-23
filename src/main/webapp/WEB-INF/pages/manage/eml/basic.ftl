@@ -111,7 +111,7 @@
                         $("#intellectualRights").val(licenseText);
                         $("#eml\\.intellectualRights").val(licenseText);
 
-                        $("#disclaimerRigths").css('display', '');
+                        $("#disclaimerRigths").css('display', 'none');
                     }
 
                 } else {
@@ -119,7 +119,7 @@
                     $("#intellectualRightsDiv").hide();
 
                     $("#intellectualRights").val('');
-                    $("#disclaimerRigths").css('display', 'none');
+                    $("#disclaimerRigths").css('display', '');
                     $("#eml\\.intellectualRights").val('');
                 }
             });// end intellectual rights
@@ -184,6 +184,9 @@
                 <div id="intellectualRightsDiv" class="mt-3 p-3 border">
                     <@licenseLogoClass eml.intellectualRights!/>
                     <#noescape>${eml.intellectualRights!}</#noescape>
+                    <#if version?? && version.toPlainString() != resource.emlVersion.toPlainString() && recordsPublishedForVersion??>
+                        <@s.text name='version.toPlainString()'/>, <@s.text name='resource.emlVersion.toPlainString()'/>, <@s.text name='recordsPublishedForVersion'/>
+                    </#if>
                 </div>
                 <!-- internal parameter -->
                 <input id="eml.intellectualRights" name="eml.intellectualRights" type="hidden" value="${eml.intellectualRights!}" />
