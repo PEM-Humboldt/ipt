@@ -46,9 +46,9 @@
 
                 <#if con.address.postalCode?has_content || con.address.city?has_content>
                     <div class="city">
-                       <#if con.address.postalCode?has_content>
-                           ${con.address.postalCode!}
-                       </#if>
+                        <#if con.address.postalCode?has_content>
+                            ${con.address.postalCode!}
+                        </#if>
                         ${con.address.city!}
                     </div>
                 </#if>
@@ -104,6 +104,48 @@
         </#if>
     </#if>
 </#macro>
+
+
+<!-- IAvH Customization -->
+<#function elemInArray array elem sep>
+    <#list array?split(sep) as arrayElem>
+        <#if arrayElem == elem>
+            <#return true>
+        </#if>
+    </#list>
+    <#return false>
+</#function>
+
+<#-- ...Testing... -->
+<#assign showDwCA=false/>
+    <#if eml.intellectualRights?has_content>
+        <#if elemInArray('Libre a nivel interno, Libre a nivel interno con notificación previa, Restringido temporalmente', eml.intellectualRights, ", ") >
+            <h1>Protegido!</h1>
+            <#if (Session.curr_user)??>
+                <#if Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights == "Libre a nivel interno" >
+                    <#assign showDwCA=true/>
+                </#if>
+                <#if (Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights != "Libre a nivel interno") || !Session.curr_user.email?ends_with("@humboldt.org.co") >
+                    <#if Session.curr_user.grantedAccessTo?has_content >
+                        <h1>(${resource.shortname}) --&gt; ${Session.curr_user.grantedAccessTo}</h1>
+                        <#if elemInArray(Session.curr_user.grantedAccessTo, resource.shortname, ", ")>
+                            <#assign showDwCA=true/>
+                        <#else><h1>Permiso denegado!</h1>
+                        </#if>
+                    <#else>
+                        <h1>No se encontró 'grantedAccessTo'... </h1>
+                    </#if>
+                </#if>
+            <#else>
+                <h1>Usuario invitado. </h1>
+            </#if>
+        <#else>
+            <#assign showDwCA=true/>
+        </#if>
+    <#else>
+        <#assign showDwCA=true/>
+    </#if>
+<!-- /IAvH Customization-->
 
 <#assign anchor_versions>#versions</#assign>
 <#assign anchor_rights>#rights</#assign>
@@ -237,7 +279,7 @@
                             <@s.text name='portal.resource.gbif.page.short'/>
                         </a>
                     </#if>
-                    <#if metadataOnly == false>
+                    <#if metadataOnly == false && showDwCA>
                         <a href="${download_dwca_url}" class="btn btn-sm btn-outline-gbif-primary mt-1 bi bi-download">
                             <@s.text name='portal.resource.published.dwca'/>
                         </a>
@@ -279,46 +321,26 @@
         <#assign coreExt = action.getExtensionManager().get(coreRowType)!/>
         <#assign coreCount = recordsByExtensionOrdered.get(coreRowType)!recordsPublishedForVersion!0?c/>
 
-        <!-- IAvH Customization -->
-        <#function elemInArray array elem sep>
-            <#list array?split(sep) as arrayElem>
-                <#if arrayElem == elem>
-                    <#return true>
-                </#if>
-            </#list>
-            <#return false>
-        </#function>
+        <!-- rights section -->
+        <#if eml.intellectualRights?has_content>
+            <div id="rights" class="my-3 p-3 bg-body rounded shadow-sm">
+                <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header">
+                    <@s.text name='eml.intellectualRights.simple'/>
+                </h5>
 
-        <#-- ...Testing... -->
-        <#assign showDwCA=false/>
-            <#if eml.intellectualRights?has_content>
-                <#if elemInArray('Libre a nivel interno., Libre a nivel interno con notificación previa., Restringido temporalmente.', eml.intellectualRights, ", ") >
-                    <h1 class="minuscular">Protegido!</h1>
-                    <#if (Session.curr_user)??>
-                         <#if Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights == "Libre a nivel interno." >
-					        <#assign showDwCA=true/>
-				        </#if>
-                        <#if (Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights != "Libre a nivel interno.") || !Session.curr_user.email?ends_with("@humboldt.org.co") >
-                            <#if Session.curr_user.grantedAccessTo?has_content >
-                                <h1 class="minuscular">(${resource.shortname}) --&gt; ${Session.curr_user.grantedAccessTo}</h1>
-                                <#if elemInArray(Session.curr_user.grantedAccessTo, resource.shortname, ", ")>
-                                    <#assign showDwCA=true/>
-                                <#else><h1 class="minuscular">Permiso denegado!</h1>
-                                </#if>
-                            <#else>
-                                <h1 class="minuscular">No se encontró 'grantedAccessTo'... </h1>
-                            </#if>
+                <div class="mx-md-4 mx-2">
+                    <p><@s.text name='portal.resource.rights.help'/>:</p>
+                    <@licenseLogoClass eml.intellectualRights/>
+                    <p property="dc:license">
+                        <#if resource.organisation?? && action.getDefaultOrganisation()?? && resource.organisation.key.toString() != action.getDefaultOrganisation().key.toString()>
+                            <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
                         </#if>
-                    <#else>
-                        <h1 class="minuscular">Usuario invitado. </h1>
-                    </#if>
-                 <#else>
-                    <#assign showDwCA=true/>
-                </#if>
-            <#else>
-                <#assign showDwCA=true/>
-            </#if>
-        <!-- /IAvH Customization-->
+                        <b><#noescape>${eml.intellectualRights}</#noescape></b>
+                        <br />
+                    </p>
+                </div>
+            </div>
+        </#if>
 
         <#if metadataOnly != true && showDwCA>
             <div id="dataRecords" class="my-3 p-3 bg-body rounded shadow-sm">
@@ -329,7 +351,7 @@
                 <div class="mx-md-4 mx-2">
                     <p>
                         <@s.text name='portal.resource.dataRecords.intro'><@s.param>${action.getCoreType()?lower_case}</@s.param></@s.text>
-                        <#if coreExt?? && coreExt.name?has_content && coreCount?has_content>
+                        <#if coreExt?? && coreExt.name?has_content && coreCount?has_content && showDwCA>
                             <@s.text name='portal.resource.dataRecords.core'><@s.param>${coreCount}</@s.param></@s.text>
                         </#if>
                     </p>
@@ -393,7 +415,7 @@
                         <#-- Archive, EML, and RTF download links include Google Analytics event tracking -->
                         <#-- e.g. Archive event tracking includes components: _trackEvent method, category, action, label, (int) value -->
                         <#-- EML and RTF versions can always be retrieved by version number but DWCA versions are only stored if IPT Archive Mode is on -->
-                        <#if metadataOnly == false>
+                        <#if metadataOnly == false && showDwCA>
                             <tr>
                                 <th class="col-4"><@s.text name='portal.resource.dwca.verbose'/></th>
                                 <#if version?? && version.toPlainString() != resource.emlVersion.toPlainString() && recordsPublishedForVersion??>
@@ -460,26 +482,6 @@
                     </p>
                     <p property="dc:bibliographicCitation" class="howtocite mt-3 p-3 border overflow-x-auto">
                         <@textWithFormattedLink eml.citation.citation/>
-                    </p>
-                </div>
-            </div>
-        </#if>
-
-        <!-- rights section -->
-        <#if eml.intellectualRights?has_content>
-            <div id="rights" class="my-3 p-3 bg-body rounded shadow-sm">
-                <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header">
-                    <@s.text name='eml.intellectualRights.simple'/>
-                </h5>
-
-                <div class="mx-md-4 mx-2">
-                    <p><@s.text name='portal.resource.rights.help'/>:</p>
-                    <@licenseLogoClass eml.intellectualRights!/>
-                    <p property="dc:license">
-                        <#if resource.organisation?? && action.getDefaultOrganisation()?? && resource.organisation.key.toString() != action.getDefaultOrganisation().key.toString()>
-                            <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
-                        </#if>
-                        <#noescape>${eml.intellectualRights!}</#noescape>
                     </p>
                 </div>
             </div>
