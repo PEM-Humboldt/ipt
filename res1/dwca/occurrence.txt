@@ -1,0 +1,3 @@
+id	basisOfRecord	scientificName	kingdom
+1	Animalia	puma concolor	Animalia
+2	Animalia	pumm:concolor	Animalia
