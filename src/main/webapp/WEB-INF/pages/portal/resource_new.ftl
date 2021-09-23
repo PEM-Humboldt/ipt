@@ -105,7 +105,6 @@
     </#if>
 </#macro>
 
-
 <!-- IAvH Customization -->
 <#function elemInArray array elem sep>
     <#list array?split(sep) as arrayElem>
@@ -274,7 +273,7 @@
                             <@s.text name='portal.resource.gbif.page.short'/>
                         </a>
                     </#if>
-                    <#if metadataOnly == false && showDwCA>
+                    <#if metadataOnly == false && showDwCA >
                         <a href="${download_dwca_url}" class="btn btn-sm btn-outline-gbif-primary mt-1 bi bi-download">
                             <@s.text name='portal.resource.published.dwca'/>
                         </a>
@@ -404,13 +403,13 @@
                 <#else>
                     <p><@s.text name='portal.resource.downloads.verbose'/></p>
                 </#if>
-
+                
                 <div class="table-responsive">
                     <table class="downloads text-smaller table table-sm table-borderless">
                         <#-- Archive, EML, and RTF download links include Google Analytics event tracking -->
                         <#-- e.g. Archive event tracking includes components: _trackEvent method, category, action, label, (int) value -->
                         <#-- EML and RTF versions can always be retrieved by version number but DWCA versions are only stored if IPT Archive Mode is on -->
-                        <#if metadataOnly == false && showDwCA>
+                        <#if metadataOnly == false && showDwCA >
                             <tr>
                                 <th class="col-4"><@s.text name='portal.resource.dwca.verbose'/></th>
                                 <#if version?? && version.toPlainString() != resource.emlVersion.toPlainString() && recordsPublishedForVersion??>

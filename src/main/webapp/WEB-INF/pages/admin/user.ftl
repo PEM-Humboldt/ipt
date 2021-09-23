@@ -52,7 +52,7 @@
                         <@input name="password2" i18nkey="user.password2" type="password"/>  
                     </#if>
                 </div>
-
+                
                 <br />
                 <p class="mx-md-4 mx-2 mb-0">
                     <@s.text name="admin.user.restrictedResources.help"/>
@@ -83,7 +83,9 @@
                         });
                         $('#user\\.grantedAccessTo').multiSelect('select', [
                             <#if user.grantedAccessTo?has_content >
-                                ${ "'"+user.grantedAccessTo?split(", ")?join("', '")+"'" } 
+                                ${ "'"+user.grantedAccessTo?split(", ")?join("', '")+"'" }
+                            <#else>
+                                ${ "''" }
                             </#if>
                         ]);  	
                             

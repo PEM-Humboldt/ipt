@@ -91,6 +91,8 @@
         I2D
     <#elseif licenseUrl == "http://creativecommons.org/licenses/by-nc/4.0/legalcode">
         CC-BY-NC 4.0
+    <#else>
+        -
     </#if>
 </#macro>
 <#include "/WEB-INF/pages/inc/header.ftl">
