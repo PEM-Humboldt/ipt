@@ -492,24 +492,17 @@ td.left_padding {
 
 
 /* Licence logos styling START */
-.cc_logo {
+.i2d_logo {
+    background: url('../images/icons/i2d.png');
     display: block;
     float: left;
     margin-right: 18px;
-    height: 31px;
-    width: 88px;
-}
-
-.cc_by {
-    background: url('../images/icons/cc-by.svg');
+    height: 40px;
+    width: 67px;
 }
 
 .cc_by_nc {
     background: url('../images/icons/cc-by-nc.svg');
-}
-
-.cc_zero {
-    background: url('../images/icons/cc-zero.svg');
 }
 /* Licence logos styling END */
 
