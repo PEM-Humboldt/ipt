@@ -31,6 +31,7 @@ import org.gbif.ipt.model.Resource.CoreRowType;
 import org.gbif.ipt.model.Source;
 import org.gbif.ipt.model.SqlSource;
 import org.gbif.ipt.model.TextFileSource;
+import org.gbif.ipt.model.UrlSource;
 import org.gbif.ipt.model.User;
 import org.gbif.ipt.model.VersionHistory;
 import org.gbif.ipt.model.converter.ConceptTermConverter;
@@ -505,12 +506,12 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
 
       if (arch.getCore() == null) {
         alog.error("manage.resource.create.core.invalid");
-        throw new ImportException("Darwin core archive is invalid and does not have a core mapping");
+        throw new ImportException("Darwin Core Archive is invalid and does not have a core mapping");
       }
 
       if (arch.getCore().getRowType() == null) {
         alog.error("manage.resource.create.core.invalid.rowType");
-        throw new ImportException("Darwin core archive is invalid, core mapping has no rowType");
+        throw new ImportException("Darwin Core Archive is invalid, core mapping has no rowType");
       }
 
       // keep track of source files as a dwca might refer to the same source file multiple times
@@ -543,7 +544,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
       if (!arch.getExtensions().isEmpty()) {
         if (map.getIdColumn() == null) {
           alog.error("manage.resource.create.core.invalid.id");
-          throw new ImportException("Darwin core archive is invalid, core mapping has no id element");
+          throw new ImportException("Darwin Core Archive is invalid, core mapping has no id element");
         }
 
         // read extension sources+mappings
@@ -558,7 +559,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
           map = importMappings(alog, ext, s);
           if (map.getIdColumn() == null) {
             alog.error("manage.resource.create.core.invalid.coreid");
-            throw new ImportException("Darwin core archive is invalid, extension mapping has no coreId element");
+            throw new ImportException("Darwin Core Archive is invalid, extension mapping has no coreId element");
           }
 
           // ensure the extension contains a coreId term mapping with the correct coreId index
@@ -678,6 +679,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     xstream.alias("filesource", TextFileSource.class);
     xstream.alias("excelsource", ExcelFileSource.class);
     xstream.alias("sqlsource", SqlSource.class);
+    xstream.alias("urlsource", UrlSource.class);
     xstream.alias("mapping", ExtensionMapping.class);
     xstream.alias("field", PropertyMapping.class);
     xstream.alias("versionhistory", VersionHistory.class);
@@ -702,6 +704,14 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     xstream.addDefaultImplementation(ExtensionProperty.class, Term.class);
     xstream.registerConverter(orgConverter);
     xstream.registerConverter(jdbcInfoConverter);
+  }
+
+  @Override
+  public void deleteResourceFromIpt(Resource resource) throws IOException {
+    // remove from data dir
+    FileUtils.forceDelete(dataDir.resourceFile(resource, ""));
+    // remove object
+    resources.remove(resource.getShortname().toLowerCase());
   }
 
   public void delete(Resource resource, boolean remove) throws IOException, DeletionNotAllowedException {

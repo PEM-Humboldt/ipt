@@ -19,7 +19,7 @@
         </div>
 
         <#-- minimum info is the last name, organisation name, or position name -->
-        <div <#if dcPropertyType?has_content>property="dc:${dcPropertyType}" </#if> class="contactName text-gbif-primary">
+        <div <#if dcPropertyType?has_content>property="dc:${dcPropertyType}" </#if> class="contactName mb-1">
             <#if con.lastName?has_content>
                 ${con.firstName!} ${con.lastName!}
             <#elseif con.organisation?has_content>
@@ -29,7 +29,7 @@
             </#if>
         </div>
         <#-- we use this div to toggle the grouped information -->
-        <div>
+        <div class="text-smaller">
             <#if con.position?has_content>
                 <div class="contactPosition">
                     ${con.position!}
@@ -37,36 +37,36 @@
             </#if>
             <div class="address">
                 <#if con.organisation?has_content>
-                    <span>${con.organisation}</span>
+                    <div>${con.organisation}</div>
                 </#if>
 
                 <#if con.address.address?has_content>
-                    <span>${con.address.address!}</span>
+                    <div>${con.address.address!}</div>
                 </#if>
 
                 <#if con.address.postalCode?has_content || con.address.city?has_content>
-                    <span class="city">
+                    <div class="city">
                         <#if con.address.postalCode?has_content>
                             ${con.address.postalCode!}
                         </#if>
                         ${con.address.city!}
-                    </span>
+                    </div>
                 </#if>
 
                 <#if con.address.province?has_content>
-                    <span class="province">${con.address.province}</span>
+                    <div class="province">${con.address.province}</div>
                 </#if>
 
                 <#if con.address.country?has_content && con.address.country != 'UNKNOWN'>
-                    <span class="country">${con.address.country}</span>
+                    <div class="country">${con.address.country}</div>
                 </#if>
 
                 <#if con.email?has_content>
-                    <span class="email"><a href="mailto:${con.email}" title="email">${con.email}</a></span>
+                    <div class="email"><a href="mailto:${con.email}" title="email">${con.email}</a></div>
                 </#if>
 
                 <#if con.phone?has_content>
-                    <span class="phone">${con.phone}</span>
+                    <div class="phone">${con.phone}</div>
                 </#if>
 
             </div>
@@ -86,17 +86,10 @@
     </div>
 </#macro>
 
-<#-- Creates a column list of contacts, defaults to 2 columns -->
-<#macro contactList contacts contactType="" dcPropertyType="" columns=2>
+<#-- Creates a column list of contacts -->
+<#macro contactList contacts contactType="" dcPropertyType="" >
     <#list contacts as c>
-        <#if c_index%columns==0>
-            <div class="contact_row col${columns}">
-        </#if>
         <@contact con=c type=contactType dcPropertyType=dcPropertyType />
-        <#if c_index%columns==columns-1 || !c_has_next >
-            <!-- end of row -->
-            </div>
-        </#if>
     </#list>
 </#macro>
 
@@ -126,7 +119,6 @@
 <#assign showDwCA=false/>
     <#if eml.intellectualRights?has_content>
         <#if elemInArray('Libre a nivel interno, Libre a nivel interno con notificación previa, Restringido temporalmente', eml.intellectualRights, ", ") >
-            <h1>Protegido!</h1>
             <#if (Session.curr_user)??>
                 <#if Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights == "Libre a nivel interno" >
                     <#assign showDwCA=true/>
@@ -136,14 +128,10 @@
                         <h1>(${resource.shortname}) --&gt; ${Session.curr_user.grantedAccessTo}</h1>
                         <#if elemInArray(Session.curr_user.grantedAccessTo, resource.shortname, ", ")>
                             <#assign showDwCA=true/>
-                        <#else><h1>Permiso denegado!</h1>
+                        <#else>
                         </#if>
-                    <#else>
-                        <h1>No se encontró 'grantedAccessTo'... </h1>
                     </#if>
                 </#if>
-            <#else>
-                <h1>Usuario invitado. </h1>
             </#if>
         <#else>
             <#assign showDwCA=true/>
@@ -163,9 +151,16 @@
 <#assign download_eml_url>${baseURL}/eml.do?r=${resource.shortname}&v=<#if version??>${version.toPlainString()}<#else>${resource.emlVersion.toPlainString()}</#if></#assign>
 <#assign download_rtf_url>${baseURL}/rtf.do?r=${resource.shortname}&v=<#if version??>${version.toPlainString()}<#else>${resource.emlVersion.toPlainString()}</#if></#assign>
 
-<script type="text/javascript" src="${baseURL}/js/jquery/jquery-3.5.1.min.js"></script>
-<script type="text/javascript" src="${baseURL}/js/jquery/jquery.dataTables-1.10.23.min.js"></script>
-<script type="text/javascript" src="${baseURL}/js/jquery/dataTables.bootstrap5-1.10.23.min.js"></script>
+<style>
+    <#-- For HTML headers inside description -->
+    h1, h2, h3, h4, h5 {
+        font-size: 1.25rem !important;
+    }
+</style>
+
+<script src="${baseURL}/js/jquery/jquery-3.5.1.min.js"></script>
+<script src="${baseURL}/js/jquery/jquery.dataTables-1.10.23.min.js"></script>
+<script src="${baseURL}/js/jquery/dataTables.bootstrap5-1.10.23.min.js"></script>
 
 <main class="container">
     <div class="my-3 p-3 bg-body rounded shadow-sm">
@@ -209,11 +204,11 @@
                             </#if>
 
                             <#if action.getDefaultOrganisation()?? && resource.organisation.key.toString() == action.getDefaultOrganisation().key.toString()>
-                                ${publishedOnText?lower_case}&nbsp;<span property="dc:issued">${eml.pubDate?date?string.medium}</span>
+                                ${publishedOnText?lower_case}&nbsp;<span property="dc:issued">${eml.pubDate?date?string.long}</span>
                                 <br>
                             <em class="text-gbif-danger"><@s.text name='manage.home.not.registered.verbose'/></em>
                             <#else>
-                                <@s.text name='portal.resource.publishedOn'><@s.param>${resource.organisation.name}</@s.param></@s.text> <span property="dc:issued">${eml.pubDate?date?string.medium}</span>
+                                <@s.text name='portal.resource.publishedOn'><@s.param>${resource.organisation.name}</@s.param></@s.text> <span property="dc:issued">${eml.pubDate?date?string.long_short}</span>
                                 <span property="dc:publisher" style="display: none">${resource.organisation.name}</span>
                             </#if>
 
@@ -251,11 +246,11 @@
             </div>
 
             <#if (eml.description?size>0)>
-                <div property="dc:abstract" class="mt-3">
+                <div property="dc:abstract" class="mt-3 overflow-x-auto">
                     <#list eml.description as para>
                         <#if para?has_content>
                             <p>
-                                <@textWithFormattedLink para/>
+                                <@para?interpret />
                             </p>
                         </#if>
                     </#list>
@@ -350,7 +345,7 @@
                 <div class="mx-md-4 mx-2">
                     <p>
                         <@s.text name='portal.resource.dataRecords.intro'><@s.param>${action.getCoreType()?lower_case}</@s.param></@s.text>
-                        <#if coreExt?? && coreExt.name?has_content && coreCount?has_content && showDwCA >
+                        <#if coreExt?? && coreExt.name?has_content && coreCount?has_content && showDwCA>
                             <@s.text name='portal.resource.dataRecords.core'><@s.param>${coreCount}</@s.param></@s.text>
                         </#if>
                     </p>
@@ -364,7 +359,12 @@
                             <ul class="no_bullets horizontal_graph">
                                 <!-- at top, show bar for core record count to enable comparison against extensions -->
                                 <#if coreExt?? && coreExt.name?has_content && coreCount?has_content>
-                                    <li><@extensionLink coreExt true/><div class="grey_bar">${coreCount?c}</div></li>
+                                    <li>
+                                        <@extensionLink coreExt true/>
+                                        <div class="grey_bar">
+                                            ${coreCount?c}
+                                        </div>
+                                    </li>
                                 </#if>
 
                                 <!-- below bar for core record count, show bars for extension record counts -->
@@ -372,7 +372,12 @@
                                     <#assign ext = action.getExtensionManager().get(k)!/>
                                     <#assign extCount = recordsByExtensionOrdered.get(k)!/>
                                     <#if coreRowType?has_content && k != coreRowType && ext?? && ext.name?has_content && extCount?has_content>
-                                        <li><@extensionLink ext/><div class="grey_bar">${extCount?c}</div></li>
+                                        <li>
+                                            <@extensionLink ext/>
+                                            <div class="grey_bar">
+                                                ${extCount?c}
+                                            </div>
+                                        </li>
                                     </#if>
                                 </#list>
                             </ul>
@@ -545,31 +550,31 @@
                     <@s.text name='portal.resource.contacts'/>
                 </h5>
 
-                <div class="row g-3 mx-md-4 mx-2">
-                    <div class="col-lg">
-                        <p><@s.text name='portal.resource.creator.intro'/>:</p>
+                <div class="row g-3 mx-md-4 mx-2 overflow-x-auto">
+                    <div class="col-lg-6 col-xl-4">
+                        <p class="text-smaller fw-bold"><@s.text name='portal.resource.creator.intro'/>:</p>
                         <div>
                             <@contactList contacts=eml.creators dcPropertyType='creator'/>
                         </div>
                     </div>
 
-                    <div class="col-lg">
-                        <p><@s.text name='portal.resource.contact.intro'/>:</p>
+                    <div class="col-lg-6 col-xl-4">
+                        <p class="text-smaller fw-bold"><@s.text name='portal.resource.contact.intro'/>:</p>
                         <div>
                             <@contactList contacts=eml.contacts dcPropertyType='mediator'/>
                         </div>
                     </div>
 
-                    <div class="col-lg">
-                        <p><@s.text name='portal.metadata.provider.intro'/>:</p>
+                    <div class="col-lg-6 col-xl-4">
+                        <p class="text-smaller fw-bold"><@s.text name='portal.metadata.provider.intro'/>:</p>
                         <div>
                             <@contactList contacts=eml.metadataProviders dcPropertyType='contributor'/>
                         </div>
                     </div>
 
                     <#if (eml.associatedParties?size>0)>
-                        <div class="col-lg">
-                            <p><@s.text name='portal.associatedParties.intro'/>:</p>
+                        <div class="col-lg-6 col-xl-4">
+                            <p class="text-smaller fw-bold"><@s.text name='portal.associatedParties.intro'/>:</p>
                             <div>
                                 <@contactList contacts=eml.associatedParties dcPropertyType='contributor'/>
                             </div>
@@ -727,7 +732,7 @@
 
                     <#if (eml.project.personnel?size >0)>
                         <br>
-                        <p><@s.text name='eml.project.personnel.intro'/>:</p>
+                        <p class="text-smaller fw-bold"><@s.text name='eml.project.personnel.intro'/>:</p>
                         <div>
                             <@contactList eml.project.personnel/>
                         </div>
@@ -745,7 +750,9 @@
                 </h5>
 
                 <div class="mx-md-4 mx-2">
-                    <p><@textWithFormattedLink eml.sampleDescription!no_description/></p>
+                    <p class="overflow-x-auto">
+                        <@textWithFormattedLink eml.sampleDescription!no_description/>
+                    </p>
 
                     <div class="table-responsive">
                         <table class="text-smaller table table-sm table-borderless">
@@ -766,7 +773,9 @@
                     </div>
 
                     <#if (eml.methodSteps?? && (eml.methodSteps?size>=1) && eml.methodSteps[0]?has_content)>
-                        <p><@s.text name='rtf.methods.description'/>&#58;</p>
+                        <p class="overflow-x-auto">
+                            <@s.text name='rtf.methods.description'/>&#58;
+                        </p>
                         <ol class="overflow-x-auto">
                             <#list eml.methodSteps as item>
                                 <#if (eml.methodSteps[item_index]?has_content)>
@@ -892,9 +901,8 @@
             <div id="additional" class="mx-md-4 mx-2">
                 <div>
                     <#if eml.additionalInfo?has_content>
-                        <p><@textWithFormattedLink eml.additionalInfo/></p>
+                        <p class="overflow-x-auto"><@textWithFormattedLink eml.additionalInfo/></p>
                     </#if>
-
                     <div class="table-responsive">
                         <table class="text-smaller table table-sm table-borderless">
                             <#if eml.purpose?has_content>
@@ -928,12 +936,12 @@
 <#include "/WEB-INF/pages/inc/footer.ftl">
 
 <!-- data record line chart -->
-<script type="text/javascript" src="${baseURL}/js/graphs.js"></script>
+<script src="${baseURL}/js/graphs.js"></script>
 
-<script type="text/javascript" src="${baseURL}/js/jconfirmation.jquery.js"></script>
+<script src="${baseURL}/js/jconfirmation.jquery.js"></script>
 
 <!-- Menu Toggle Script -->
-<script type="text/javascript">
+<script>
     $("#menu-toggle").click(function(e) {
         e.preventDefault();
         $("#wrapper").toggleClass("toggled");

@@ -1,8 +1,8 @@
 <#escape x as x?html>
 <#include "/WEB-INF/pages/inc/header.ftl">
 <title><@s.text name='manage.source.title'/></title>
-<script type="text/javascript" src="${baseURL}/js/jconfirmation.jquery.js"></script>
-<script type="text/javascript">
+<script src="${baseURL}/js/jconfirmation.jquery.js"></script>
+<script>
     $(document).ready(function(){
         initHelp();
         $('.confirm').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name="manage.source.confirmation.message"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>"});
@@ -14,6 +14,29 @@
         $("#modalbox").click(function(e) {
             e.preventDefault();
             $("#modalbox").hide();
+        });
+
+        $(document.body).on('click', '.helpOptionLink', function (e) {
+            e.preventDefault();
+            // get all link classes
+            var classes = $(this).attr('class').split(/\s+/);
+            var inputName, inputValue
+
+            for (var i = 0; i < classes.length; i++) {
+                // get input name in order to set value
+                if (classes[i].startsWith('inputName')) {
+                    // get rid of prefix, escape dots
+                    inputName = classes[i].replace('inputName-', '').replaceAll('.', '\\.');
+                }
+
+                // get value to be set
+                if (classes[i].startsWith('inputValue')) {
+                    // get rid of prefix
+                    inputValue = classes[i].replace('inputValue-', '');
+                }
+            }
+
+            $('#' + inputName).val(inputValue)
         });
     });
 </script>
@@ -36,7 +59,7 @@
                 <@s.text name='manage.source.intro'/>
             </p>
 
-            <form class="topForm" action="source.do" method="post">
+            <form class="topForm needs-validation" action="source.do" method="post" novalidate>
                 <div class="row g-3 mx-lg-4 mx-2">
                     <input type="hidden" name="r" value="${resource.shortname}" />
                     <input type="hidden" name="id" value="${id!}" />
@@ -63,17 +86,65 @@
                         <div class="col-lg-6">
                             <div class="table-responsive">
                                 <table id="source-properties" class="table table-sm table-borderless text-smaller">
-                                    <tr><th><@s.text name='manage.source.readable'/></th><td><#if source.readable> <i class="bi bi-check-circle text-gbif-primary"></i><#else><i class="bi bi-exclamation-circle text-gbif-danger"></i> ${problem!}</#if></td></tr>
-                                    <tr><th><@s.text name='manage.source.columns'/></th><td>${source.getColumns()}</td></tr>
-                                    <#if source.fieldsTerminatedBy?has_content>
-                                        <tr><th><@s.text name='manage.source.file'/></th><td>${(source.file.getAbsolutePath())!}</td></tr>
-                                        <tr><th><@s.text name='manage.source.size'/></th><td>${source.fileSizeFormatted!"???"}</td></tr>
-                                        <tr><th><@s.text name='manage.source.rows'/></th><td>${source.rows!"???"}</td></tr>
-                                        <tr><th><@s.text name='manage.source.modified'/></th><td>${(source.lastModified?datetime?string("yyyy-MM-dd HH:mm:ss"))!}</td></tr>
-                                        <#if (logExists)>
-                                            <tr><th><@s.text name='manage.source.source.log'/></th><td><a href="${baseURL}/sourcelog.do?r=${resource.shortname}&s=${source.name}"><@s.text name='manage.source.download'/></a></td></tr>
+                                    <tr>
+                                        <th><@s.text name='manage.source.readable'/></th>
+                                        <td>
+                                            <#if source.readable> <i class="bi bi-circle-fill text-gbif-primary"></i><#else><i class="bi bi-circle-fill text-gbif-danger"></i> ${problem!}</#if>
+                                        </td>
+                                    </tr>
+
+                                    <#if source.sourceType == 'URL'>
+                                        <tr>
+                                            <th><@s.text name='manage.source.url'/></th>
+                                            <td><a href="${(source.url)!}">${(source.url)!}</a></td>
+                                        </tr>
+                                        <#if source.readable>
+                                            <tr>
+                                                <th><@s.text name='manage.source.columns'/></th>
+                                                <td>${source.getColumns()}</td>
+                                            </tr>
+                                            <tr>
+                                                <th><@s.text name='manage.source.rows'/></th>
+                                                <td>${source.rows!"???"}</td>
+                                            </tr>
+                                            <tr>
+                                                <th><@s.text name='manage.source.size'/></th>
+                                                <td>${source.fileSizeFormatted!"-"}</td>
+                                            </tr>
                                         </#if>
-                                    <#else>
+                                        <#if source.lastModified?has_content>
+                                            <tr>
+                                                <th><@s.text name='manage.source.modified'/></th>
+                                                <td>${(source.lastModified?datetime?string.long_medium)!}</td>
+                                            </tr>
+                                        </#if>
+                                    <#elseif source.sourceType == 'TEXT_FILE'>
+                                        <tr>
+                                            <th><@s.text name='manage.source.file'/></th>
+                                            <td>${(source.file.getAbsolutePath())!}</td>
+                                        </tr>
+                                        <tr>
+                                            <th><@s.text name='manage.source.columns'/></th>
+                                            <td>${source.getColumns()}</td>
+                                        </tr>
+                                        <tr>
+                                            <th><@s.text name='manage.source.rows'/></th>
+                                            <td>${source.rows!"???"}</td>
+                                        </tr>
+                                        <tr>
+                                            <th><@s.text name='manage.source.size'/></th>
+                                            <td>${source.fileSizeFormatted!"???"}</td>
+                                        </tr>
+                                        <tr>
+                                            <th><@s.text name='manage.source.modified'/></th>
+                                            <td>${(source.lastModified?datetime?string.long_medium)!}</td>
+                                        </tr>
+                                        <#if (logExists)>
+                                            <tr>
+                                                <th><@s.text name='manage.source.source.log'/></th>
+                                                <td><a href="${baseURL}/sourcelog.do?r=${resource.shortname}&s=${source.name}"><@s.text name='manage.source.download'/></a></td>
+                                            </tr>
+                                        </#if>
                                     </#if>
                                 </table>
                             </div>
@@ -137,7 +208,7 @@
                             </div>
 
                         <#-- file source -->
-                        <#else>
+                        <#elseif source.isFileSource()>
                             <div class="col-lg-6">
                                 <@headerLines/>
                             </div>
@@ -145,7 +216,26 @@
                                 <@input name="fileSource.fieldsTerminatedByEscaped" help="i18n" helpOptions={"\\t":"[ \\t ] Tab",",":"[ , ] Comma",";":"[ ; ] Semicolon","|":"[ | ] Pipe"}/>
                             </div>
                             <div class="col-lg-6">
-                                <@input name="fileSource.fieldsEnclosedByEscaped" help="i18n" helpOptions={"":"None","&quot;":"Double Quote","a":"Single Quote"}/>
+                                <@input name="fileSource.fieldsEnclosedByEscaped" help="i18n" helpOptions={"":"None","&quot;":"Double Quote","&apos;":"Single Quote"}/>
+                            </div>
+                            <div class="col-lg-6">
+                                <@multivalue/>
+                            </div>
+                            <div class="col-lg-6">
+                                <@encoding/>
+                            </div>
+                            <div class="col-lg-6">
+                                <@dateFormat/>
+                            </div>
+                        <#else>
+                            <div class="col-lg-6">
+                                <@headerLines/>
+                            </div>
+                            <div class="col-lg-6">
+                                <@input name="source.fieldsTerminatedByEscaped" i18nkey="fileSource.fieldsTerminatedByEscaped" help="i18n" helpOptions={"\\t":"[ \\t ] Tab",",":"[ , ] Comma",";":"[ ; ] Semicolon","|":"[ | ] Pipe"}/>
+                            </div>
+                            <div class="col-lg-6">
+                                <@input name="source.fieldsEnclosedByEscaped" i18nkey="fileSource.fieldsEnclosedByEscaped" help="i18n" helpOptions={"":"None","&quot;":"Double Quote","&apos;":"Single Quote"}/>
                             </div>
                             <div class="col-lg-6">
                                 <@multivalue/>
@@ -162,7 +252,7 @@
                             <@s.submit cssClass="btn btn-outline-gbif-primary" name="save" key="button.save"/>
                             <@s.submit cssClass="btn btn-outline-secondary my-1" name="cancel" key="button.cancel"/>
                             <#if id?has_content>
-                                <@s.submit cssClass="confirm btn btn-outline-gbif-danger my-1" name="delete" key="button.delete.source.file"/>
+                                <@s.submit cssClass="confirm btn btn-outline-gbif-danger my-1" name="delete" key="button.delete.source"/>
                             </#if>
                         </div>
                     <#else>
