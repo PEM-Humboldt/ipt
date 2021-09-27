@@ -2,7 +2,7 @@
     <#setting number_format="#####.##">
     <#include "/WEB-INF/pages/inc/header.ftl">
     <title><@s.text name='manage.metadata.physical.title'/></title>
-    <script>
+    <script type="text/javascript">
         $(document).ready(function(){
             initHelp();
         });

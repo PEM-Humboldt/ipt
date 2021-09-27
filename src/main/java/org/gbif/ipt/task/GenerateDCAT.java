@@ -775,8 +775,7 @@ public class GenerateDCAT {
   /**
    * Encapsulates an object:
    * </br>
-   * Literals are encapsulated with double quotation marks (") or three double quotation marks (""") for literals which
-   * contain CR or LF.
+   * Literals are encapsulated with double quotation marks (").
    * </br>
    * Resources are encapsulated with less than (<) and greater than (>) symbols.
    * </br>
@@ -789,11 +788,7 @@ public class GenerateDCAT {
     String ret = "";
     switch (type) {
       case LITERAL:
-        if (object.contains("\r") || object.contains("\n")) {
-          ret += "\"\"\"";
-        } else {
-          ret += "\"";
-        }
+        ret += "\"";
         break;
       case RESOURCE:
         ret += "<";
@@ -805,11 +800,7 @@ public class GenerateDCAT {
     ret += (ObjectTypes.LITERAL == type) ? escapeString(object) : object;
     switch (type) {
       case LITERAL:
-        if (object.contains("\r") || object.contains("\n")) {
-          ret += "\"\"\"";
-        } else {
-          ret += "\"";
-        }
+        ret += "\"";
         break;
       case RESOURCE:
         ret += ">";

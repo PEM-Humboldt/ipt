@@ -164,14 +164,7 @@ public class DataDir {
    * @return true if a working data directory is configured
    */
   public boolean isConfigured() {
-    return dataDir != null && dataDir.isDirectory() && dataDir.list().length > 0;
-  }
-
-  /**
-   * @return true if a working data directory is configured, but is not yet set up
-   */
-  public boolean isConfiguredButEmpty() {
-    return dataDir != null && dataDir.isDirectory() && dataDir.list().length == 0;
+    return dataDir != null && dataDir.exists();
   }
 
   /**
@@ -334,7 +327,7 @@ public class DataDir {
             throw new InvalidConfigException(TYPE.INVALID_DATA_DIR,
               "DataDir " + dataDir.getAbsolutePath() + " exists already and is no IPT data dir.");
           }
-          LOG.info("Reusing existing data dir {}", dataDir);
+          LOG.info("Reusing existing data dir.");
           // persist location in WEB-INF
           try {
             persistLocation();
@@ -350,7 +343,6 @@ public class DataDir {
 
       } else {
         // NEW datadir
-        LOG.info("Setting up new data directory {}", dataDir);
         try {
           // create new main data dir. Populate later
           FileUtils.forceMkdir(dataDir);
@@ -361,10 +353,8 @@ public class DataDir {
           testFile.delete();
           // create new default data dir
           createDefaultDir();
-          if (dataDirSettingFile != null) {
-            // all works fine - persist location in WEB-INF if that is how it is recorded
-            persistLocation();
-          }
+          // all works fine - persist location in WEB-INF
+          persistLocation();
           return true;
         } catch (IOException e) {
           LOG.error("New DataDir " + dataDir.getAbsolutePath() + " not writable", e);

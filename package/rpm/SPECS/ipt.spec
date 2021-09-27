@@ -1,7 +1,4 @@
-%define nr_ver 2.5.0
-# Set to -RC1 etc for release candidates, and <percent>nil for releases
-%define nr_ver_extra %nil
-# Set to 0.1 etc for release candidates, and 1 etc for releases
+%define nr_ver 2.4.2
 %define release_number 1
 
 Name: ipt
@@ -9,15 +6,17 @@ Version: %{nr_ver}
 Release: %{release_number}%{dist}
 License: ASL 2.0
 URL: https://www.gbif.org/ipt
-Source0: https://repository.gbif.org/repository/gbif/org/gbif/ipt/%{nr_ver}%{nr_ver_extra}/ipt-%{nr_ver}%{nr_ver_extra}.war
+Source0: https://repository.gbif.org/repository/gbif/org/gbif/ipt/%{nr_ver}/ipt-%{nr_ver}.war
 Source1: ipt.service
 Source2: ipt.sysconfig
 Source3: ipt-vhost.conf
-Source4: ipt.7
+Source4: man7/ipt.7.ronn
 Summary: GBIF Integrated Publishing Toolkit (IPT)
 BuildArch: noarch
 
 %{?systemd_requires}
+#BuildRequires: systemd
+BuildRequires: nodejs-ronn
 %define _unitdir /usr/lib/systemd/system
 
 Requires: java >= 1:1.8.0
@@ -35,11 +34,14 @@ facilitate sharing biodiversity data as Darwin Core Archives (DWCA).
 
 This package runs a single, standalone instance of the IPT.
 
-Documentation is available on https://ipt.gbif.org/manual
+Documentation is available on https://www.gbif.org/ipt
 
 %prep
 cp %{SOURCE0} ipt.war
 cp %{SOURCE1} %{SOURCE2} %{SOURCE3} %{SOURCE4} .
+
+%build
+ronn --roff --organization Global\ Biodiversity\ Information\ Facility ipt.7.ronn || /usr/lib/node_modules/ronn/bin/ronn.js --roff ipt.7.ronn > ipt.7
 
 %install
 install -D -p -m 644 ipt.war %{buildroot}%{_javadir}/gbif/ipt.war
@@ -71,11 +73,7 @@ mkdir -p %{buildroot}%{_localstatedir}/lib/ipt
 %systemd_postun_with_restart ipt.service
 
 %changelog
-* Mon Aug 23 2021 Matthew Blissett <mblissett@gbif.org> - 2.5.0-1
-- Publish IPT 2.5.0 release.
-* Fri Jun 25 2021 Matthew Blissett <mblissett@gbif.org> - 2.5.0RC1-0.1
-- Publish IPT 2.5.0-RC1 pre-release.
-* Tue Sep 08 2020 Matthew Blissett <mblissett@gbif.org> - 2.4.2-1
+* Wed Sep 08 2020 Matthew Blissett <mblissett@gbif.org> - 2.4.2-1
 - Publish IPT 2.4.2 release.
 * Wed Sep 02 2020 Matthew Blissett <mblissett@gbif.org> - 2.4.1-1
 - Publish IPT 2.4.1 release.

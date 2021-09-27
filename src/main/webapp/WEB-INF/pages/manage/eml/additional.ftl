@@ -2,10 +2,10 @@
     <#setting number_format="#####.##">
     <#include "/WEB-INF/pages/inc/header.ftl">
     <#include "/WEB-INF/pages/macros/metadata.ftl"/>
-    <script src="${baseURL}/js/ajaxfileupload.js"></script>
-    <script src="${baseURL}/js/jconfirmation.jquery.js"></script>
+    <script type="text/javascript" src="${baseURL}/js/ajaxfileupload.js"></script>
+    <script type="text/javascript" src="${baseURL}/js/jconfirmation.jquery.js"></script>
     <title><@s.text name='manage.metadata.additional.title'/></title>
-    <script>
+    <script type="text/javascript">
         $(document).ready(function () {
             initHelp();
 
@@ -55,6 +55,9 @@
                 }
                 return false;
             }
+
+            // Initialize/select the intellectual rights value from current eml file
+            $("select#eml\\.intellectualRights").val("${eml.intellectualRights}"); 
 
         });
     </script>

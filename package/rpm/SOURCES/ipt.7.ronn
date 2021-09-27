@@ -46,9 +46,7 @@ IPT.  An example configuration file for doing this is at
 
 ## RESOURCES
 
-Refer to the [IPT User Manual](https://ipt.gbif.org/manual/) for
-documentation and tutorials.
+On the [GitHub site](https://github.com/gbif/ipt/) you will find the
+source code, additional documentation and issue tracker.
 
-Source code and an issue tracker are is available in [GitHub](https://github.com/gbif/ipt/).
-
-For assistance, write to the [mailing list](https://lists.gbif.org/mailman/listinfo/ipt).
+Further information is on the [GBIF IPT site](https://www.gbif.org/ipt).

@@ -1,4 +1,6 @@
-// A link to index.adoc is included automatically.
+* xref:index.adoc[Background]
+* xref:news.adoc[News]
+* xref:release-notes.adoc[]
 * xref:introduction.adoc[]
 * xref:getting-started.adoc[]
 ** xref:requirements.adoc[]
@@ -7,14 +9,9 @@
 *** xref:tomcat-installation-linux.adoc[]
 *** xref:tomcat-installation-windows.adoc[]
 ** xref:initial-setup.adoc[]
-* xref:overview.adoc[]
-* xref:home.adoc[]
+* xref:quick-reference-guide.adoc[]
 * xref:manage-resources.adoc[]
 * xref:administration.adoc[]
-* xref:about.adoc[]
-* xref:releases.adoc[]
-* xref:release-notes.adoc[]
-//** xref:statistics.adoc[]
 * xref:how-to-publish.adoc[]
 ** xref:resource-metadata.adoc[]
 ** xref:checklist-data.adoc[]
@@ -26,15 +23,16 @@
 ** Occurrence Data (pending)
 ** xref:best-practices-sampling-event-data.adoc[Sampling Event Data]
 * xref:faq.adoc[]
-* Contributing
-** xref:translations.adoc[Translations]
-** xref:developer-guide.adoc[Development]
 * Customization
 ** xref:customization.adoc[]
-** xref:database-connection.adoc[]
 ** xref:core.adoc[Adding a new core]
 ** xref:license.adoc[]
 ** xref:user-id.adoc[]
+* Contributing
+** xref:translations.adoc[Translations]
+** xref:developer-guide.adoc[Development]
+* Other Resources & Tutorials
+** xref:database-connection.adoc[]
 * xref:versioning.adoc[]
 * xref:citation.adoc[]
 ** xref:datacite-mappings.adoc[]
@@ -45,5 +43,7 @@
 * xref:data-preparation.adoc[]
 * xref:data-quality-checklist.adoc[]
 * xref:colophon.adoc[]
+* xref:releases.adoc[Version history]
+* xref:statistics.adoc[]
 * xref:resources.adoc[]
 * xref:glossary.adoc[]

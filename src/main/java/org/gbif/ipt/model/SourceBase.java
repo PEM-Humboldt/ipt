@@ -46,7 +46,7 @@ public abstract class SourceBase implements Comparable<Source>, Serializable, So
    * <li>All backslash character</li>
    * <li>All question mark character</li>
    * <li>All percent character</li>
-   * <li>All asterisk character</li>
+   * <li>All asterik character</li>
    * <li>All colon character</li>
    * <li>All pipe character</li>
    * <li>All less than character</li>
@@ -127,22 +127,17 @@ public abstract class SourceBase implements Comparable<Source>, Serializable, So
 
   @Override
   public boolean isFileSource() {
-    return this instanceof TextFileSource;
+    return TextFileSource.class.isInstance(this);
   }
 
   @Override
   public boolean isExcelSource() {
-    return this instanceof ExcelFileSource;
+    return ExcelFileSource.class.isInstance(this);
   }
 
   @Override
   public boolean isSqlSource() {
-    return this instanceof SqlSource;
-  }
-
-  @Override
-  public boolean isUrlSource() {
-    return this instanceof UrlSource;
+    return SqlSource.class.isInstance(this);
   }
 
   @Override
@@ -188,21 +183,5 @@ public abstract class SourceBase implements Comparable<Source>, Serializable, So
   @Override
   public String toString() {
     return this.getClass().getSimpleName() + "[" + name + ";" + resource + "]";
-  }
-
-  protected String escape(String x) {
-    if (x == null) {
-      return null;
-    }
-    return x.replaceAll("\\t", "\\\\t").replaceAll("\\n", "\\\\n").replaceAll("\\r", "\\\\r")
-        .replaceAll("\\f", "\\\\f");
-  }
-
-  protected String unescape(String x) {
-    if (x == null) {
-      return null;
-    }
-    return x.replaceAll("\\\\t", String.valueOf('\t')).replaceAll("\\\\n", String.valueOf('\n'))
-        .replaceAll("\\\\r", String.valueOf('\r')).replaceAll("\\\\f", String.valueOf('\f'));
   }
 }

@@ -76,7 +76,7 @@ public class ResourceFileAction extends PortalBaseAction {
       } else {
         // Humboldt users have access to restricted internal resources, so just check the rest
         if ((user.getEmail().endsWith(Constants.HUMBOLDT_MAIL_DOMAIN) &&
-        !eml.getIntellectualRights().equals(getText("eml.intellectualRights.license.text.internal"))) ||
+          !eml.getIntellectualRights().equals(getText("eml.intellectualRights.license.text.internal"))) ||
           !user.getEmail().endsWith(Constants.HUMBOLDT_MAIL_DOMAIN)){
             if (!Strings.isNullOrEmpty(user.getGrantedAccessTo())){
               if (!Arrays.asList(user.getGrantedAccessTo().split(", ")).contains(resource.getShortname())){

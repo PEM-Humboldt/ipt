@@ -78,15 +78,6 @@ public interface ResourceManager {
   Resource create(String shortname, String type, User creator) throws AlreadyExistingException;
 
   /**
-   * Deletes a Resource's data dir.
-   *
-   * @param resource Resource
-   *
-   * @throws IOException                 if deletion could not be completed
-   */
-  void deleteResourceFromIpt(Resource resource) throws IOException;
-
-  /**
    * Deletes a Resource.
    *
    * @param resource Resource

@@ -3,7 +3,7 @@
     <#include "/WEB-INF/pages/inc/header.ftl">
     <title><@s.text name='manage.metadata.methods.title'/></title>
     <#include "/WEB-INF/pages/macros/metadata.ftl"/>
-    <script>
+    <script type="text/javascript">
         $(document).ready(function(){
             initHelp();
             $("#removeLink-0").hide();

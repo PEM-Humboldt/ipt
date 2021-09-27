@@ -84,8 +84,4 @@ public class SqlSource extends SourceBase {
   public void setUsername(String username) {
     this.username = username;
   }
-
-  public SourceType getSourceType() {
-    return SourceType.SQL;
-  }
 }

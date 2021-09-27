@@ -24,7 +24,7 @@ import org.gbif.ipt.model.PropertyMapping;
 import org.gbif.ipt.model.RecordFilter;
 import org.gbif.ipt.model.RecordFilter.Comparator;
 import org.gbif.ipt.model.Source;
-import org.gbif.ipt.model.SourceWithHeader;
+import org.gbif.ipt.model.TextFileSource;
 import org.gbif.ipt.service.admin.ExtensionManager;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.VocabulariesManager;
@@ -450,21 +450,21 @@ public class MappingAction extends ManagerBaseAction {
   }
 
   private void readSource() {
-    Source src = mapping.getSource();
-    if (src == null) {
-      columns = new ArrayList<>();
+    if (mapping.getSource() == null) {
+      columns = new ArrayList<String>();
     } else {
-      peek = sourceManager.peek(src, 5);
+      peek = sourceManager.peek(mapping.getSource(), 5);
       // If user wants to import a source without a header lines, the columns are going to be numbered with the first
       // non-null value as an example. Otherwise, read the file/database normally.
-      if ((src.isUrlSource() || src.isFileSource())
-          && ((SourceWithHeader) src).getIgnoreHeaderLines() == 0) {
+      if (mapping.getSource().isFileSource() && ((TextFileSource) mapping.getSource()).getIgnoreHeaderLines() == 0) {
         columns = mapping.getColumns(peek);
       } else {
-        columns = sourceManager.columns(src);
+        columns = sourceManager.columns(mapping.getSource());
       }
-      if (columns.isEmpty() && src.getName() != null) {
-        addActionWarning(getText("manage.mapping.source.no.columns", new String[] {src.getName()}));
+      if (columns.isEmpty() && mapping.getSource().getName() != null) {
+        // TODO: i18n
+        addActionWarning("Source " + mapping.getSource().getName()
+                         + " has no columns available to map. Please check that it has been configured correctly.");
       }
     }
   }
@@ -476,7 +476,7 @@ public class MappingAction extends ManagerBaseAction {
       mid = resource.addMapping(mapping);
     } else {
       // save field mappings
-      Set<PropertyMapping> mappedFields = new TreeSet<>();
+      Set<PropertyMapping> mappedFields = new TreeSet<PropertyMapping>();
       for (PropertyMapping f : fields) {
         Integer index = MoreObjects.firstNonNull(f.getIndex(), -9999);
         if (index >= 0 || StringUtils.trimToNull(f.getDefaultValue()) != null) {

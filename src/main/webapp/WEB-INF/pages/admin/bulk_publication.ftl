@@ -1,6 +1,6 @@
 <#include "/WEB-INF/pages/inc/header.ftl">
-<script src="${baseURL}/js/jconfirmation.jquery.js"></script>
-<script>
+<script type="text/javascript" src="${baseURL}/js/jconfirmation.jquery.js"></script>
+<script type="text/javascript">
     $(document).ready(function(){
         initHelp();
 
