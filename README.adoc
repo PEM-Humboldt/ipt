@@ -1,6 +1,7 @@
 https://builds.gbif.org/job/ipt/lastBuild/console[image:https://builds.gbif.org/job/ipt/badge/icon[Build status]]
+# [Catalogador de Información Biológica - IAvH](http://i2d.humboldt.org.co/ceiba/)
 
-= GBIF Integrated Publishing Toolkit (IPT)
+= GBIF Integrated Publishing Toolkit (IPT) - Versión Ceiba 2.5.0
 
 The Integrated Publishing Toolkit (IPT) is a free, open source software tool used to publish and share biodiversity datasets through the https://www.gbif.org/[GBIF network]. The IPT can also be configured with a DataCite account in order to assign DOIs to datasets, thus transforming it into a data repository.
 
