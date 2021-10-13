@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -67,6 +66,7 @@ public class HomeAction extends BaseAction {
       File versionEmlFile = cfg.getDataDir().resourceEmlFile(shortname, v);
       // try/catch block flags resources missing mandatory metadata (published using IPT prior to v2.2)
       try {
+        // set organisation if this field is empty in the resource
         if (resource.getOrganisation() == null) resource.setOrganisation(noOrganisation);
         Resource publishedPublicVersion = ResourceUtils
           .reconstructVersion(v, resource.getShortname(), resource.getCoreType(), resource.getAssignedDoi(), resource.getOrganisation(),
