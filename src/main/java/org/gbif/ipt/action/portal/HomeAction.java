@@ -57,7 +57,7 @@ public class HomeAction extends BaseAction {
     super.prepare();
     resources = Lists.newArrayList();
 
-    // add default organisation "No organisation" as first option
+    // add default organisation "No organisation"
     Organisation noOrganisation = getDefaultOrganisation();
 
     for (Resource resource : resourceManager.listPublishedPublicVersions()) {
