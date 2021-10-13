@@ -503,6 +503,11 @@ td.left_padding {
 
 .cc_by_nc {
     background: url('../images/icons/cc-by-nc.svg');
+    display: block;
+    float: left;
+    margin-right: 18px;
+    height: 32px;
+    width: 88px;
 }
 /* Licence logos styling END */
 
