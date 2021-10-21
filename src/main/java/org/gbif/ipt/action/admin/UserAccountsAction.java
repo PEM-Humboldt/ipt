@@ -50,6 +50,7 @@ public class UserAccountsAction extends POSTAction {
   private List<User> users;
   private List<Resource> restrictedResourcesForAllButIAvHUsers;
   private List<Resource> restrictedResourcesForIAvHUsers;
+  private List<User> potentialManagers;
 
 
   @Inject
@@ -159,10 +160,46 @@ public class UserAccountsAction extends POSTAction {
       }
     }
 
+    // Start - IAvH Customization
+
+    // Set validation users lists
     List<String> intellectualRightsListForIAvHUsers = Arrays.asList(getText("eml.intellectualRights.license.text.temporalRestriction"), getText("eml.intellectualRights.license.text.internalNotification"));
     List<String> intellectualRightsListForAllButIAvHUsers = Arrays.asList(getText("eml.intellectualRights.license.text.internal"));
     restrictedResourcesForIAvHUsers = resourceManager.list(intellectualRightsListForIAvHUsers);
     restrictedResourcesForAllButIAvHUsers = resourceManager.list(intellectualRightsListForAllButIAvHUsers);
+
+    LOG.debug("IAvH - Iniciando actualización de users.xml......");
+    // Test and sync managers list into users.xml and resource.xml (for each resource)
+    for (Resource resource : resourceManager.list()) {
+      // set managers for current resource
+      for (User u : userManager.list()) {
+
+        try {
+          
+          if (u.getGrantedAccessTo() != null) {
+            String[] accessTo = u.getGrantedAccessTo().split(", ");
+            List<String> userAccessTo = new ArrayList<String>(Arrays.asList(accessTo));
+            // validate if the user is into resource managers object
+            if (!resource.getManagers().contains(u)){
+              userAccessTo.remove(resource.getShortname());
+            }
+            // update grantedAccessTo
+            if (userAccessTo.isEmpty()) {
+              u.setGrantedAccessTo("");
+            } else {
+              u.setGrantedAccessTo(String.join(", ", userAccessTo));
+            }
+            
+            userManager.save(u);
+          }                    
+        } catch (IOException e) {
+          u.setGrantedAccessTo("");
+        }
+      }
+      resourceManager.save(resource);
+    }
+    LOG.debug("......IAvH - Actualización de users.xml finalizada");
+    // End - IAvH Customization
   }
 
   @Override
