@@ -34,10 +34,6 @@
             </div>
             <a href="${baseURL}/" rel="home" title="CEIBA IPT" class="navbar-brand" >
                 <img src="${baseURL}/images/logo.png" alt="CEIBA IPT" class="gbif-logo"/>
-                [#if !cfg.devMode() && cfg.getRegistryType()?has_content && cfg.getRegistryType()=='PRODUCTION']
-                [#else]
-                    <img class="testmode" alt="[@s.text name="menu.testMode"/]" src="${baseURL}/images/testmode.png" style="width: 100px;"/>
-                [/#if]
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
