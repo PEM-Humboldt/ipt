@@ -81,7 +81,6 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                     }
                 },
                 "aoColumns": [
-                    { "sTitle": "<@s.text name="portal.home.logo"/>", "bSearchable": false, "bVisible": <#if shownPublicly>true<#else>false</#if> },
                     { "sTitle": "<@s.text name="manage.home.name"/>"},
                     { "sTitle": "<@s.text name="manage.home.organisation"/>"},
                     { "sTitle": "<@s.text name="manage.home.type"/>"},
