@@ -205,8 +205,6 @@
 
                             <#if action.getDefaultOrganisation()?? && resource.organisation.key.toString() == action.getDefaultOrganisation().key.toString()>
                                 ${publishedOnText?lower_case}&nbsp;<span property="dc:issued">${eml.pubDate?date?string.long}</span>
-                                <br>
-                            <em class="text-gbif-danger"><@s.text name='manage.home.not.registered.verbose'/></em>
                             <#else>
                                 <@s.text name='portal.resource.publishedOn'><@s.param>${resource.organisation.name}</@s.param></@s.text> <span property="dc:issued">${eml.pubDate?date?string.long_short}</span>
                                 <span property="dc:publisher" style="display: none">${resource.organisation.name}</span>
@@ -480,25 +478,6 @@
                 </div>
             </div>
         </#if>
-
-        <!-- GBIF Registration section -->
-        <div id="gbif" class="my-3 p-3 bg-body rounded shadow-sm">
-            <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header">
-                <@s.text name='portal.resource.organisation.key'/>
-            </h5>
-
-            <div class="mx-md-4 mx-2">
-                <#if resource.status=="REGISTERED" && resource.organisation??>
-                    <p>
-                        <@s.text name='manage.home.registered.verbose'><@s.param>${cfg.portalUrl}/dataset/${resource.key}</@s.param><@s.param>${resource.key}</@s.param></@s.text>
-                        <#-- in prod mode link goes to /publisher (GBIF Portal), in dev mode link goes to /publisher (GBIF UAT Portal) -->
-                        &nbsp;<@s.text name='manage.home.published.verbose'><@s.param>${cfg.portalUrl}/publisher/${resource.organisation.key}</@s.param><@s.param>${resource.organisation.name}</@s.param><@s.param>${cfg.portalUrl}/node/${resource.organisation.nodeKey!"#"}</@s.param><@s.param>${resource.organisation.nodeName!}</@s.param></@s.text>
-                    </p>
-                <#else>
-                    <p><@s.text name='manage.home.not.registered.verbose'/></p>
-                </#if>
-            </div>
-        </div>
 
         <!-- Keywords section -->
         <#if eml.subject?has_content>

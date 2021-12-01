@@ -38,7 +38,7 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
         var aDataSet = [
             <#list resources as r>
             [
-                <#if r.eml.logoUrl?has_content>'<img class="resourceminilogo" src="${r.eml.logoUrl}" />'<#else>'${emptyString}'</#if>,
+                
                 "<a href='${baseURL}<#if !shownPublicly>/manage</#if>/resource?r=${r.shortname}'><if><#if r.title?has_content>${r.title?replace("\'", "\\'")?replace("\"", '\\"')}<#else>${r.shortname}</#if></a>",
                  <#if r.eml.project.funding?has_content>'${r.eml.project.funding.replace("\n"," ").replace('"','').replace("“","").replace("”","")}'<#else>'${emptyString}'</#if>,
                 <#if r.coreType?has_content && types[r.coreType?lower_case]?has_content>'${types[r.coreType?lower_case]?replace("\'", "\\'")?replace("\"", '\\"')?cap_first!}'<#else>'${emptyString}'</#if>,
@@ -46,7 +46,6 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                 '<a target="_blank" href="${baseURL}/resource?r=${r.shortname}#dataRecords">${r.recordsPublished!0}</a>',
                 '${r.modified?date}',
                 <#if r.published>'${(r.lastPublished?date)!}'<#else>'<@s.text name="portal.home.not.published"/>'</#if>,
-                '${(r.nextPublished?date?string("yyyy-MM-dd HH:mm"))!'${emptyString}'}',
                 <#if r.status=='PRIVATE'>'<@s.text name="manage.home.visible.private"/>'<#elseif r.status=='DELETED'>'${deletedString}'<#else>'<@s.text name="manage.home.visible.public"/>'</#if>,
                 <#if r.creator??>'${r.creator.firstname?replace("\'", "\\'")?replace("\"", '\\"')!} ${r.creator.lastname?replace("\'", "\\'")?replace("\"", '\\"')!}'<#else>'${emptyString}'</#if>,
                 '${r.shortname}'
@@ -81,7 +80,6 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                     }
                 },
                 "aoColumns": [
-                    { "sTitle": "<@s.text name="portal.home.logo"/>", "bSearchable": false, "bVisible": <#if shownPublicly>true<#else>false</#if> },
                     { "sTitle": "<@s.text name="manage.home.name"/>"},
                     { "sTitle": "<@s.text name="manage.home.organisation"/>"},
                     { "sTitle": "<@s.text name="manage.home.type"/>"},
@@ -89,7 +87,6 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                     { "sTitle": "<@s.text name="portal.home.records"/>", "bSearchable": false, "sType": "number"},
                     { "sTitle": "<@s.text name="manage.home.last.modified"/>", "bSearchable": false},
                     { "sTitle": "<@s.text name="manage.home.last.publication" />", "bSearchable": false},
-                    { "sTitle": "<@s.text name="manage.home.next.publication" />", "bSearchable": false},
                     { "sTitle": "<@s.text name="manage.home.visible"/>", "bSearchable": false, "bVisible": <#if shownPublicly>false<#else>true</#if>},
                     { "sTitle": "<@s.text name="portal.home.author"/>", "bVisible": <#if shownPublicly>false<#else>true</#if>},
                     { "sTitle": "<@s.text name="resource.shortname"/>", "bVisible": false}

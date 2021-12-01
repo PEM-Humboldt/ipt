@@ -34,10 +34,6 @@
             </div>
             <a href="${baseURL}/" rel="home" title="CEIBA IPT" class="navbar-brand" >
                 <img src="${baseURL}/images/logo.png" alt="CEIBA IPT" class="gbif-logo"/>
-                [#if !cfg.devMode() && cfg.getRegistryType()?has_content && cfg.getRegistryType()=='PRODUCTION']
-                [#else]
-                    <img class="testmode" alt="[@s.text name="menu.testMode"/]" src="${baseURL}/images/testmode.png" style="width: 100px;"/>
-                [/#if]
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -50,7 +46,7 @@
                         <a class="nav-link [#if currentMenu=='home']active[/#if]" href="${baseURL}/"><img src="${baseURL}/images/icons/home.png">[@s.text name="menu.home"/]</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link [#if currentMenu=='data']active[/#if]" href="http://goo.gl/8VC1cg" target="_blank"><img src="${baseURL}/images/icons/data.png">[@s.text name="menu.data"/]</a>
+                        <a class="nav-link [#if currentMenu=='data']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/consulta?authuser=0" target="_blank"><img src="${baseURL}/images/icons/data.png">[@s.text name="menu.data"/]</a>
                     </li>
                     [#if managerRights]
                         <li class="nav-item">
@@ -79,7 +75,7 @@
                         <a class="nav-link [#if currentMenu=='inventory']active[/#if]" href="http://goo.gl/is7UaG" target="_blank"><img src="${baseURL}/images/icons/inventory.png">[@s.text name="menu.inventory"/]</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link [#if currentMenu=='data']active[/#if]" href="http://goo.gl/8VC1cg" target="_blank"><img src="${baseURL}/images/icons/data.png">[@s.text name="menu.data"/]</a>
+                        <a class="nav-link [#if currentMenu=='data']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/consulta?authuser=0" target="_blank"><img src="${baseURL}/images/icons/data.png">[@s.text name="menu.data"/]</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link [#if currentMenu=='faq']active[/#if]" href="${baseURL}/faq.do"><img src="${baseURL}/images/icons/about.png">[@s.text name="menu.faq"/]</a>
