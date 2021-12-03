@@ -305,7 +305,6 @@ public class MetadataAction extends ManagerBaseAction {
         // if IPT isn't registered there are no publishing organisations to choose from, so set to "No organisation"
         if (getRegisteredIpt() == null && getDefaultOrganisation() != null) {
           resource.setOrganisation(getDefaultOrganisation());
-          addActionWarning(getText("manage.overview.visibility.missing.organisation"));
         }
 
         if (isHttpPost()) {
