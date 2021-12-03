@@ -259,40 +259,40 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.contacts[${contact_index}].firstName" i18nkey="eml.contact.firstName"/>
+                        <@input name="eml.contacts[${contact_index}].firstName" help="i18n" i18nkey="eml.contact.firstName"/>
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.contacts[${contact_index}].lastName" i18nkey="eml.contact.lastName" requiredField=true/>
+                        <@input name="eml.contacts[${contact_index}].lastName" help="i18n" i18nkey="eml.contact.lastName" requiredField=true/>
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.contacts[${contact_index}].position" i18nkey="eml.contact.position" requiredField=true />
+                        <@input name="eml.contacts[${contact_index}].position" help="i18n" i18nkey="eml.contact.position" requiredField=true />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.contacts[${contact_index}].organisation" i18nkey="eml.contact.organisation" requiredField=true />
+                        <@input name="eml.contacts[${contact_index}].organisation" help="i18n" i18nkey="eml.contact.organisation" requiredField=true />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.contacts[${contact_index}].address.address" i18nkey="eml.contact.address.address" />
+                        <@input name="eml.contacts[${contact_index}].address.address" help="i18n" i18nkey="eml.contact.address.address" />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.contacts[${contact_index}].address.city" i18nkey="eml.contact.address.city" />
+                        <@input name="eml.contacts[${contact_index}].address.city" help="i18n" i18nkey="eml.contact.address.city" />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.contacts[${contact_index}].address.province" i18nkey="eml.contact.address.province" />
+                        <@input name="eml.contacts[${contact_index}].address.province" help="i18n" i18nkey="eml.contact.address.province" />
                     </div>
                     <div class="countryList col-md-6">
                         <@select name="eml.contacts[${contact_index}].address.country" help="i18n" options=countries i18nkey="eml.contact.address.country" value="${eml.contacts[contact_index].address.country!}"/>
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.contacts[${contact_index}].address.postalCode" i18nkey="eml.contact.address.postalCode" />
+                        <@input name="eml.contacts[${contact_index}].address.postalCode" help="i18n" i18nkey="eml.contact.address.postalCode" />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.contacts[${contact_index}].phone" i18nkey="eml.contact.phone" />
+                        <@input name="eml.contacts[${contact_index}].phone" help="i18n" i18nkey="eml.contact.phone" />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.contacts[${contact_index}].email" i18nkey="eml.contact.email" />
+                        <@input name="eml.contacts[${contact_index}].email" help="i18n" i18nkey="eml.contact.email" />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.contacts[${contact_index}].homepage" i18nkey="eml.contact.homepage" type="url" />
+                        <@input name="eml.contacts[${contact_index}].homepage" help="i18n" i18nkey="eml.contact.homepage" type="url" />
                     </div>
                     <div class="col-md-6">
                         <#if eml.contacts[contact_index].userIds[0]??>
