@@ -146,7 +146,7 @@
 
         <div class="row mx-md-3 mx-1 g-3">
             <div class="col-12">
-                <@input name="eml.title" requiredField=true />
+                <@input name="eml.title" requiredField=true help="i18n" />
             </div>
 
             <div class="col-lg-4">
@@ -326,40 +326,40 @@
                 </div>
             </div>
             <div class="col-md-6">
-                <@input name="eml.contact.firstName" i18nkey="eml.contact.firstName"/>
+                <@input name="eml.contact.firstName" help="i18n" i18nkey="eml.contact.firstName"/>
             </div>
             <div class="col-md-6">
-                <@input name="eml.contact.lastName" i18nkey="eml.contact.lastName" requiredField=true/>
+                <@input name="eml.contact.lastName" help="i18n" i18nkey="eml.contact.lastName" requiredField=true/>
             </div>
             <div class="col-md-6">
-                <@input name="eml.contact.position" i18nkey="eml.contact.position" requiredField=true />
+                <@input name="eml.contact.position" help="i18n" i18nkey="eml.contact.position" requiredField=true />
             </div>
             <div class="col-md-6">
-                <@input name="eml.contact.organisation" i18nkey="eml.contact.organisation" requiredField=true />
+                <@input name="eml.contact.organisation" help="i18n" i18nkey="eml.contact.organisation" requiredField=true />
             </div>
             <div class="col-md-6">
-                <@input name="eml.contact.address.address" i18nkey="eml.contact.address.address" />
+                <@input name="eml.contact.address.address" help="i18n" i18nkey="eml.contact.address.address" />
             </div>
             <div class="col-md-6">
-                <@input name="eml.contact.address.city" i18nkey="eml.contact.address.city" />
+                <@input name="eml.contact.address.city" help="i18n" i18nkey="eml.contact.address.city" />
             </div>
             <div class="col-md-6">
-                <@input name="eml.contact.address.province" i18nkey="eml.contact.address.province" />
+                <@input name="eml.contact.address.province" help="i18n" i18nkey="eml.contact.address.province" />
             </div>
             <div class="countryList col-md-6">
                 <@select name="country" options=countries help="i18n" i18nkey="eml.contact.address.country" />
             </div>
             <div class="col-md-6">
-                <@input name="eml.contact.address.postalCode" i18nkey="eml.contact.address.postalCode" />
+                <@input name="eml.contact.address.postalCode" help="i18n" i18nkey="eml.contact.address.postalCode" />
             </div>
             <div class="col-md-6">
-                <@input name="eml.contact.phone" i18nkey="eml.contact.phone" />
+                <@input name="eml.contact.phone" help="i18n" i18nkey="eml.contact.phone" />
             </div>
             <div class="col-md-6">
-                <@input name="eml.contact.email" i18nkey="eml.contact.email" />
+                <@input name="eml.contact.email" help="i18n" i18nkey="eml.contact.email" />
             </div>
             <div class="col-md-6">
-                <@input name="eml.contact.homepage" i18nkey="eml.contact.homepage" type="url" />
+                <@input name="eml.contact.homepage" help="i18n" i18nkey="eml.contact.homepage" type="url" />
             </div>
             <div class="col-md-6">
                 <@select name="eml.contact.userId.directory" options=userIdDirectories help="i18n" i18nkey="eml.contact.directory" />
