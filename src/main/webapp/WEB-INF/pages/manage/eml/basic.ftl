@@ -385,40 +385,40 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.creators[${creator_index}].firstName" i18nkey="eml.resourceCreator.firstName"/>
+                        <@input name="eml.creators[${creator_index}].firstName" help="i18n" i18nkey="eml.resourceCreator.firstName"/>
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.creators[${creator_index}].lastName" i18nkey="eml.resourceCreator.lastName" requiredField=true/>
+                        <@input name="eml.creators[${creator_index}].lastName" help="i18n" i18nkey="eml.resourceCreator.lastName" requiredField=true/>
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.creators[${creator_index}].position" i18nkey="eml.resourceCreator.position" requiredField=true />
+                        <@input name="eml.creators[${creator_index}].position" help="i18n" i18nkey="eml.resourceCreator.position" requiredField=true />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.creators[${creator_index}].organisation" i18nkey="eml.resourceCreator.organisation" requiredField=true />
+                        <@input name="eml.creators[${creator_index}].organisation" help="i18n" i18nkey="eml.resourceCreator.organisation" requiredField=true />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.creators[${creator_index}].address.address" i18nkey="eml.resourceCreator.address.address" />
+                        <@input name="eml.creators[${creator_index}].address.address" help="i18n" i18nkey="eml.resourceCreator.address.address" />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.creators[${creator_index}].address.city" i18nkey="eml.resourceCreator.address.city" />
+                        <@input name="eml.creators[${creator_index}].address.city" help="i18n" i18nkey="eml.resourceCreator.address.city" />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.creators[${creator_index}].address.province" i18nkey="eml.resourceCreator.address.province" />
+                        <@input name="eml.creators[${creator_index}].address.province" help="i18n" i18nkey="eml.resourceCreator.address.province" />
                     </div>
                     <div class="countryList col-md-6">
                         <@select name="eml.creators[${creator_index}].address.country" help="i18n" options=countries i18nkey="eml.resourceCreator.address.country" value="${eml.creators[creator_index].address.country!}"/>
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.creators[${creator_index}].address.postalCode" i18nkey="eml.resourceCreator.address.postalCode" />
+                        <@input name="eml.creators[${creator_index}].address.postalCode" help="i18n" i18nkey="eml.resourceCreator.address.postalCode" />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.creators[${creator_index}].phone" i18nkey="eml.resourceCreator.phone" />
+                        <@input name="eml.creators[${creator_index}].phone" help="i18n" i18nkey="eml.resourceCreator.phone" />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.creators[${creator_index}].email" i18nkey="eml.resourceCreator.email" />
+                        <@input name="eml.creators[${creator_index}].email" help="i18n" i18nkey="eml.resourceCreator.email" />
                     </div>
                     <div class="col-md-6">
-                        <@input name="eml.creators[${creator_index}].homepage" i18nkey="eml.resourceCreator.homepage" type="url" />
+                        <@input name="eml.creators[${creator_index}].homepage" help="i18n" i18nkey="eml.resourceCreator.homepage" type="url" />
                     </div>
                     <div class="col-md-6">
                         <#if eml.creators[creator_index].userIds[0]??>
