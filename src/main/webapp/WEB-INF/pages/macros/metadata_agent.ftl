@@ -114,7 +114,6 @@
 
         $("[id^='associatedParty-copyDetails']").click(function(event) {
             event.preventDefault();
-            console.log('Angela prueba 1, jejeje');
             copyI2DDetails(event, "associatedParty-item-");
             // copyPrimaryContactDetails(event, "associatedParty-item-");
         });
@@ -444,7 +443,6 @@
 
             $("#associatedParty-item-"+index+" [id^='associatedParty-copyDetails']").attr("id", "associatedParty-copyDetails-"+index);
             $("#associatedParty-copyDetails-"+index).click(function(event) {
-                console.log('Angela prueba, jejeje');
                 copyI2DDetails(event, "associatedParty-item-");
                 // copyPrimaryContactDetails(event, "associatedParty-item-");
             });
