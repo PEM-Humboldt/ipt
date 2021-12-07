@@ -59,7 +59,7 @@
                         </li>
                     [#else]
                         <li class="nav-item">
-                            <a class="nav-link [#if currentMenu=='faq']active[/#if]" href="${baseURL}/faq.do" target="_blank"><img src="${baseURL}/images/icons/about.png">[@s.text name="menu.faq"/]</a>
+                            <a class="nav-link [#if currentMenu=='faq']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/preguntas-frecuentes/faq-ceiba?authuser=0" target="_blank"><img src="${baseURL}/images/icons/about.png">[@s.text name="menu.faq"/]</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link [#if currentMenu=='manual']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/ceiba-manual/ceiba-consulta" target="_blank"><img src="${baseURL}/images/icons/usermanu.png">[@s.text name="menu.usermanual"/]</a>
@@ -78,7 +78,7 @@
                         <a class="nav-link [#if currentMenu=='data']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/consulta?authuser=0" target="_blank"><img src="${baseURL}/images/icons/data.png">[@s.text name="menu.data"/]</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link [#if currentMenu=='faq']active[/#if]" href="${baseURL}/faq.do"><img src="${baseURL}/images/icons/about.png">[@s.text name="menu.faq"/]</a>
+                        <a class="nav-link [#if currentMenu=='faq']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/preguntas-frecuentes/faq-ceiba?authuser=0" target="_blank"><img src="${baseURL}/images/icons/about.png">[@s.text name="menu.faq"/]</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link [#if currentMenu=='manual']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/ceiba-manual/ceiba-consulta" target="_blank"><img src="${baseURL}/images/icons/usermanu.png">[@s.text name="menu.usermanual"/]</a>
