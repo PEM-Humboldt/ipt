@@ -38,7 +38,7 @@
                 <div id="associatedParty-item-${item_index}" class="item clearfix row g-3 mx-md-3 mx-1 border-bottom pb-3 mt-1">
                     <div class="columnLinks mt-3 d-flex justify-content-between">
                         <div>
-                            <a id="associatedParty-copyDetails-${item_index}" href="">[ ${copyLink?lower_case?cap_first} ]</a>
+                            <a id="associatedParty-copyDetails-${item_index}" href="">[ <@s.text name="eml.associatedParties.copyLink" />  ]</a>
                         </div>
                         <div>
                             <a id="associatedParty-removeLink-${item_index}" class="removeAssociatedPartyLink" href="">[ ${removeLink?lower_case?cap_first} ]</a>
@@ -117,7 +117,7 @@
         <div id="baseItem-associatedParty" class="item clearfix row g-3 mx-md-3 mx-1 border-bottom pb-3 mt-1" style="display:none;">
             <div class="columnLinks mt-3 d-flex justify-content-between">
                 <div>
-                    <a id="associatedParty-copyDetails" href="">[ ${copyLink}  ]</a>
+                    <a id="associatedParty-copyDetails" href="">[ <@s.text name="eml.associatedParties.copyLink" />  ]</a>
                 </div>
                 <div>
                     <a id="associatedParty-removeLink" class="removeAssociatedPartyLink" href="">[ ${removeLink?lower_case?cap_first} ]</a>
