@@ -1,3 +1,18 @@
+/*
+ * Copyright 2021 Global Biodiversity Information Facility (GBIF)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.gbif.ipt.action.portal;
 
 import org.gbif.api.model.common.DOI;
@@ -32,26 +47,25 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+
 import javax.validation.constraints.NotNull;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.google.common.base.Functions;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
-import com.google.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.xml.sax.SAXException;
+
+import com.google.inject.Inject;
 
 public class ResourceAction extends PortalBaseAction {
 
@@ -75,7 +89,7 @@ public class ResourceAction extends PortalBaseAction {
   private Map<String, String> frequencies;
   private Map<String, String> types;
   private int recordsPublishedForVersion;
-  private Map<String, Integer> recordsByExtensionForVersion = Maps.newHashMap();
+  private Map<String, Integer> recordsByExtensionForVersion = new HashMap<>();
   private String coreType;
   private String dwcaSizeForVersion;
   private String emlSizeForVersion;
@@ -120,7 +134,7 @@ public class ResourceAction extends PortalBaseAction {
    */
   private Eml loadEmlFromFile(String shortname, @NotNull BigDecimal version)
     throws IOException, SAXException, ParserConfigurationException {
-    Preconditions.checkNotNull(version);
+    Objects.requireNonNull(version);
     File emlFile = dataDir.resourceEmlFile(shortname, version);
     LOG.debug("Loading EML from file: " + emlFile.getAbsolutePath());
     InputStream in = new FileInputStream(emlFile);
@@ -179,7 +193,7 @@ public class ResourceAction extends PortalBaseAction {
    * known
    */
   private PublicationStatus getPublishedVersionsPublicationStatus(Resource resource, BigDecimal version) {
-    Preconditions.checkNotNull(version);
+    Objects.requireNonNull(version);
     List<VersionHistory> history = resource.getVersionHistory();
     if (!history.isEmpty()) {
       for (VersionHistory vh : history) {
@@ -315,7 +329,7 @@ public class ResourceAction extends PortalBaseAction {
 
     // ensure record counts by extension always exists, defaulting to empty map
     if (recordsByExtensionForVersion == null) {
-      Map<String, Integer> m = Maps.newHashMap();
+      Map<String, Integer> m = new HashMap<>();
       setRecordsByExtensionForVersion(m);
     }
 
@@ -331,11 +345,11 @@ public class ResourceAction extends PortalBaseAction {
       organizedCoverages = constructOrganizedTaxonomicCoverages(eml.getTaxonomicCoverages());
     }
     // roles list, derived from XML vocabulary, and displayed in drop-down where new contacts are created
-    roles = new LinkedHashMap<String, String>();
+    roles = new LinkedHashMap<>();
     roles.putAll(vocabManager.getI18nVocab(Constants.VOCAB_URI_ROLES, getLocaleLanguage(), false));
 
     // preservation methods list, derived from XML vocabulary, and displayed in drop-down on Collections Data Page.
-    preservationMethods = new LinkedHashMap<String, String>();
+    preservationMethods = new LinkedHashMap<>();
     preservationMethods
       .putAll(vocabManager.getI18nVocab(Constants.VOCAB_URI_PRESERVATION_METHOD, getLocaleLanguage(), false));
 
@@ -343,19 +357,19 @@ public class ResourceAction extends PortalBaseAction {
     languages = vocabManager.getI18nVocab(Constants.VOCAB_URI_LANGUAGE, getLocaleLanguage(), true);
 
     // countries list, derived from XML vocabulary, and displayed in drop-down where new contacts are created
-    countries = new LinkedHashMap<String, String>();
+    countries = new LinkedHashMap<>();
     countries.putAll(vocabManager.getI18nVocab(Constants.VOCAB_URI_COUNTRY, getLocaleLanguage(), true));
 
     // ranks list, derived from XML vocabulary, and displayed on Taxonomic Coverage Page
-    ranks = new LinkedHashMap<String, String>();
+    ranks = new LinkedHashMap<>();
     ranks.putAll(vocabManager.getI18nVocab(Constants.VOCAB_URI_RANKS, getLocaleLanguage(), false));
 
     // update frequencies list, derived from XML vocabulary, and displayed on Basic Metadata Page
-    frequencies = new LinkedHashMap<String, String>();
+    frequencies = new LinkedHashMap<>();
     frequencies.putAll(vocabManager.getI18nVocab(Constants.VOCAB_URI_UPDATE_FREQUENCIES, getLocaleLanguage(), false));
 
     // Dataset core type list, derived from XML vocabulary
-    types = new LinkedHashMap<String, String>();
+    types = new LinkedHashMap<>();
     types.putAll(vocabManager.getI18nVocab(Constants.VOCAB_URI_DATASET_TYPE, getLocaleLanguage(), false));
     types = MapUtils.getMapWithLowercaseKeys(types);
     coreType = (resource.getCoreType() != null && types.containsKey(resource.getCoreType().toLowerCase())) ? types
@@ -441,7 +455,7 @@ public class ResourceAction extends PortalBaseAction {
     copy.setEml(eml);
 
     // create new VersionHistory
-    List<VersionHistory> histories = Lists.newArrayList();
+    List<VersionHistory> histories = new ArrayList<>();
     histories.addAll(resource.getVersionHistory());
     copy.setVersionHistory(histories);
     VersionHistory history = new VersionHistory(nextVersion, releaseDate, PublicationStatus.PUBLIC);
@@ -557,7 +571,7 @@ public class ResourceAction extends PortalBaseAction {
    * @param coverages list of resource's TaxonomicCoverage
    */
   List<OrganizedTaxonomicCoverage> constructOrganizedTaxonomicCoverages(List<TaxonomicCoverage> coverages) {
-    List<OrganizedTaxonomicCoverage> organizedTaxonomicCoverages = new ArrayList<OrganizedTaxonomicCoverage>();
+    List<OrganizedTaxonomicCoverage> organizedTaxonomicCoverages = new ArrayList<>();
     for (TaxonomicCoverage coverage : coverages) {
       OrganizedTaxonomicCoverage organizedCoverage = new OrganizedTaxonomicCoverage();
       organizedCoverage.setDescription(coverage.getDescription());
@@ -578,12 +592,12 @@ public class ResourceAction extends PortalBaseAction {
    * @return list of OrganizedTaxonomicKeywords (one for each rank + unknown rank), or an empty list if none were added
    */
   private List<OrganizedTaxonomicKeywords> setOrganizedTaxonomicKeywords(List<TaxonKeyword> keywords) {
-    List<OrganizedTaxonomicKeywords> organizedTaxonomicKeywordsList = new ArrayList<OrganizedTaxonomicKeywords>();
+    List<OrganizedTaxonomicKeywords> organizedTaxonomicKeywordsList = new ArrayList<>();
 
     // also we want a unique set of names corresponding to empty rank
-    Set<String> uniqueNamesForEmptyRank = new HashSet<String>();
+    Set<String> uniqueNamesForEmptyRank = new HashSet<>();
 
-    ranks = new LinkedHashMap<String, String>();
+    ranks = new LinkedHashMap<>();
     ranks.putAll(vocabManager.getI18nVocab(Constants.VOCAB_URI_RANKS, getLocaleLanguage(), false));
 
     for (String rank : ranks.keySet()) {
@@ -781,10 +795,14 @@ public class ResourceAction extends PortalBaseAction {
    * @return map of record counts by extension for published version (specified from version parameter), sorted by
    * count then by extension name for uniqueness (as two extensions can have the same count)
    */
-  public ImmutableSortedMap<String, Integer> getRecordsByExtensionOrdered() {
-    return ImmutableSortedMap.copyOf(recordsByExtensionForVersion,
-      Ordering.natural().reverse().onResultOf(Functions.forMap(recordsByExtensionForVersion))
-        .compound(Ordering.<String> natural()));
+  public LinkedHashMap<String, Integer> getRecordsByExtensionOrdered() {
+    LinkedHashMap<String, Integer> result = new LinkedHashMap<>();
+    recordsByExtensionForVersion
+        .entrySet().stream()
+        .sorted(Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder()).thenComparing(Map.Entry.comparingByKey()))
+        .forEachOrdered(x -> result.put(x.getKey(), x.getValue()));
+
+    return result;
   }
 
   /**

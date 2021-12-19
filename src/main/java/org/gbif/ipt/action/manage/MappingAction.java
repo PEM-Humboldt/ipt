@@ -1,16 +1,18 @@
-/***************************************************************************
- * Copyright 2010 Global Biodiversity Information Facility Secretariat
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * http://www.apache.org/licenses/LICENSE-2.0
+/*
+ * Copyright 2021 Global Biodiversity Information Facility (GBIF)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- ***************************************************************************/
-
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.gbif.ipt.action.manage;
 
 import org.gbif.dwc.terms.Term;
@@ -37,20 +39,19 @@ import org.gbif.ipt.validation.ExtensionMappingValidator.ValidationStatus;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.google.inject.Inject;
 
 /**
  * A rather complex action that deals with a single mapping configuration.
@@ -82,9 +83,9 @@ public class MappingAction extends ManagerBaseAction {
   private final Comparator[] comparators = Comparator.values();
   private List<String[]> peek;
   private List<PropertyMapping> fields;
-  private Map<String, Integer> fieldsTermIndices = Maps.newHashMap();
-  private Map<String, List<PropertyMapping>> fieldsByGroup = Maps.newLinkedHashMap();
-  private final Map<String, Map<String, String>> vocabTerms = Maps.newHashMap();
+  private Map<String, Integer> fieldsTermIndices = new HashMap<>();
+  private Map<String, List<PropertyMapping>> fieldsByGroup = new LinkedHashMap<>();
+  private final Map<String, Map<String, String>> vocabTerms = new HashMap<>();
   private ExtensionProperty coreid;
   private ExtensionProperty datasetId;
   private Integer mid;
@@ -232,7 +233,7 @@ public class MappingAction extends ManagerBaseAction {
    * source data has no columns
    */
   public List<String> getNonMappedColumns() {
-    List<String> mapped = Lists.newArrayList();
+    List<String> mapped = new ArrayList<>();
 
     // return empty list if source data has no columns
     if (columns.isEmpty()) {
@@ -256,7 +257,7 @@ public class MappingAction extends ManagerBaseAction {
     }
 
     // return list all source columns excluding those mapped
-    List<String> nonMapped = Lists.newArrayList(columns);
+    List<String> nonMapped = new ArrayList<>(columns);
     nonMapped.removeAll(mapped);
     return nonMapped;
   }
@@ -265,7 +266,7 @@ public class MappingAction extends ManagerBaseAction {
    * @return list of groups in extension that are redundant (are already included in the core extension)
    */
   public List<String> getRedundantGroups() {
-    List<String> redundantGroups = new ArrayList<String>();
+    List<String> redundantGroups = new ArrayList<>();
     if (resource.getCoreRowType() != null && !resource.getCoreRowType()
       .equalsIgnoreCase(mapping.getExtension().getRowType())) {
       Extension core = extensionManager.get(resource.getCoreRowType());
@@ -291,7 +292,7 @@ public class MappingAction extends ManagerBaseAction {
    * @return the normalized column name, or null if the incoming name was null or empty
    */
   String normalizeColumnName(String col) {
-    if (!Strings.isNullOrEmpty(col)) {
+    if (StringUtils.isNotBlank(col)) {
       col = NORM_TERM.matcher(col.toLowerCase()).replaceAll("");
       if (col.contains(":")) {
         col = StringUtils.substringAfter(col, ":");
@@ -375,9 +376,9 @@ public class MappingAction extends ManagerBaseAction {
         mappingCoreid = new PropertyMapping();
         mappingCoreid.setTerm(coreid);
         mappingCoreid.setIndex(mapping.getIdColumn());
-        fields = new ArrayList<PropertyMapping>(mapping.getExtension().getProperties().size());
+        fields = new ArrayList<>(mapping.getExtension().getProperties().size());
       } else {
-        fields = new ArrayList<PropertyMapping>(mapping.getExtension().getProperties().size() -1);
+        fields = new ArrayList<>(mapping.getExtension().getProperties().size() -1);
       }
 
       // inspect source
@@ -397,7 +398,7 @@ public class MappingAction extends ManagerBaseAction {
           String group = ep.getGroup();
           if (group != null) {
             if (fieldsByGroup.get(group) == null) {
-              fieldsByGroup.put(group, new ArrayList<PropertyMapping>());
+              fieldsByGroup.put(group, new ArrayList<>());
             }
             fieldsByGroup.get(group).add(pm);
           }
@@ -478,7 +479,7 @@ public class MappingAction extends ManagerBaseAction {
       // save field mappings
       Set<PropertyMapping> mappedFields = new TreeSet<>();
       for (PropertyMapping f : fields) {
-        Integer index = MoreObjects.firstNonNull(f.getIndex(), -9999);
+        int index = f.getIndex() != null ? f.getIndex() : -9999;
         if (index >= 0 || StringUtils.trimToNull(f.getDefaultValue()) != null) {
           mappedFields.add(f);
         }
@@ -489,7 +490,7 @@ public class MappingAction extends ManagerBaseAction {
           resource.getCoreRowType().equalsIgnoreCase(mapping.getExtension().getRowType())) {
         mappingCoreid.setIndex(mapping.getIdColumn());
         mappingCoreid.setDefaultValue(mapping.getIdSuffix());
-        Integer index = MoreObjects.firstNonNull(mappingCoreid.getIndex(), -9999);
+        int index = mappingCoreid.getIndex() != null ? mappingCoreid.getIndex() : -9999;
         if (index >= 0 || StringUtils.trimToNull(mappingCoreid.getDefaultValue()) != null) {
           mappedFields.add(mappingCoreid);
         }

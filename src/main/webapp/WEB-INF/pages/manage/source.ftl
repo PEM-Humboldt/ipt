@@ -4,8 +4,7 @@
 <script src="${baseURL}/js/jconfirmation.jquery.js"></script>
 <script>
     $(document).ready(function(){
-        initHelp();
-        $('.confirm').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name="manage.source.confirmation.message"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>"});
+        $('.confirm').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name="manage.source.confirmation.message"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>", buttonType: "danger"});
         $("#peekBtn").click(function(e) {
             e.preventDefault();
             $("#modalcontent").load("peek.do?r=${resource.shortname}&id=${id!}");
@@ -50,7 +49,7 @@
 
             <#include "/WEB-INF/pages/inc/action_alerts.ftl">
 
-            <h5 class="border-bottom pb-2 mb-2 mx-lg-4 mx-2 pt-2 text-gbif-header text-center">
+            <h5 class="border-bottom pb-2 mb-2 mx-lg-4 mx-2 pt-2 text-gbif-header fw-400 text-center">
                 <@s.text name='manage.source.title'/>
                 <a href="resource.do?r=${resource.shortname}" title="${resource.title!resource.shortname}">${resource.title!resource.shortname}</a>
             </h5>

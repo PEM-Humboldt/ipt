@@ -1,7 +1,7 @@
 <!-- Represents source data and mapping data sections on resource overview page -->
 <div class="my-3 p-3 bg-body rounded shadow-sm" id="sources">
     <div class="titleOverview">
-        <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 text-gbif-header">
+        <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 text-gbif-header fw-400">
             <#assign sourcesInfo>
                 <@s.text name='manage.overview.source.description1'/>&nbsp;<@s.text name='manage.overview.source.description2'/>&nbsp;<@s.text name='manage.overview.source.description3'><@s.param><@s.text name='button.add'/></@s.param></@s.text></br></br><@s.text name='manage.overview.source.description4'><@s.param><@s.text name="button.connectDB"/></@s.param></@s.text></br></br><@s.text name='manage.overview.source.description5'/>
             </#assign>
@@ -96,7 +96,8 @@
                         <div class="row">
                             <div class="col-12">
                                 <@s.file name="file" cssClass="form-control form-control-sm my-1" cssStyle="display: none;" key="manage.resource.create.file"/>
-                                <input type="url" id="url" name="url" class="form-control form-control-sm my-1" style="display: none">
+                                <input type="text" id="sourceName" name="sourceName" class="form-control form-control-sm my-1" placeholder="<@s.text name='source.name'/>" style="display: none">
+                                <input type="url" id="url" name="url" class="form-control form-control-sm my-1" placeholder="URL" style="display: none">
                             </div>
                             <div class="col-12">
                                 <@s.submit name="add" cssClass="btn btn-sm btn-outline-gbif-primary my-1" key="button.connect"/>
@@ -118,7 +119,7 @@
 </div>
 
 <div class="my-3 p-3 bg-body rounded shadow-sm" id="mappings">
-    <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 text-gbif-header">
+    <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 text-gbif-header fw-400">
         <#assign mappingsInfo>
             <@s.text name='manage.overview.source.description1'/>&nbsp;<@s.text name='manage.overview.source.description2'/>&nbsp;<@s.text name='manage.overview.source.description3'><@s.param><@s.text name='button.add'/></@s.param></@s.text></br></br><@s.text name='manage.overview.source.description4'><@s.param><@s.text name="button.connectDB"/></@s.param></@s.text></br></br><@s.text name='manage.overview.source.description5'/><@s.text name='manage.overview.DwC.Mappings.coretype.description1'/></br></br><@s.text name='manage.overview.DwC.Mappings.coretype.description2'/></br></br><@s.text name='manage.overview.DwC.Mappings.coretype.description3'/></br></br><@s.text name='manage.overview.DwC.Mappings.coretype.description4'/>
         </#assign>

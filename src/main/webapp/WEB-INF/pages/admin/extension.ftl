@@ -7,7 +7,7 @@
     <div class="my-3 p-3 bg-body rounded shadow-sm">
         <#include "/WEB-INF/pages/inc/action_alerts.ftl">
 
-        <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header text-center">
+        <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header fw-400 text-center">
             <@s.text name="admin.extension.title"/> ${extension.title}
         </h5>
 
@@ -93,7 +93,7 @@
     </div>
 
     <div class="my-3 p-3 bg-body rounded shadow-sm">
-        <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header">
+        <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header fw-400">
             <@s.text name="admin.extension.properties"/>
         </h5>
 
@@ -135,7 +135,7 @@
                             <div class="details table-responsive">
                                 <table>
                                     <tr><th class="pe-md-4 pe-2"><@s.text name="extension.prop.qname"/></th><td>${p.qualname}</td></tr>
-                                    <tr><th class="pe-md-4 pe-2"><@s.text name="basic.namespace"/></th><td>${p.namespace}</td></tr>
+                                    <tr><th class="pe-md-4 pe-2"><@s.text name="basic.namespace"/></th><td>${p.namespace()}</td></tr>
                                     <tr><th class="pe-md-4 pe-2"><@s.text name="extension.prop.group"/></th><td>${p.group!}</td></tr>
                                     <tr><th class="pe-md-4 pe-2"><@s.text name="extension.prop.type"/></th><td>${p.type}</td></tr>
                                     <tr><th class="pe-md-4 pe-2"><@s.text name="extension.prop.required"/></th><td>${p.required?string}</td></tr>

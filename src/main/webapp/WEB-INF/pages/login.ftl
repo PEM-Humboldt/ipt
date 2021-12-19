@@ -10,7 +10,7 @@
 
         <#include "/WEB-INF/pages/inc/action_alerts_without_warnings.ftl">
 
-        <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header text-center">
+        <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header fw-400 text-center">
             <@s.text name="login.title"/>
         </h5>
 
@@ -39,7 +39,7 @@
                 </#if>
 
                 <div class="col-12 pt-3">
-                    <@s.submit cssClass="btn btn-outline-gbif-primary w-100" name="login" key="portal.login"/>
+                    <@s.submit cssClass="btn btn-outline-gbif-primary w-100 text-capitalize" name="login" key="portal.login"/>
                 </div>
             </div>
         </form>

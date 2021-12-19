@@ -5,16 +5,16 @@
   <parent>
     <groupId>org.gbif</groupId>
     <artifactId>motherpom</artifactId>
-    <version>37</version>
+    <version>55</version>
   </parent>
 
   <artifactId>ipt</artifactId>
-  <version>2.5.0-CEIBA</version>
+  <version>2.5.4-CEIBA</version>
   <packaging>war</packaging>
 
   <name>IPT</name>
   <description>The GBIF Integrated Publishing Toolkit</description>
-  <url>https://github.com/gbif/${project.artifactId}</url>
+  <url>https://github.com/gbif/ipt</url>
 
   <!--
    Default settings used mainly for development.
@@ -37,28 +37,31 @@
     <!-- The datadir for tests that use a guice injected DataDir object -->
     <test.datadir>/tmp/test-datadir</test.datadir>
 
-    <jdkLevel>1.8</jdkLevel>
+    <!-- GBIF dependencies -->
+    <dwc-api.version>1.34</dwc-api.version>
+    <dwca-io.version>2.11</dwca-io.version>
+    <gbif-api.version>0.155</gbif-api.version>
+    <gbif-common.version>0.52</gbif-common.version>
+    <gbif-doi.version>2.16</gbif-doi.version>
+    <gbif-metadata-profile.version>1.3</gbif-metadata-profile.version>
+    <gbif-parsers.version>0.56</gbif-parsers.version>
+    <gbif-registry-metadata.version>3.71</gbif-registry-metadata.version>
+    <gbif-httputils.version>1.1</gbif-httputils.version>
 
+    <!-- Third party dependencies -->
     <apache-poi.version>3.17</apache-poi.version>
     <commons-digester.version>2.1</commons-digester.version>
-    <commons-io.version>2.5</commons-io.version>
+    <commons-io.version>2.7</commons-io.version>
     <commons-lang3.version>3.6</commons-lang3.version>
+    <commons-collections4.version>4.4</commons-collections4.version>
     <commons-validator.version>1.6</commons-validator.version>
-    <dwc-api.version>1.17</dwc-api.version>
-    <dwca-io.version>1.31</dwca-io.version>
-    <freemarker.version>2.3.26-incubating</freemarker.version>
-    <gbif-api.version>0.82</gbif-api.version>
-    <gbif-common-ws.version>0.41</gbif-common-ws.version>
-    <gbif-common.version>0.38</gbif-common.version>
-    <gbif-doi.version>2.9</gbif-doi.version>
-    <gbif-metadata-profile.version>1.1.2</gbif-metadata-profile.version>
-    <gbif-parsers.version>0.42</gbif-parsers.version>
+    <commons-text.version>1.9</commons-text.version>
+    <freemarker.version>2.3.31</freemarker.version>
     <gson.version>2.8.2</gson.version>
     <guava.version>20.0</guava.version>
     <guice.version>4.2.0</guice.version>
-    <httpclient.version>4.3.6</httpclient.version>
-    <httpcore.version>4.3.3</httpcore.version>
-    <httputils.version>0.10</httputils.version>
+    <httpclient.version>4.5.13</httpclient.version>
+    <httpcore.version>4.4.13</httpcore.version>
     <itext.version>2.1.7</itext.version>
     <javassist.version>3.12.1.GA</javassist.version>
     <javax.mail.version>1.4.7</javax.mail.version>
@@ -66,9 +69,9 @@
     <jetty-maven-plugin.version>9.4.7.v20170914</jetty-maven-plugin.version>
     <jsp-api.version>2.0</jsp-api.version>
     <jsr305.version>3.0.2</jsr305.version>
-    <junit.version>4.12</junit.version>
+    <junit.version>5.8.0</junit.version>
     <log4j.version>2.13.3</log4j.version>
-    <mockito-all.version>1.10.19</mockito-all.version>
+    <mockito.version>3.12.4</mockito.version>
     <owasp-java-html-sanitizer.version>20170515.1</owasp-java-html-sanitizer.version>
     <servlet-api.version>3.0.1</servlet-api.version>
     <slf4j.version>1.7.26</slf4j.version>
@@ -76,7 +79,7 @@
     <validation-api.version>2.0.0.Final</validation-api.version>
     <!-- NB XStream does not use semantic versioning.  Take care when upgrading, as we need to
          ensure the IPT can still load existing resource.xml and other configuration files -->
-    <xstream.version>1.4.12</xstream.version>
+    <xstream.version>1.4.18</xstream.version>
 
     <!-- JDBC drivers -->
     <jtds.version>1.3.1</jtds.version>
@@ -84,6 +87,10 @@
     <mysql-connector-java.version>8.0.25</mysql-connector-java.version>
     <ojdbc.version>21.1.0.0</ojdbc.version>
     <postgresql.version>42.2.20</postgresql.version>
+
+    <!-- Plugins -->
+    <buildnumber-maven-plugin.version>1.2</buildnumber-maven-plugin.version>
+    <native2ascii-maven-plugin.version>2.0.1</native2ascii-maven-plugin.version>
   </properties>
 
   <developers>
@@ -92,8 +99,12 @@
       <email>trobertson@gbif.org</email>
     </developer>
     <developer>
-      <name>Markus Döring</name>
-      <email>mdoering@gbif.org</email>
+      <name>Matt Blissett</name>
+      <email>mblissett@gbif.org</email>
+    </developer>
+    <developer>
+      <name>Mikhail Podolskiy</name>
+      <email>mpodolskiy@gbif.org</email>
     </developer>
   </developers>
 
@@ -143,6 +154,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
+        <version>${maven-release-plugin.version}</version>
         <configuration>
           <useReleaseProfile>false</useReleaseProfile>
           <arguments>-Pgbif-release,release</arguments>
@@ -186,7 +198,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>buildnumber-maven-plugin</artifactId>
-        <version>1.2</version>
+        <version>${buildnumber-maven-plugin.version}</version>
         <executions>
           <execution>
             <phase>validate</phase>
@@ -206,7 +218,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>native2ascii-maven-plugin</artifactId>
-        <version>2.0.1</version>
+        <version>${native2ascii-maven-plugin.version}</version>
         <executions>
           <execution>
             <id>utf8-to-latin1</id>
@@ -228,25 +240,16 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-eclipse-plugin</artifactId>
-        <configuration>
-          <downloadSources>true</downloadSources>
-          <additionalBuildcommands>
-            <buildcommand>com.atlassw.tools.eclipse.checkstyle.CheckstyleBuilder</buildcommand>
-          </additionalBuildcommands>
-          <additionalConfig>
-            <file>
-              <name>.checkstyle</name>
-              <url>http://rs.gbif.org/conventions/java-style-config.xml</url>
-            </file>
-          </additionalConfig>
-        </configuration>
-      </plugin>
-      <!-- commented out only to perform release: runs integration tests (*IT) during verify -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven-failsafe-plugin.version}</version>
       </plugin>
+
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>${spotless-maven-plugin.version}</version>
+      </plugin>
+
     </plugins>
 
     <resources>
@@ -272,6 +275,7 @@
         <filtering>false</filtering>
       </resource>
     </resources>
+
     <testResources>
       <!-- with filtering copying big test files becomes VERY slow -->
       <testResource>
@@ -318,7 +322,7 @@
     <dependency>
       <groupId>org.gbif</groupId>
       <artifactId>gbif-httputils</artifactId>
-      <version>${httputils.version}</version>
+      <version>${gbif-httputils.version}</version>
     </dependency>
     <dependency>
       <groupId>org.gbif</groupId>
@@ -329,12 +333,18 @@
       <groupId>org.gbif</groupId>
       <artifactId>gbif-parsers</artifactId>
       <version>${gbif-parsers.version}</version>
+      <!-- Exclude name-parser, not used in the IPT -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.gbif</groupId>
+          <artifactId>name-parser-v1</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
-    <!-- XSS filtering -->
     <dependency>
-      <groupId>org.gbif</groupId>
-      <artifactId>gbif-common-ws</artifactId>
-      <version>${gbif-common-ws.version}</version>
+      <groupId>org.gbif.registry</groupId>
+      <artifactId>registry-metadata</artifactId>
+      <version>${gbif-registry-metadata.version}</version>
     </dependency>
     <dependency>
       <groupId>org.gbif</groupId>
@@ -427,6 +437,11 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
+    </dependency>
     <!-- Used to validate email addresses -->
     <dependency>
       <groupId>javax.mail</groupId>
@@ -439,15 +454,6 @@
       <artifactId>javax.servlet-api</artifactId>
       <version>${servlet-api.version}</version>
       <scope>provided</scope>
-    </dependency>
-
-    <!--
-      Warning!! Guava is highly fragile so be very sure that all environments are tested thoroughly before changing.
-    -->
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
     </dependency>
 
     <!-- Accessing different external databases to suck in data alternatively to text files -->
@@ -513,7 +519,7 @@
     </dependency>
 
 
-    <!-- Commons lang provides utilities for (e.g.) simple hashcode building -->
+    <!-- Commons lang utilities -->
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
@@ -525,6 +531,19 @@
       <artifactId>commons-validator</artifactId>
       <version>${commons-validator.version}</version>
     </dependency>
+    <!-- Commons collections, for multi value maps -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-collections4</artifactId>
+      <version>${commons-collections4.version}</version>
+    </dependency>
+    <!-- Commons text, for WordUtils etc. -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-text</artifactId>
+      <version>${commons-text.version}</version>
+    </dependency>
+
 
     <!-- native java io cannot handle redirects -->
     <dependency>
@@ -552,7 +571,6 @@
 
     <!--
       XStream for resource config data persistence (could be replaced by JAXB in the future)
-      Version frozen at 1.4.8 - do not upgrade! See issue #1297
     -->
     <dependency>
       <groupId>com.thoughtworks.xstream</groupId>
@@ -597,15 +615,21 @@
 
     <!-- testing -->
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
       <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
-      <artifactId>mockito-all</artifactId>
-      <version>${mockito-all.version}</version>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
 
