@@ -191,30 +191,19 @@
 
         <div class="container p-3">
 
-    <div id="bbox" class="row mx-md-3 mx-1 g-3">
-        <div class="col-12">
-            <@checkbox name="globalCoverage" help="i18n" i18nkey="eml.geospatialCoverages.globalCoverage"/>
-        </div>
-        <div id="coordinates" class="row g-3 mt-0">
-            <div class="col-md-6">
-                <@input name="eml.geospatialCoverages[0].boundingCoordinates.min.longitude" value="${(eml.geospatialCoverages[0].boundingCoordinates.min.longitude)!}" help="i18n" i18nkey="eml.geospatialCoverages.boundingCoordinates.min.longitude" requiredField=true />
+            <div class="text-center">
+                <h5 class="pt-2 text-gbif-header fs-4 fw-400 text-center">
+                    <@s.text name='manage.metadata.geocoverage.title'/>
+                </h5>
             </div>
-            <div class="col-md-6">
-                <@input name="eml.geospatialCoverages[0].boundingCoordinates.max.longitude" value="${(eml.geospatialCoverages[0].boundingCoordinates.max.longitude)!}" help="i18n" i18nkey="eml.geospatialCoverages.boundingCoordinates.max.longitude" requiredField=true />
-            </div>
-            <div class="col-md-6">
-                <@input name="eml.geospatialCoverages[0].boundingCoordinates.min.latitude" value="${(eml.geospatialCoverages[0].boundingCoordinates.min.latitude)!}" help="i18n" i18nkey="eml.geospatialCoverages.boundingCoordinates.min.latitude" requiredField=true />
-            </div>
-            <div class="col-md-6">
-                <@input name="eml.geospatialCoverages[0].boundingCoordinates.max.latitude" value="${(eml.geospatialCoverages[0].boundingCoordinates.max.latitude)!}" help="i18n" i18nkey="eml.geospatialCoverages.boundingCoordinates.max.latitude" requiredField=true />
+
+            <div class="text-center fs-smaller">
+                <a href="resource.do?r=${resource.shortname}" title="${resource.title!resource.shortname}">${resource.title!resource.shortname}</a>
             </div>
         </div>
     </div>
 
-    <div class="row g-3 mx-md-3 mx-1 mt-2">
-        <div class="col-12">
-            <@text name="eml.geospatialCoverages[0].description" value="${(eml.geospatialCoverages[0].description)!}" help="i18n" i18nkey="eml.geospatialCoverages.description" requiredField=true minlength=2 />
-        </div>
+    <#include "metadata_section_select.ftl"/>
 
     <div class="container-fluid bg-body">
         <div class="container bd-layout">

@@ -37,6 +37,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.util.Strings;
 
 import com.google.inject.Inject;
 
@@ -92,7 +93,7 @@ public class ResourceFileAction extends PortalBaseAction {
         if ((user.getEmail().endsWith(Constants.HUMBOLDT_MAIL_DOMAIN) &&
         !eml.getIntellectualRights().equals(getText("eml.intellectualRights.license.text.internal"))) ||
           !user.getEmail().endsWith(Constants.HUMBOLDT_MAIL_DOMAIN)){
-            if (!Strings.isNullOrEmpty(user.getGrantedAccessTo())){
+            if (!Strings.isEmpty(user.getGrantedAccessTo())){
               if (!Arrays.asList(user.getGrantedAccessTo().split(", ")).contains(resource.getShortname())){
                 return NOT_ALLOWED;
               }

@@ -972,6 +972,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     return result;
   }
 
+  @Override
   public List<Resource> list(List<String> intellectualRightsList) {
     List<Resource> result = new ArrayList<Resource>();
     for (Resource r : resources.values()) {
