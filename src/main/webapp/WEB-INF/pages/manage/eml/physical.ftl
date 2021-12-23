@@ -33,6 +33,9 @@
 
             <div class="mx-md-4 mx-2 mt-2">
                 <@input name="eml.distributionUrl" help="i18n" i18nkey="eml.distributionUrl" type="url" />
+                <div class="text-center fs-smaller">
+                    <a href="resource.do?r=${resource.shortname}" title="${resource.title!resource.shortname}">${resource.title!resource.shortname}</a>
+                </div>
             </div>
         </div>
 

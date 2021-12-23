@@ -37,14 +37,6 @@
 
         <#include "metadata_section_select.ftl"/>
 
-            <div class="row g-3 mx-md-4 mx-2 mt-1 mb-2">
-                <@input name="eml.project.title" requiredField=true help="i18n"/>
-                <@input name="eml.project.identifier" help="i18n"/>
-                <@text name="eml.project.description" help="i18n"/>
-                <@text name="eml.project.funding" help="i18n"/>
-                <@text name="eml.project.studyAreaDescription.descriptorValue" help="i18n" />
-                <@text name="eml.project.designDescription" help="i18n" />
-            </div>
         <div class="container-fluid bg-body">
             <div class="container bd-layout">
 

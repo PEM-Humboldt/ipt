@@ -102,6 +102,12 @@
                     </div>
                     <div class="col-lg-6">
                         <@select name="eml.associatedParties[${item_index}].role" i18nkey="eml.associatedParties.role" help="i18n" value="${eml.associatedParties[item_index].role!}" options=roles />
+        <div class="container-fluid bg-body">
+            <div class="container bd-layout">
+
+                <main class="bd-main bd-main-right">
+                    <div class="bd-toc mt-4 mb-5 ps-3 mb-lg-5 text-muted">
+                        <#include "eml_sidebar.ftl"/>
                     </div>
 
                     <div class="bd-content ps-lg-4">
@@ -186,6 +192,14 @@
                             <div class="addNew col-12 mt-1">
                                 <a id="plus-associatedParty" href="">${addLink?lower_case?cap_first}</a>
                             </div>
+
+                    <div id='buttons' class="buttons col-12 mt-3">
+                        <@s.submit cssClass="button btn btn-outline-gbif-primary" name="save" key="button.save"/>
+                        <@s.submit cssClass="button btn btn-outline-secondary" name="cancel" key="button.back"/>
+                    </div>
+
+                    <!-- internal parameter -->
+                    <input name="r" type="hidden" value="${resource.shortname}" />
 
         <div id="baseItem-associatedParty" class="item clearfix row g-3 mx-md-3 mx-1 border-bottom pb-3 mt-1" style="display:none;">
             <div class="columnLinks mt-3 d-flex justify-content-between">

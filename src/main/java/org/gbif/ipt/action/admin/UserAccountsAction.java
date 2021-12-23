@@ -43,6 +43,7 @@ import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.service.manage.ResourceManager;
 import java.util.Arrays;
+import com.google.inject.Inject;
 
 /**
  * The Action responsible for all user input relating to the user accounts in the IPT.

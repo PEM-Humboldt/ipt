@@ -226,13 +226,10 @@
                             <@s.text name='portal.resource.latest.version'/>
                         </#if>
 
-                            <#if action.getDefaultOrganisation()?? && resource.organisation.key.toString() == action.getDefaultOrganisation().key.toString()>
-                                ${publishedOnText?lower_case}&nbsp;<span property="dc:issued">${eml.pubDate?date?string.long}</span>
-                            <#else>
-                                <@s.text name='portal.resource.publishedOn'><@s.param>${resource.organisation.name}</@s.param></@s.text> <span property="dc:issued">${eml.pubDate?date?string.long_short}</span>
-                                <span property="dc:publisher" style="display: none">${resource.organisation.name}</span>
-                            </#if>
-
+                        <#if action.getDefaultOrganisation()?? && resource.organisation.key.toString() == action.getDefaultOrganisation().key.toString()>
+                            ${publishedOnText?lower_case}&nbsp;<span property="dc:issued">${eml.pubDate?date?string.long}</span>
+                            <br>
+                            <em class="text-gbif-danger"><@s.text name='manage.home.not.registered.verbose'/></em>
                         <#else>
                             <@s.text name='portal.resource.publishedOn'><@s.param>${resource.organisation.name}</@s.param></@s.text> <span property="dc:issued">${eml.pubDate?date?string.long_short}</span>
                             <span property="dc:publisher" style="display: none">${resource.organisation.name}</span>
@@ -348,21 +345,6 @@
                                 </div>
                             </#if>
 
-                            <#if eml.intellectualRights?has_content>
-                                <div>
-                                    <dt><@s.text name='portal.resource.license'/>:</dt>
-                                    <dd>
-                                        <#if eml.intellectualRights.contains("CC-BY-NC")>
-                                            <a href="http://creativecommons.org/licenses/by-nc/4.0/legalcode" target="_blank">CC-BY-NC 4.0</a>
-                                        <#elseif eml.intellectualRights.contains("CC-BY")>
-                                            <a href="http://creativecommons.org/licenses/by/4.0/legalcode" target="_blank">CC-BY 4.0</a>
-                                        <#elseif eml.intellectualRights.contains("CC0")>
-                                            <a href="http://creativecommons.org/publicdomain/zero/1.0/legalcode" target="_blank">CC0 1.0</a>
-                                        </#if>
-                                    </dd>
-                                </div>
-                            </#if>
-
                             <div>
                                 <#if eml.citation?? && (eml.citation.citation?has_content || eml.citation.identifier?has_content)>
                                     <a href="#anchor-citation" class="doi" dir="ltr">
@@ -417,21 +399,80 @@
                         <#if (resourceDescriptionLength>maxDescriptionLength) || (eml.description?size>1)>
                             <li><a href="#anchor-description" class="sidebar-navigation-link"><@s.text name='portal.resource.description'/></a></li>
                         </#if>
-                        <@s.text name='portal.resource.cite.help'/>:
-                    </p>
-                    <p property="dc:bibliographicCitation" class="howtocite mt-3 p-3 border overflow-x-auto">
-                        <@textWithFormattedLink eml.citation.citation/>
-                    </p>
-                </div>
+                         <#if resource.lastPublished??>
+                            <#if metadataOnly != true>
+                                <li><a href="#anchor-dataRecords" class="sidebar-navigation-link"><@s.text name='portal.resource.dataRecords'/></a></li>
+                            </#if>
+                            <li><a href="#anchor-downloads" class="sidebar-navigation-link"><@s.text name='portal.resource.downloads'/></a></li>
+                            <#if resource.versionHistory??>
+                                <li><a href="#anchor-versions" class="sidebar-navigation-link"><@s.text name='portal.resource.versions'/></a></li>
+                            </#if>
+                            <#if eml.citation?? && (eml.citation.citation?has_content || eml.citation.identifier?has_content)>
+                                <li><a href="#anchor-citation" class="sidebar-navigation-link"><@s.text name='portal.resource.cite.howTo'/></a></li>
+                            </#if>
+                            <#if eml.intellectualRights?has_content>
+                                <li><a href="#anchor-rights" class="sidebar-navigation-link"><@s.text name='eml.intellectualRights.simple'/></a></li>
+                            </#if>
+                            <li><a href="#anchor-gbif" class="sidebar-navigation-link"><@s.text name='portal.resource.organisation.key'/></a></li>
+                            <#if eml.subject?has_content>
+                                <li><a href="#anchor-keywords" class="sidebar-navigation-link"><@s.text name='portal.resource.summary.keywords'/></a></li>
+                            </#if>
+                            <#if (eml.physicalData?size > 0 )>
+                                <li><a href="#anchor-external" class="sidebar-navigation-link"><@s.text name='manage.metadata.physical.alternativeTitle'/></a></li>
+                            </#if>
+                            <#if (eml.contacts?size>0) || (eml.creators?size>0) || (eml.metadataProviders?size>0) || (eml.associatedParties?size>0)>
+                                <li><a href="#anchor-contacts" class="sidebar-navigation-link"><@s.text name='portal.resource.contacts'/></a></li>
+                            </#if>
+                            <#if eml.geospatialCoverages[0]??>
+                                <li><a href="#anchor-geospatial" class="sidebar-navigation-link"><@s.text name='portal.resource.summary.geocoverage'/></a></li>
+                            </#if>
+                            <#if ((organizedCoverages?size > 0))>
+                                <li><a href="#anchor-taxanomic" class="sidebar-navigation-link"><@s.text name='manage.metadata.taxcoverage.title'/></a></li>
+                            </#if>
+                            <#if ((eml.temporalCoverages?size > 0))>
+                                <li><a href="#anchor-temporal" class="sidebar-navigation-link"><@s.text name='manage.metadata.tempcoverage.title'/></a></li>
+                            </#if>
+                            <#if eml.project?? && eml.project.title?has_content>
+                                <li><a href="#anchor-project" class="sidebar-navigation-link"><@s.text name='manage.metadata.project.title'/></a></li>
+                            </#if>
+                            <#if eml.studyExtent?has_content || eml.sampleDescription?has_content || eml.qualityControl?has_content || (eml.methodSteps?? && (eml.methodSteps?size>=1) && eml.methodSteps[0]?has_content) >
+                                <li><a href="#anchor-methods" class="sidebar-navigation-link"><@s.text name='manage.metadata.methods.title'/></a></li>
+                            </#if>
+                            <#if eml.collections?? && (eml.collections?size > 0) && eml.collections[0].collectionName?has_content >
+                                <li><a href="#anchor-collection" class="sidebar-navigation-link"><@s.text name='manage.metadata.collections.title'/></a></li>
+                            </#if>
+                            <#if eml.bibliographicCitationSet?? && (eml.bibliographicCitationSet.bibliographicCitations?has_content)>
+                                <li><a href="#anchor-reference" class="sidebar-navigation-link"><@s.text name='manage.metadata.citations.bibliography'/></a></li>
+                            </#if>
+                        </#if>
+                        <li><a href="#anchor-additional" class="sidebar-navigation-link"><@s.text name='manage.metadata.additional.title'/></a></li>
+                    </ul>
+                </nav>
             </div>
-        </#if>
 
-        <!-- Keywords section -->
-        <#if eml.subject?has_content>
-            <div id="keywords" class="my-3 p-3 bg-body rounded shadow-sm">
-                <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header">
-                    <@s.text name='portal.resource.summary.keywords'/>
-                </h5>
+            <div class="bd-content ps-lg-4">
+                <#if (resourceDescriptionLength>maxDescriptionLength) || (eml.description?size>1)>
+                    <span class="anchor anchor-home-resource-page" id="anchor-description"></span>
+                    <div id="description" class="mt-5 section">
+                        <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fw-400">
+                            <@s.text name='portal.resource.description'/>
+                        </h4>
+                        <div property="dc:abstract" class="mt-3 overflow-x-auto">
+                            <#if (eml.description?size>0)>
+                                <#list eml.description as para>
+                                    <#if para?has_content>
+                                        <p>
+                                            <@para?interpret />
+                                        </p>
+                                    </#if>
+                                </#list>
+                            <#else>
+                                <p><@s.text name='portal.resource.no.description'/></p>
+                            </#if>
+                        </div>
+                    </div>
+                </#if>
+
 
                 <!-- Dataset must have been published for versions, downloads, and how to cite sections to show -->
                 <#if resource.lastPublished??>
@@ -544,7 +585,7 @@
                                 </tr>
                             </table>
                         </div>
-                    </div>
+                    </#if>
 
                     <!-- versions section -->
                     <#if resource.versionHistory??>
