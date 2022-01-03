@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>ipt</artifactId>
-  <version>2.5.6-SNAPSHOT</version>
+  <version>2.5.6-CEIBA</version>
   <packaging>war</packaging>
 
   <name>IPT</name>
@@ -107,6 +107,10 @@
       <name>Mikhail Podolskiy</name>
       <email>mpodolskiy@gbif.org</email>
     </developer>
+    <developer>
+      <name>Angela Devia</name>
+      <email>adevia@humboldt.org.co</email>
+    </developer>
   </developers>
 
   <mailingLists>
@@ -128,7 +132,7 @@
 
   <issueManagement>
     <system>GitHub</system>
-    <url>https://github.com/gbif/ipt/issues</url>
+    <url>https://github.com/PEM-Humboldt/ipt/issues</url>
   </issueManagement>
 
   <ciManagement>
@@ -148,7 +152,7 @@
   </repositories>
 
   <build>
-    <finalName>ipt-${project.version}-r${buildNumber}</finalName>
+    <finalName>ipt-${project.version}</finalName>
     <defaultGoal>jetty:run</defaultGoal>
     <plugins>
 
