@@ -29,11 +29,18 @@ import org.gbif.ipt.validation.UserValidator;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
 
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.RandomStringGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import org.gbif.ipt.config.Constants;
+import org.gbif.ipt.model.Resource;
+import org.gbif.ipt.service.manage.ResourceManager;
+import java.util.Arrays;
 
 import com.google.inject.Inject;
 
@@ -55,18 +62,23 @@ public class UserAccountsAction extends POSTAction {
 
   private final UserAccountManager userManager;
   private final UserValidator validator = new UserValidator();
+  private final ResourceManager resourceManager;
 
   private User user;
   private String password2;
   private boolean resetPassword;
   private boolean newUser;
   private List<User> users;
+  private List<Resource> restrictedResourcesForAllButIAvHUsers;
+  private List<Resource> restrictedResourcesForIAvHUsers;
 
   @Inject
-  public UserAccountsAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
-    UserAccountManager userManager) {
+  public UserAccountsAction(SimpleTextProvider textProvider, 
+      AppConfig cfg, RegistrationManager registrationManager, 
+      ResourceManager resourceManager, UserAccountManager userManager) {
     super(textProvider, cfg, registrationManager);
     this.userManager = userManager;
+    this.resourceManager = resourceManager;
   }
 
   @Override
@@ -117,6 +129,20 @@ public class UserAccountsAction extends POSTAction {
     return users;
   }
 
+  /**
+   * @return the restricted resources for all but IAvH users
+   */
+  public List<Resource> getRestrictedResourcesForAllButIAvHUsers() {
+    return restrictedResourcesForAllButIAvHUsers;
+  }
+
+  /**
+   * @return the restricted resources for IAvH users
+   */
+  public List<Resource> getRestrictedResourcesForIAvHUsers() {
+    return restrictedResourcesForIAvHUsers;
+  }
+
   public String list() {
     users = userManager.list();
     return SUCCESS;
@@ -150,10 +176,38 @@ public class UserAccountsAction extends POSTAction {
         LOG.error("An exception occurred while retrieving user: " + e.getMessage(), e);
       }
     }
+    List<String> intellectualRightsListForIAvHUsers = Arrays.asList(getText("eml.intellectualRights.license.text.temporalRestriction"), getText("eml.intellectualRights.license.text.internalNotification"));
+    List<String> intellectualRightsListForAllButIAvHUsers = Arrays.asList(getText("eml.intellectualRights.license.text.internal"));
+    restrictedResourcesForIAvHUsers = resourceManager.list(intellectualRightsListForIAvHUsers);
+    restrictedResourcesForAllButIAvHUsers = resourceManager.list(intellectualRightsListForAllButIAvHUsers);
   }
 
   @Override
   public String save() {
+
+    List<Resource> resources = resourceManager.list();
+    String[] accessTo = req.getParameterValues("user.grantedAccessTo");
+    if (accessTo != null) {
+      for (String str : accessTo) {
+
+        Resource toUpdate = resourceManager.get(str);
+
+        // remove from local resource list all resources to update to avoid replacing managers
+        resources.remove(toUpdate);
+
+        toUpdate.addManager(userManager.get(user.getEmail()));
+        resourceManager.save(toUpdate);
+      }
+
+      // Remove from local resources list this user selected
+      for (Resource r : resources) {
+        if (r.getManagers().contains(user)){
+          r.getManagers().remove(user);
+          resourceManager.save(r);
+        }
+      }
+    }
+
     try {
       if (id == null) {
         userManager.create(user);
@@ -210,6 +264,10 @@ public class UserAccountsAction extends POSTAction {
 
   @Override
   public void validateHttpPostOnly() {
+    String accessTo = StringUtils.trimToNull(req.getParameter("user.grantedAccessTo"));
+	  if (accessTo == null) { // Should we use an interceptor here?
+      user.setGrantedAccessTo("");
+    }
     // only validate on form submit ignoring list views
     // && users == null
     validator.validate(this, user);
