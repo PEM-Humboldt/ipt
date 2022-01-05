@@ -26,7 +26,7 @@
 
     <link rel="shortcut icon" href="${baseURL}/images/icons/favicon-16x16.png" type="image/x-icon" />
     <link href="${baseURL}/rss.do" title="Latest Resources" rel="alternate" type="application/rss+xml" />
-    <link type="text/css" href="${baseURL}/styles/jquery/jquery-ui.min.css" media="all" rel="stylesheet"/>
+    <link type="text/css" href="${baseURL}/styles/jquery/jquery-ui.min-1.12.1.css" media="all" rel="stylesheet"/>
     <link type="text/css" href="${baseURL}/styles/jquery/multi-select.css" media="screen" rel="stylesheet">
     <link type="text/css" href="${baseURL}/styles/font-awesome.min.css" media="all" rel="stylesheet"/>
 
@@ -34,8 +34,8 @@
     <script src="${baseURL}/js/modernizr.js"></script>
     <script src="${baseURL}/js/jquery/jquery-3.5.1.min.js"></script>
     <script src="${baseURL}/js/jquery/jquery-ui.min-1.12.1.js"></script>
+    <script src="${baseURL}/js/jquery/jquery.multi-select.js"></script>
     <script src="${baseURL}/js/global.js"></script>
-    <script src="${baseURL}/js/jquery.multi-select.js"></script>
 
 
     [#-- GOOGLE ANALYTICS - asynchroneous: http://code.google.com/apis/analytics/docs/tracking/asyncTracking.html --]
