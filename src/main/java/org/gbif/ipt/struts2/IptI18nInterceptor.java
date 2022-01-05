@@ -36,36 +36,26 @@ public class IptI18nInterceptor extends I18nInterceptor {
 
   static {
     IPT_SUPPORTED_LOCALES = new HashSet<>();
-    IPT_SUPPORTED_LOCALES.add(Locale.UK); // Used to ensure a day-month-year order in formatted dates.
-    IPT_SUPPORTED_LOCALES.add(Locale.FRENCH);
-    IPT_SUPPORTED_LOCALES.add(Locale.CHINESE);
-    IPT_SUPPORTED_LOCALES.add(Locale.JAPANESE);
     IPT_SUPPORTED_LOCALES.add(new Locale("es"));
-    IPT_SUPPORTED_LOCALES.add(new Locale("pt"));
-    IPT_SUPPORTED_LOCALES.add(new Locale("ru"));
-    IPT_SUPPORTED_LOCALES.add(new Locale("fa"));
   }
 
   @Override
   protected Locale getLocaleFromParam(Object requestedLocale) {
-    Locale locale = null;
+    Locale locale = new Locale("es");
     try {
       if (requestedLocale != null) {
         locale = (requestedLocale instanceof Locale) ? (Locale) requestedLocale
             : LocaleUtils.toLocale(requestedLocale.toString());
         if (locale != null && LOG.isDebugEnabled()) {
-          LOG.debug("Applied request locale: " + locale.getLanguage());
+          LOG.debug("Forced to applied request locale: es");
         }
       }
     } catch (IllegalArgumentException e) {
       LOG.debug("Invalid request locale: {}", requestedLocale);
-      locale = Locale.getDefault();
-    }
-    if (Locale.ENGLISH.equals(locale)) {
-      locale = Locale.UK;
+      locale = new Locale("es");
     }
     if (locale != null && !IPT_SUPPORTED_LOCALES.contains(locale)) {
-      locale = Locale.getDefault();
+      locale = new Locale("es");
     }
     return locale;
   }
