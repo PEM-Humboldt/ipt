@@ -11,7 +11,7 @@
         // summary: a textarea to enter a summary for the submit
         // buttonType: a button type (color)
         var theOptions = jQuery.extend({
-            titleQuestion: "Are you sure?",
+            titleQuestion: "¿Está seguro?",
             question: undefined,
             yesAnswer: "Yes",
             cancelAnswer: "Cancel",
