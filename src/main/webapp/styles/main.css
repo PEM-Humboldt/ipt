@@ -20,8 +20,8 @@ table {
 
 
 /* Logo, header, menu etc. START */
-.gbif-logo {
-    height: 32px;
+.logo-ceiba {
+    height: 55px;
     position: relative;
     line-height: 32px;
     padding-right: 8px;
@@ -41,6 +41,10 @@ header, .dropdown-menu {
 
 .bg-gbif-main-navbar {
     background: linear-gradient(#78b578, #71b171);
+}
+
+.logo-iavh {
+    height: 45px;
 }
 
 .navbar-button {
@@ -235,7 +239,7 @@ a.no-text-decoration, a.no-text-decoration:focus, a.no-text-decoration:hover {
     border-color: #bec6ce !important;
 }
 .btn-outline-secondary:focus, .btn-outline-secondary:active:focus {
-    box-shadow: 0 0 0 0.25rem rgba(190, 198, 206, 0.25); !important;
+    box-shadow: 0 0 0 0.25rem rgba(190, 198, 206, 0.25) !important;
 }
 /* GBIF gray colored outline button START */
 
@@ -251,7 +255,7 @@ a.no-text-decoration, a.no-text-decoration:focus, a.no-text-decoration:hover {
     border-color: #61a861;
 }
 .btn-check:focus + .btn-outline-gbif-primary, .btn-outline-gbif-primary:focus {
-    box-shadow: 0 0 0 0.25rem rgba(113, 177, 113, 0.25); !important;
+    box-shadow: 0 0 0 0.25rem rgba(113, 177, 113, 0.25) !important;
 }
 .btn-check:checked + .btn-outline-gbif-primary, .btn-check:active + .btn-outline-gbif-primary, .btn-outline-gbif-primary:active, .btn-outline-gbif-primary.active, .btn-outline-gbif-primary.dropdown-toggle.show {
     color: #fff !important;
@@ -738,6 +742,11 @@ a.popover-link, a.popover-link:hover, a.popover-link:focus {
 .modal-header .close {
     padding: 1rem 1rem;
     margin: -1rem -1rem -1rem auto;
+}
+
+.my-3 {
+    margin-top: 1.3rem !important;
+    margin-bottom: 1rem !important;
 }
 
 button.close {

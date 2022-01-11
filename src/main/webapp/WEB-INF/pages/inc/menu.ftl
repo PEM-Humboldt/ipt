@@ -6,12 +6,9 @@
 <header>
     <nav class="navbar navbar-expand-xl navbar-dark bg-gbif-main-navbar fixed-top py-1 [#if !auxTopNavbar]shadow-sm[/#if]">
         <div class="container">
-            <a href="${baseURL}/" rel="home" title="Logo" class="navbar-brand" >
-                <img src="${baseURL}/images/gbif-logo-L.svg" alt="IPT" class="gbif-logo"/>
-                [#if !cfg.devMode() && cfg.getRegistryType()?has_content && cfg.getRegistryType()=='PRODUCTION']
-                [#else]
-                    <img class="testmode" alt="[@s.text name="menu.testMode"/]" src="${baseURL}/images/testmode.png" style="width: 100px;"/>
-                [/#if]
+            <a href="http://www.humboldt.org.co" rel="home" title="IAvH"><img src="${baseURL}/images/logo-IAvH.png" class="logo-iavh"></a>
+            <a href="${baseURL}/" rel="home" title="CEIBA IPT" class="navbar-brand" >
+                <img src="${baseURL}/images/logo-CEIBA.png" alt="CEIBA IPT" class="logo-ceiba"/>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -31,10 +28,20 @@
                         <li class="nav-item">
                             <a class="nav-link [#if currentMenu=='admin']active[/#if]" href="${baseURL}/admin/">[@s.text name="menu.admin"/]</a>
                         </li>
+                    [#else]
+                        <li class="nav-item">
+                            <a class="nav-link [#if currentMenu=='inventory']active[/#if]" href="http://goo.gl/is7UaG" target="_blank">[@s.text name="menu.inventory"/]</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link [#if currentMenu=='data']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/consulta?authuser=0" target="_blank">[@s.text name="menu.data"/]</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link [#if currentMenu=='faq']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/preguntas-frecuentes/faq-ceiba?authuser=0" target="_blank">[@s.text name="menu.faq"/]</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link [#if currentMenu=='manual']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/ceiba-manual/ceiba-consulta" target="_blank">[@s.text name="menu.usermanual"/]</a>
+                        </li>
                     [/#if]
-                    <li class="nav-item">
-                        <a class="nav-link [#if currentMenu=='about']active[/#if]" href="${baseURL}/about.do">[@s.text name="menu.about"/]</a>
-                    </li>
                 </ul>
 
                 <div class="d-xl-flex align-content-between">
