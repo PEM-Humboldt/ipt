@@ -786,14 +786,6 @@
                                         </button>
                                         <@s.submit cssClass="confirmRegistration btn btn-sm btn-outline-secondary" name="register" key="button.register" disabled="true"/>
                                     </div>
-                                <#elseif missingValidPublishingOrganisation?string == "true">
-                                    <!-- Disable register button and show warning: user must assign valid publishing organisation -->
-                                    <div class="btn-group my-1" role="group">
-                                        <button type="button" class="btn btn-sm btn-outline-warning" data-bs-trigger="focus" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true" data-bs-content="<@s.text name="manage.overview.visibility.missing.organisation" escapeHtml=true/>">
-                                            <i class="bi bi-exclamation-triangle"></i>
-                                        </button>
-                                        <@s.submit cssClass="confirmRegistration btn btn-sm btn-outline-secondary" name="register" key="button.register" disabled="true"/>
-                                    </div>
                                 <#elseif missingRegistrationMetadata?string == "true">
                                     <!-- Disable register button and show warning: user must fill in minimum registration metadata -->
                                     <div class="btn-group my-1" role="group">
