@@ -18,6 +18,7 @@ package org.gbif.ipt.action.portal;
 import org.gbif.ipt.action.BaseAction;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
+import org.gbif.ipt.model.Organisation;
 import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.voc.PublicationStatus;
 import org.gbif.ipt.service.admin.RegistrationManager;
@@ -70,6 +71,9 @@ public class HomeAction extends BaseAction {
     super.prepare();
     resources = new ArrayList<>();
 
+    // add default organisation "No organisation"
+    Organisation noOrganisation = getDefaultOrganisation();
+
     for (Resource resource : resourceManager.listPublishedPublicVersions()) {
       // reconstruct the last published public version
       BigDecimal v = resource.getLastPublishedVersionsVersion();
@@ -77,6 +81,10 @@ public class HomeAction extends BaseAction {
       File versionEmlFile = cfg.getDataDir().resourceEmlFile(shortname, v);
       // try/catch block flags resources missing mandatory metadata (published using IPT prior to v2.2)
       try {
+
+        // set organisation if this field is empty in the resource
+        if (resource.getOrganisation() == null) resource.setOrganisation(noOrganisation);
+
         Resource publishedPublicVersion = ResourceUtils
           .reconstructVersion(v, resource.getShortname(), resource.getCoreType(), resource.getAssignedDoi(), resource.getOrganisation(),
             resource.findVersionHistory(v), versionEmlFile, resource.getKey());
@@ -84,6 +92,10 @@ public class HomeAction extends BaseAction {
         // set properties only existing on current (unpublished) version
         Resource current = resourceManager.get(shortname);
         publishedPublicVersion.setModified(current.getModified());
+        // save date metadata was last modified
+        if (current.getMetadataModified() != null) {
+          resource.setMetadataModified(current.getMetadataModified());
+        } else  { resource.setMetadataModified(current.getModified()); }
         publishedPublicVersion.setNextPublished(current.getNextPublished());
         publishedPublicVersion.setCoreType(current.getCoreType());
         publishedPublicVersion.setSubtype(current.getSubtype());
