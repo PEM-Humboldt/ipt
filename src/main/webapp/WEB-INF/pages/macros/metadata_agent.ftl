@@ -114,7 +114,8 @@
 
         $("[id^='associatedParty-copyDetails']").click(function(event) {
             event.preventDefault();
-            copyPrimaryContactDetails(event, "associatedParty-item-");
+            copyI2DDetails(event, "associatedParty-item-");
+            // copyPrimaryContactDetails(event, "associatedParty-item-");
         });
 
         $("[id^='personnel-copyDetails']").click(function(event) {
@@ -432,7 +433,8 @@
 
             $("#associatedParty-item-"+index+" [id^='associatedParty-copyDetails']").attr("id", "associatedParty-copyDetails-"+index);
             $("#associatedParty-copyDetails-"+index).click(function(event) {
-                copyPrimaryContactDetails(event, "associatedParty-item-");
+                copyI2DDetails(event, "associatedParty-item-");
+                // copyPrimaryContactDetails(event, "associatedParty-item-");
             });
 
             $("#associatedParty-item-"+index+" [id$='firstName']").attr("id", "eml.associatedParties["+index+"].firstName").attr("name", function() {return $(this).attr("id");});
@@ -465,6 +467,27 @@
             $("#associatedParty-item-"+index+" [for$='directory']").attr("for", "eml.associatedParties["+index+"].userIds[0].directory");
             $("#associatedParty-item-"+index+" [id$='identifier']").attr("id", "eml.associatedParties["+index+"].userIds[0].identifier").attr("name", function() {return $(this).attr("id");});
             $("#associatedParty-item-"+index+" [for$='identifier']").attr("for", "eml.associatedParties["+index+"].userIds[0].identifier");
+        }
+
+        function copyI2DDetails(event, idPrefix) {
+            event.preventDefault();
+            var $target = $(event.target);
+            var index = $target.attr("id").split("-")[2];
+            // replace " with &quot; to prevent JS from failing
+            $("#" + idPrefix + index + " [id$='firstName']").val("");
+            $("#" + idPrefix + index + " [id$='lastName']").val("Infraestructura Institucional de Datos");
+            $("#" + idPrefix + index + " [id$='position']").val("");
+            $("#" + idPrefix + index + " [id$='organisation']").val("Instituto de Investigación de Recursos Biológicos Alexander Von Humboldt");
+            $("#" + idPrefix + index + " [id$='address']").val("Avenida Paseo Bolívar # 16-20");
+            $("#" + idPrefix + index + " [id$='city']").val("Bogotá, D.C.");
+            $("#" + idPrefix + index + " [id$='province']").val("Bogotá, D.C.");
+            $("#" + idPrefix + index + " [id$='postalCode']").val("110321");
+            $("#" + idPrefix + index + " [id$='country']").val("COLOMBIA");
+            $("#" + idPrefix + index + " [id$='phone']").val("3202767");
+            $("#" + idPrefix + index + " [id$='email']").val("i2d@humboldt.org.co");
+            $("#" + idPrefix + index + " [id$='homepage']").val("http://www.humboldt.org.co");
+            $("#" + idPrefix + index + " [id$='directory']").val("");
+            $("#" + idPrefix + index + " [id$='identifier']").val("");
         }
 
         function setPersonnelItemIndex(item, index) {
