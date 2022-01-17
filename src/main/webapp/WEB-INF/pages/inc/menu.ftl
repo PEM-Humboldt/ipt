@@ -19,6 +19,9 @@
                     <li class="nav-item">
                         <a class="nav-link [#if currentMenu=='home']active[/#if]" href="${baseURL}/">[@s.text name="menu.home"/]</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link [#if currentMenu=='data']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/consulta?authuser=0" target="_blank">[@s.text name="menu.data"/]</a>
+                    </li>
                     [#if managerRights]
                         <li class="nav-item">
                             <a class="nav-link [#if currentMenu=='manage']active[/#if]" href="${baseURL}/manage/">[@s.text name="menu.manage"/]</a>
