@@ -105,6 +105,42 @@
     </#if>
 </#macro>
 
+<!-- IAvH Customization -->
+<#function elemInArray array elem sep>
+    <#list array?split(sep) as arrayElem>
+        <#if arrayElem == elem>
+            <#return true>
+        </#if>
+    </#list>
+    <#return false>
+</#function>
+
+<#-- ...Testing... -->
+<#assign showDwCA=false/>
+    <#if eml.intellectualRights?has_content>
+        <#if elemInArray('Libre a nivel interno, Libre a nivel interno con notificación previa, Restringido temporalmente', eml.intellectualRights, ", ") >
+            <#if (Session.curr_user)??>
+                <#if Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights == "Libre a nivel interno" >
+                    <#assign showDwCA=true/>
+                </#if>
+                <#if (Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights != "Libre a nivel interno") || !Session.curr_user.email?ends_with("@humboldt.org.co") >
+                    <#if Session.curr_user.grantedAccessTo?has_content >
+                        <h1>(${resource.shortname}) --&gt; ${Session.curr_user.grantedAccessTo}</h1>
+                        <#if elemInArray(Session.curr_user.grantedAccessTo, resource.shortname, ", ")>
+                            <#assign showDwCA=true/>
+                        <#else>
+                        </#if>
+                    </#if>
+                </#if>
+            </#if>
+        <#else>
+            <#assign showDwCA=true/>
+        </#if>
+    <#else>
+        <#assign showDwCA=true/>
+    </#if>
+<!-- /IAvH Customization-->
+
 <#assign anchor_versions>#anchor-versions</#assign>
 <#assign anchor_rights>#anchor-rights</#assign>
 <#assign anchor_citation>#anchor-citation</#assign>
@@ -435,7 +471,26 @@
                     <#assign coreExt = action.getExtensionManager().get(coreRowType)!/>
                     <#assign coreCount = recordsByExtensionOrdered.get(coreRowType)!recordsPublishedForVersion!0?c/>
 
-                    <#if metadataOnly != true>
+                                        <!-- rights section -->
+                    <#if eml.intellectualRights?has_content>
+                        <span class="anchor anchor-resource-page" id="anchor-rights"></span>
+                        <div id="rights" class="mt-5 section">
+                            <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fw-400">
+                                <@s.text name='eml.intellectualRights.simple'/>
+                            </h4>
+
+                            <p><@s.text name='portal.resource.rights.help'/>:</p>
+                            <@licenseLogoClass eml.intellectualRights!/>
+                            <p property="dc:license">
+                                <#if resource.organisation?? && action.getDefaultOrganisation()?? && resource.organisation.key.toString() != action.getDefaultOrganisation().key.toString()>
+                                    <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
+                                </#if>
+                                <#noescape>${eml.intellectualRights!}</#noescape>
+                            </p>
+                        </div>
+                    </#if>
+
+                    <#if metadataOnly != true && showDwCA>
                         <span class="anchor anchor-home-resource-page" id="anchor-dataRecords"></span>
                         <div id="dataRecords" class="mt-5 section">
                             <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fw-400">
@@ -444,7 +499,7 @@
 
                             <p>
                                 <@s.text name='portal.resource.dataRecords.intro'><@s.param>${action.getCoreType()?lower_case}</@s.param></@s.text>
-                                <#if coreExt?? && coreExt.name?has_content && coreCount?has_content>
+                                <#if coreExt?? && coreExt.name?has_content && coreCount?has_content && showDwCA>
                                     <@s.text name='portal.resource.dataRecords.core'><@s.param>${coreCount}</@s.param></@s.text>
                                 </#if>
                             </p>
@@ -507,7 +562,7 @@
                                 <#-- Archive, EML, and RTF download links include Google Analytics event tracking -->
                                 <#-- e.g. Archive event tracking includes components: _trackEvent method, category, action, label, (int) value -->
                                 <#-- EML and RTF versions can always be retrieved by version number but DWCA versions are only stored if IPT Archive Mode is on -->
-                                <#if metadataOnly == false>
+                                <#if metadataOnly == false && showDwCA>
                                     <tr>
                                         <th class="col-4"><@s.text name='portal.resource.dwca.verbose'/></th>
                                         <#if version?? && version.toPlainString() != resource.emlVersion.toPlainString() && recordsPublishedForVersion??>
@@ -575,43 +630,6 @@
                             </p>
                         </div>
                     </#if>
-
-                    <!-- rights section -->
-                    <#if eml.intellectualRights?has_content>
-                        <span class="anchor anchor-resource-page" id="anchor-rights"></span>
-                        <div id="rights" class="mt-5 section">
-                            <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fw-400">
-                                <@s.text name='eml.intellectualRights.simple'/>
-                            </h4>
-
-                            <p><@s.text name='portal.resource.rights.help'/>:</p>
-                            <@licenseLogoClass eml.intellectualRights!/>
-                            <p property="dc:license">
-                                <#if resource.organisation?? && action.getDefaultOrganisation()?? && resource.organisation.key.toString() != action.getDefaultOrganisation().key.toString()>
-                                    <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
-                                </#if>
-                                <#noescape>${eml.intellectualRights!}</#noescape>
-                            </p>
-                        </div>
-                    </#if>
-
-                    <!-- GBIF Registration section -->
-                    <span class="anchor anchor-resource-page" id="anchor-gbif"></span>
-                    <div id="gbif" class="mt-5 section">
-                        <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fw-400">
-                            <@s.text name='portal.resource.organisation.key'/>
-                        </h4>
-
-                        <#if resource.status=="REGISTERED" && resource.organisation??>
-                            <p>
-                                <@s.text name='manage.home.registered.verbose'><@s.param>${cfg.portalUrl}/dataset/${resource.key}</@s.param><@s.param>${resource.key}</@s.param></@s.text>
-                                <#-- in prod mode link goes to /publisher (GBIF Portal), in dev mode link goes to /publisher (GBIF UAT Portal) -->
-                                &nbsp;<@s.text name='manage.home.published.verbose'><@s.param>${cfg.portalUrl}/publisher/${resource.organisation.key}</@s.param><@s.param>${resource.organisation.name}</@s.param><@s.param>${cfg.portalUrl}/node/${resource.organisation.nodeKey!"#"}</@s.param><@s.param>${resource.organisation.nodeName!}</@s.param></@s.text>
-                            </p>
-                        <#else>
-                            <p><@s.text name='manage.home.not.registered.verbose'/></p>
-                        </#if>
-                    </div>
 
                     <!-- Keywords section -->
                     <#if eml.subject?has_content>
