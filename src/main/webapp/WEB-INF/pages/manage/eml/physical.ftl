@@ -54,7 +54,7 @@
                             </p>
 
                             <div class="mt-2">
-                                <@input name="eml.distributionUrl" i18nkey="eml.distributionUrl" type="url" />
+                                <@input name="eml.distributionUrl" help="i18n" i18nkey="eml.distributionUrl" type="url" />
                             </div>
                         </div>
 

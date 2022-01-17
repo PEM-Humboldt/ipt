@@ -258,7 +258,7 @@
                                         </div>
 
                                         <div class="col-lg-6">
-                                            <@select i18nkey="eml.temporalCoverages.type"  name="tempTypes-${temporalCoverage_index}" options=tempTypes value="${temporalCoverage.type}" />
+                                            <@select help="i18n" i18nkey="eml.temporalCoverages.type"  name="tempTypes-${temporalCoverage_index}" options=tempTypes value="${temporalCoverage.type}" />
                                         </div>
 
                                         <!-- Adding new subform -->
