@@ -333,11 +333,15 @@
                                     <dt><@s.text name='portal.resource.license'/>:</dt>
                                     <dd>
                                         <#if eml.intellectualRights.contains("CC-BY-NC")>
-                                            <a href="http://creativecommons.org/licenses/by-nc/4.0/legalcode" target="_blank">CC-BY-NC 4.0</a>
-                                        <#elseif eml.intellectualRights.contains("CC-BY")>
-                                            <a href="http://creativecommons.org/licenses/by/4.0/legalcode" target="_blank">CC-BY 4.0</a>
-                                        <#elseif eml.intellectualRights.contains("CC0")>
-                                            <a href="http://creativecommons.org/publicdomain/zero/1.0/legalcode" target="_blank">CC0 1.0</a>
+                                            <a href="http://creativecommons.org/licenses/by-nc/4.0/legalcode" target="_blank">Libre a nivel interno y externo (Creative Commons Attribution Non Commercial (CC-BY-NC) 4.0)</a>
+                                        <#elseif eml.intellectualRights.contains("Restringido temporalmente")>
+                                            <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Restringido temporalmente</a>
+                                        <#elseif eml.intellectualRights.contains("Libre a nivel interno con notificación previa")>
+                                            <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Libre a nivel interno con notificación previa</a>
+                                        <#elseif eml.intellectualRights.contains("Libre a nivel interno")>
+                                            <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Libre a nivel interno</a>
+                                        <#else>
+                                            Probas
                                         </#if>
                                     </dd>
                                 </div>
