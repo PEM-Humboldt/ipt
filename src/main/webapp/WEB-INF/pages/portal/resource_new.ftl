@@ -226,8 +226,8 @@
 
                         <#if action.getDefaultOrganisation()?? && resource.organisation.key.toString() == action.getDefaultOrganisation().key.toString()>
                             ${publishedOnText?lower_case}&nbsp;<span property="dc:issued">${eml.pubDate?date?string.long}</span>
-                            <br>
-                            <em class="text-gbif-danger"><@s.text name='manage.home.not.registered.verbose'/></em>
+                            <#-- <br>
+                            <em class="text-gbif-danger"><@s.text name='manage.home.not.registered.verbose'/></em> -->
                         <#else>
                             <@s.text name='portal.resource.publishedOn'><@s.param>${resource.organisation.name}</@s.param></@s.text> <span property="dc:issued">${eml.pubDate?date?string.long_short}</span>
                             <span property="dc:publisher" style="display: none">${resource.organisation.name}</span>
