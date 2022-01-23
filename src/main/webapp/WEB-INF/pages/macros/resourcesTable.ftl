@@ -43,7 +43,7 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                  <#if r.eml.project.funding?has_content>'${r.eml.project.funding.replace("\n"," ").replace('"','').replace("“","").replace("”","")}'<#else>'${emptyString}'</#if>,
                 <#if r.coreType?has_content && types[r.coreType?lower_case]?has_content>'${types[r.coreType?lower_case]?replace("\'", "\\'")?replace("\"", '\\"')?cap_first!}'<#else>'${emptyString}'</#if>,
                 <#if r.subtype?has_content && datasetSubtypes[r.subtype?lower_case]?has_content >'${datasetSubtypes[r.subtype?lower_case]?replace("\'", "\\'")?replace("\"", '\\"')?cap_first!}'<#else>'${emptyString}'</#if>,
-                '<a target="_blank" href="${baseURL}/resource?r=${r.shortname}#dataRecords">${r.recordsPublished!0}</a>',
+                '<a target="_blank" href="${baseURL}/resource?r=${r.shortname}#anchor-dataRecords">${(r.recordsPublished?c)!0}</a>',
                 '${r.modified?date}',
                 <#if r.published>'${(r.lastPublished?date)!}'<#else>'<@s.text name="portal.home.not.published"/>'</#if>,
                 <#if r.status=='PRIVATE'>'<@s.text name="manage.home.visible.private"/>'<#elseif r.status=='DELETED'>'${deletedString}'<#else>'<@s.text name="manage.home.visible.public"/>'</#if>,

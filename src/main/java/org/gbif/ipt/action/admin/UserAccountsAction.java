@@ -1,3 +1,18 @@
+/*
+ * Copyright 2021 Global Biodiversity Information Facility (GBIF)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.gbif.ipt.action.admin;
 
 import org.gbif.ipt.action.POSTAction;
@@ -17,9 +32,8 @@ import java.util.List;
 import java.util.ArrayList;
 
 import com.google.common.base.Strings;
-import com.google.inject.Inject;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.RandomStringGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,6 +41,8 @@ import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.service.manage.ResourceManager;
 import java.util.Arrays;
+
+import com.google.inject.Inject;
 
 /**
  * The Action responsible for all user input relating to the user accounts in the IPT.
@@ -38,6 +54,11 @@ public class UserAccountsAction extends POSTAction {
 
   private static final long serialVersionUID = 8892204508303815998L;
   private static final int PASSWORD_LENGTH = 8;
+  private static final String PASSWORD_ALLOWED_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+  private static final RandomStringGenerator PASSWORD_GENERATOR =
+      new RandomStringGenerator.Builder()
+          .selectFrom(PASSWORD_ALLOWED_CHARS.toCharArray())
+          .build();
 
   private final UserAccountManager userManager;
   private final UserValidator validator = new UserValidator();
@@ -51,11 +72,10 @@ public class UserAccountsAction extends POSTAction {
   private List<Resource> restrictedResourcesForAllButIAvHUsers;
   private List<Resource> restrictedResourcesForIAvHUsers;
 
-
   @Inject
-  public UserAccountsAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
-    ResourceManager resourceManager,
-    UserAccountManager userManager) {
+  public UserAccountsAction(SimpleTextProvider textProvider, 
+      AppConfig cfg, RegistrationManager registrationManager, 
+      ResourceManager resourceManager, UserAccountManager userManager) {
     super(textProvider, cfg, registrationManager);
     this.userManager = userManager;
     this.resourceManager = resourceManager;
@@ -64,7 +84,7 @@ public class UserAccountsAction extends POSTAction {
   @Override
   public String delete() {
     if (getCurrentUser().getEmail().equalsIgnoreCase(id)) {
-      // cant remove logged in user
+      // can't remove logged in user
       addActionError(getText("admin.user.deleted.current"));
     } else {
       try {
@@ -81,14 +101,12 @@ public class UserAccountsAction extends POSTAction {
         } else if (Reason.LAST_RESOURCE_MANAGER == e.getReason()) {
           addActionError(getText("admin.user.deleted.lastmanager", new String[] {e.getMessage()}));
         } else if (Reason.IS_RESOURCE_CREATOR == e.getReason()) {
-          // TODO i18n
-          addActionError("The User cannot be deleted as it is the creator for the following resources: " + e.getMessage()
-                         + " Consider downgrading the User's role, as an alternative action.");
+          addActionError(getText("admin.user.deleted.error.creator", new String[] {e.getMessage()}));
         } else {
           addActionError(getText("admin.user.deleted.error"));
         }
       } catch (IOException e) {
-        addActionError(getText("admin.user.cantSave") + ": " + e.getMessage());
+        addActionError(getText("admin.user.cantSave", new String[] {e.getMessage()}));
       }
     }
     return INPUT;
@@ -137,7 +155,7 @@ public class UserAccountsAction extends POSTAction {
       newUser = true;
     } else {
       // modify copy of existing user - otherwise we even change the proper instances when canceling the request or
-      // submitting non validating data
+      // submitting non-validating data
       user = userManager.get(id);
     }
 
@@ -158,7 +176,6 @@ public class UserAccountsAction extends POSTAction {
         LOG.error("An exception occurred while retrieving user: " + e.getMessage(), e);
       }
     }
-
     List<String> intellectualRightsListForIAvHUsers = Arrays.asList(getText("eml.intellectualRights.license.text.temporalRestriction"), getText("eml.intellectualRights.license.text.internalNotification"));
     List<String> intellectualRightsListForAllButIAvHUsers = Arrays.asList(getText("eml.intellectualRights.license.text.internal"));
     restrictedResourcesForIAvHUsers = resourceManager.list(intellectualRightsListForIAvHUsers);
@@ -172,7 +189,7 @@ public class UserAccountsAction extends POSTAction {
     String[] accessTo = req.getParameterValues("user.grantedAccessTo");
     if (accessTo != null) {
       for (String str : accessTo) {
-        
+
         Resource toUpdate = resourceManager.get(str);
 
         // remove from local resource list all resources to update to avoid replacing managers
@@ -190,15 +207,13 @@ public class UserAccountsAction extends POSTAction {
         }
       }
     }
-    
-    
+
     try {
       if (id == null) {
         userManager.create(user);
         addActionMessage(getText("admin.user.added"));
       } else if (resetPassword) {
-        String newPassword =
-          RandomStringUtils.random(PASSWORD_LENGTH, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890");
+        String newPassword = PASSWORD_GENERATOR.generate(PASSWORD_LENGTH);
         user.setPassword(newPassword);
         userManager.save(user);
         addActionMessage(getText("admin.user.passwordChanged", new String[] {user.getEmail(), newPassword}));
@@ -249,12 +264,12 @@ public class UserAccountsAction extends POSTAction {
 
   @Override
   public void validateHttpPostOnly() {
-    // only validate on form submit ignoring list views
-    // && users == null
     String accessTo = StringUtils.trimToNull(req.getParameter("user.grantedAccessTo"));
 	  if (accessTo == null) { // Should we use an interceptor here?
       user.setGrantedAccessTo("");
     }
+    // only validate on form submit ignoring list views
+    // && users == null
     validator.validate(this, user);
     // check 2nd password
     if (newUser && StringUtils.trimToNull(user.getPassword()) != null && !user.getPassword().equals(password2)) {

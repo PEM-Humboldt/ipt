@@ -14,7 +14,7 @@
         // a function called when adding new temporal coverages
         // an element is cloned and the IDs reset etc etc
         $(document).ready(function () {
-            initHelp();
+            initCalendar();
             calculateCount();
 
             function calculateCount() {
@@ -105,21 +105,21 @@
                     popovers[0].setAttribute("data-bs-content", popovers[0].getAttribute('data-bs-content').replace('inputName-startDate', "inputName-eml.temporalCoverages[" + index + "].startDate"))
                     popovers[1].setAttribute("data-bs-content", popovers[1].getAttribute('data-bs-content').replace('inputName-endDate', "inputName-eml.temporalCoverages[" + index + "].endDate"))
 
-                    initHelp("#date-" + index);
+                    initCalendar("#date-" + index);
                 }
                 if (typeSubForm === FORMATION_PERIOD) {
                     $("#" + idNewForm + " [id^='formation-']").attr("id", "formation-" + index);
                     $("#" + idNewForm + " [id$='formationPeriod']").attr("id", "eml.temporalCoverages[" + index + "].formationPeriod").attr("name", function () {
                         return $(this).attr("id");
                     });
-                    initHelp("#formation-" + index);
+                    initCalendar("#formation-" + index);
                 }
                 if (typeSubForm === LIVING_TIME_PERIOD) {
                     $("#" + idNewForm + " [id^='living-']").attr("id", "living-" + index);
                     $("#" + idNewForm + " [id$='livingTimePeriod']").attr("id", "eml.temporalCoverages[" + index + "].livingTimePeriod").attr("name", function () {
                         return $(this).attr("id");
                     });
-                    initHelp("#living-" + index);
+                    initCalendar("#living-" + index);
                 }
                 if (typeSubForm === SINGLE_DATE) {
                     $("#" + idNewForm + " [id^='single-']").attr("id", "single-" + index);
@@ -131,7 +131,7 @@
                     var popovers = $("#" + idNewForm + " a.popover-link");
                     popovers[0].setAttribute("data-bs-content", popovers[0].getAttribute('data-bs-content').replace('inputName-startDate', "inputName-eml.temporalCoverages[" + index + "].startDate"))
 
-                    initHelp("#single-" + index);
+                    initCalendar("#single-" + index);
                 }
 
                 initInfoPopovers($("#" + idNewForm)[0]);
@@ -196,140 +196,172 @@
 
                 $('#' + inputName).val(inputValue)
             });
+
+            $('#metadata-section').change(function () {
+                var metadataSection = $('#metadata-section').find(':selected').val()
+                $(location).attr('href', 'metadata-' + metadataSection + '.do?r=${resource.shortname!r!}');
+            });
         });
     </script>
 
     <title><@s.text name='manage.metadata.tempcoverage.title'/></title>
-    <#assign auxTopNavbar=true />
-    <#assign auxTopNavbarPage = "metadata" />
+    <#assign currentMetadataPage = "tempcoverage"/>
     <#assign currentMenu="manage"/>
     <#include "/WEB-INF/pages/inc/menu.ftl">
     <#include "/WEB-INF/pages/macros/forms.ftl"/>
 
-<main class="container">
-    <div class="my-3 p-3 bg-body rounded shadow-sm">
+    <form class="needs-validation" action="metadata-${section}.do" method="post" novalidate>
 
-        <#include "/WEB-INF/pages/inc/action_alerts.ftl">
+        <div class="container-fluid bg-body border-bottom">
+            <div class="container pt-2">
+                <#include "/WEB-INF/pages/inc/action_alerts.ftl">
+            </div>
 
-        <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header text-center">
-            <@s.text name='manage.metadata.tempcoverage.title'/>:
-            <a href="resource.do?r=${resource.shortname}" title="${resource.title!resource.shortname}">${resource.title!resource.shortname}</a>
-        </h5>
+            <div class="container p-3">
 
-        <p class="mx-md-4 mx-2 mb-0 mb-1">
-            <@s.text name='manage.metadata.tempcoverage.intro'/>
-        </p>
-
-        <div id="temporals">
-            <!-- Adding the temporal coverages that already exists on the file -->
-            <#assign next_agent_index=0 />
-            <#list eml.temporalCoverages as temporalCoverage>
-                <div id="temporal-${temporalCoverage_index}" class="tempo clearfix row g-3 mx-md-3 mx-1 border-bottom pb-3" >
-                    <div class="d-flex justify-content-end">
-                        <a id="removeLink-${temporalCoverage_index}" class="removeLink" href="">[ <@s.text name='manage.metadata.removethis'/> <@s.text name='manage.metadata.tempcoverage.item'/> ]</a>
-                    </div>
-
-                    <div class="col-lg-6">
-                        <@select help="i18n" i18nkey="eml.temporalCoverages.type"  name="tempTypes-${temporalCoverage_index}" options=tempTypes value="${temporalCoverage.type}" />
-                    </div>
-
-                    <!-- Adding new subform -->
-                    <#if "${temporalCoverage.type}" == "DATE_RANGE" >
-                        <div id="date-${temporalCoverage_index}" class="typeForm col-12">
-                            <div class="row g-3">
-                                <div class="col-lg-6">
-                                    <@input date=true i18nkey="eml.temporalCoverages.startDate" name="eml.temporalCoverages[${temporalCoverage_index}].startDate" help="i18n" helpOptions={"YYYY-MM-DD":"YYYY-MM-DD"}/>
-                                </div>
-                                <div class="col-lg-6">
-                                    <@input date=true i18nkey="eml.temporalCoverages.endDate" name="eml.temporalCoverages[${temporalCoverage_index}].endDate" help="i18n" helpOptions={"YYYY-MM-DD":"YYYY-MM-DD"}/>
-                                </div>
-                            </div>
-                        </div>
-
-                    <#elseif "${temporalCoverage.type}" == "SINGLE_DATE" >
-                        <div id="single-${temporalCoverage_index}" class="typeForm col-lg-6" >
-                            <div>
-                                <@input date=true i18nkey="eml.temporalCoverages.singleDate" name="eml.temporalCoverages[${temporalCoverage_index}].startDate" help="i18n" helpOptions={"YYYY-MM-DD":"YYYY-MM-DD"}/>
-                            </div>
-
-                        </div>
-
-                    <#elseif "${temporalCoverage.type}" == "FORMATION_PERIOD" >
-                        <div id="formation-${temporalCoverage_index}" class="typeForm col-lg-6" >
-                            <div>
-                                <@input i18nkey="eml.temporalCoverages.formationPeriod" name="eml.temporalCoverages[${temporalCoverage_index}].formationPeriod" help="i18n" />
-                            </div>
-                        </div>
-
-                    <#else> <!-- LIVING_TIME_PERIOD -->
-                        <div id="living-${temporalCoverage_index}" class="typeForm col-lg-6"  >
-                            <div>
-                                <@input i18nkey="eml.temporalCoverages.livingTimePeriod" name="eml.temporalCoverages[${temporalCoverage_index}].livingTimePeriod" help="i18n" />
-                            </div>
-                        </div>
-                    </#if>
-
+                <div class="text-center">
+                    <h5 class="pt-2 text-gbif-header fs-4 fw-400 text-center">
+                        <@s.text name='manage.metadata.tempcoverage.title'/>
+                    </h5>
                 </div>
-            </#list>
-        </div>
 
-        <!-- The add link and the buttons should be first. The next div is hidden. -->
-        <div class="addNew col-12 mx-md-4 mx-2 mt-1">
-            <a id="plus" href="" ><@s.text name='manage.metadata.addnew' /> <@s.text name='manage.metadata.tempcoverage.item' /></a>
-        </div>
-        <div class="buttons col-12 mx-md-4 mx-2 mt-3">
-            <@s.submit cssClass="button btn btn-outline-gbif-primary" name="save" key="button.save"/>
-            <@s.submit cssClass="button btn btn-outline-secondary" name="cancel" key="button.cancel"/>
-        </div>
-        <!-- internal parameter -->
-        <input name="r" type="hidden" value="${resource.shortname}" />
-
-
-        <!-- The base form that is going to be cloned every time an user click in the 'add' link -->
-        <div id="temporal-99999" class="tempo clearfix row g-3 mx-md-3 mx-1 border-bottom pb-3" style="display:none">
-            <div class="d-flex justify-content-end">
-                <a id="removeLink" class="removeLink" href="">[ <@s.text name='manage.metadata.removethis'/> <@s.text name='manage.metadata.tempcoverage.item'/> ]</a>
-            </div>
-            <div class="col-lg-6">
-                <@select i18nkey="eml.temporalCoverages.type"  name="tempTypes" options=tempTypes />
+                <div class="text-center fs-smaller">
+                    <a href="resource.do?r=${resource.shortname}" title="${resource.title!resource.shortname}">${resource.title!resource.shortname}</a>
+                </div>
             </div>
         </div>
 
-        <!-- DATE RANGE -->
-        <div id="date-99999" class="typeForm col-12" style="display:none">
-            <div class="row g-3">
-            <div class="col-lg-6">
-                <@input date=true i18nkey="eml.temporalCoverages.startDate" name="startDate" help="i18n" helpOptions={"YYYY-MM-DD":"YYYY-MM-DD"}/>
-            </div>
-            <div class="col-lg-6">
-                <@input date=true i18nkey="eml.temporalCoverages.endDate" name="endDate" help="i18n" helpOptions={"YYYY-MM-DD":"YYYY-MM-DD"}/>
-            </div>
+        <#include "metadata_section_select.ftl"/>
+
+        <div class="container-fluid bg-body">
+            <div class="container bd-layout">
+
+                <main class="bd-main bd-main-right">
+                    <div class="bd-toc mt-4 mb-5 ps-3 mb-lg-5 text-muted">
+                        <#include "eml_sidebar.ftl"/>
+                    </div>
+
+                    <div class="bd-content ps-lg-4">
+                        <div class="my-md-3 p-3">
+
+                            <p class="mb-0 mb-1">
+                                <@s.text name='manage.metadata.tempcoverage.intro'/>
+                            </p>
+
+                            <div id="temporals">
+                                <!-- Adding the temporal coverages that already exists on the file -->
+                                <#assign next_agent_index=0 />
+                                <#list eml.temporalCoverages as temporalCoverage>
+                                    <div id="temporal-${temporalCoverage_index}" class="tempo clearfix row g-3 border-bottom pb-3" >
+                                        <div class="d-flex justify-content-end">
+                                            <a id="removeLink-${temporalCoverage_index}" class="removeLink" href=""><@s.text name='manage.metadata.removethis'/> <@s.text name='manage.metadata.tempcoverage.item'/></a>
+                                        </div>
+
+                                        <div class="col-lg-6">
+                                            <@select help="i18n" i18nkey="eml.temporalCoverages.type"  name="tempTypes-${temporalCoverage_index}" options=tempTypes value="${temporalCoverage.type}" />
+                                        </div>
+
+                                        <!-- Adding new subform -->
+                                        <#if "${temporalCoverage.type}" == "DATE_RANGE" >
+                                            <div id="date-${temporalCoverage_index}" class="typeForm col-12">
+                                                <div class="row g-3">
+                                                    <div class="col-lg-6">
+                                                        <@input date=true i18nkey="eml.temporalCoverages.startDate" name="eml.temporalCoverages[${temporalCoverage_index}].startDate" help="i18n" helpOptions={"YYYY-MM-DD":"YYYY-MM-DD"}/>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <@input date=true i18nkey="eml.temporalCoverages.endDate" name="eml.temporalCoverages[${temporalCoverage_index}].endDate" help="i18n" helpOptions={"YYYY-MM-DD":"YYYY-MM-DD"}/>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        <#elseif "${temporalCoverage.type}" == "SINGLE_DATE" >
+                                            <div id="single-${temporalCoverage_index}" class="typeForm col-lg-6" >
+                                                <div>
+                                                    <@input date=true i18nkey="eml.temporalCoverages.singleDate" name="eml.temporalCoverages[${temporalCoverage_index}].startDate" help="i18n" helpOptions={"YYYY-MM-DD":"YYYY-MM-DD"}/>
+                                                </div>
+
+                                            </div>
+
+                                        <#elseif "${temporalCoverage.type}" == "FORMATION_PERIOD" >
+                                            <div id="formation-${temporalCoverage_index}" class="typeForm col-lg-6" >
+                                                <div>
+                                                    <@input i18nkey="eml.temporalCoverages.formationPeriod" name="eml.temporalCoverages[${temporalCoverage_index}].formationPeriod" help="i18n" />
+                                                </div>
+                                            </div>
+
+                                        <#else> <!-- LIVING_TIME_PERIOD -->
+                                            <div id="living-${temporalCoverage_index}" class="typeForm col-lg-6"  >
+                                                <div>
+                                                    <@input i18nkey="eml.temporalCoverages.livingTimePeriod" name="eml.temporalCoverages[${temporalCoverage_index}].livingTimePeriod" help="i18n" />
+                                                </div>
+                                            </div>
+                                        </#if>
+
+                                    </div>
+                                </#list>
+                            </div>
+
+                            <!-- The add link and the buttons should be first. The next div is hidden. -->
+                            <div class="addNew col-12 mt-1">
+                                <a id="plus" href="" ><@s.text name='manage.metadata.addnew' /> <@s.text name='manage.metadata.tempcoverage.item' /></a>
+                            </div>
+                            <div class="buttons col-12 mt-3">
+                                <@s.submit cssClass="button btn btn-outline-gbif-primary" name="save" key="button.save"/>
+                                <@s.submit cssClass="button btn btn-outline-secondary" name="cancel" key="button.back"/>
+                            </div>
+                            <!-- internal parameter -->
+                            <input name="r" type="hidden" value="${resource.shortname}" />
+
+
+                            <!-- The base form that is going to be cloned every time an user click in the 'add' link -->
+                            <div id="temporal-99999" class="tempo clearfix row g-3 border-bottom pb-3" style="display:none">
+                                <div class="d-flex justify-content-end">
+                                    <a id="removeLink" class="removeLink" href=""><@s.text name='manage.metadata.removethis'/> <@s.text name='manage.metadata.tempcoverage.item'/></a>
+                                </div>
+                                <div class="col-lg-6">
+                                    <@select i18nkey="eml.temporalCoverages.type"  name="tempTypes" options=tempTypes />
+                                </div>
+                            </div>
+
+                            <!-- DATE RANGE -->
+                            <div id="date-99999" class="typeForm col-12" style="display:none">
+                                <div class="row g-3">
+                                    <div class="col-lg-6">
+                                        <@input date=true i18nkey="eml.temporalCoverages.startDate" name="startDate" help="i18n" helpOptions={"YYYY-MM-DD":"YYYY-MM-DD"}/>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <@input date=true i18nkey="eml.temporalCoverages.endDate" name="endDate" help="i18n" helpOptions={"YYYY-MM-DD":"YYYY-MM-DD"}/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SINGLE DATE -->
+                            <div id="single-99999" class="typeForm col-lg-6" style="display:none">
+                                <div>
+                                    <@input date=true i18nkey="eml.temporalCoverages.singleDate" name="startDate" help="i18n" helpOptions={"YYYY-MM-DD":"YYYY-MM-DD"} />
+                                </div>
+                            </div>
+
+                            <!-- FORMATION PERIOD -->
+                            <div id="formation-99999" class="typeForm col-lg-6" style="display:none">
+                                <div>
+                                    <@input i18nkey="eml.temporalCoverages.formationPeriod" name="formationPeriod" help="i18n" />
+                                </div>
+                            </div>
+
+                            <!-- LIVING TIME PERIOD -->
+                            <div id="living-99999" class="typeForm col-lg-6" style="display:none">
+                                <div>
+                                    <@input i18nkey="eml.temporalCoverages.livingTimePeriod" name="livingTimePeriod" help="i18n" />
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </main>
             </div>
         </div>
 
-        <!-- SINGLE DATE -->
-        <div id="single-99999" class="typeForm col-lg-6" style="display:none">
-            <div>
-                <@input date=true i18nkey="eml.temporalCoverages.singleDate" name="startDate" help="i18n" helpOptions={"YYYY-MM-DD":"YYYY-MM-DD"} />
-            </div>
-        </div>
-
-        <!-- FORMATION PERIOD -->
-        <div id="formation-99999" class="typeForm col-lg-6" style="display:none">
-            <div>
-                <@input i18nkey="eml.temporalCoverages.formationPeriod" name="formationPeriod" help="i18n" />
-            </div>
-        </div>
-
-        <!-- LIVING TIME PERIOD -->
-        <div id="living-99999" class="typeForm col-lg-6" style="display:none">
-            <div>
-                <@input i18nkey="eml.temporalCoverages.livingTimePeriod" name="livingTimePeriod" help="i18n" />
-            </div>
-        </div>
-
-    </div>
-</main>
     </form>
 
     <#include "/WEB-INF/pages/inc/footer.ftl">
