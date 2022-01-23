@@ -20,8 +20,8 @@ table {
 
 
 /* Logo, header, menu etc. START */
-.gbif-logo {
-    height: 100px;
+.logo-ceiba {
+    height: 55px;
     position: relative;
     line-height: 32px;
     padding-right: 8px;
@@ -29,19 +29,6 @@ table {
     transition: all .3s;
     overflow: hidden;
     vertical-align: middle;
-}
-
-.div-iavh{
-    float: left;
-
-}
-.logo-iavh {
-    position: relative;
-    transition: all .3s;
-    z-index: -1;
-    max-height: 100px;
-    max-width: 100%;
-    object-fit: cover;
 }
 
 header, .dropdown-menu {
@@ -54,6 +41,10 @@ header, .dropdown-menu {
 
 .bg-gbif-main-navbar {
     background: linear-gradient(#78b578, #71b171);
+}
+
+.logo-iavh {
+    height: 45px;
 }
 
 .navbar-button {
@@ -248,7 +239,7 @@ a.no-text-decoration, a.no-text-decoration:focus, a.no-text-decoration:hover {
     border-color: #bec6ce !important;
 }
 .btn-outline-secondary:focus, .btn-outline-secondary:active:focus {
-    box-shadow: 0 0 0 0.25rem rgba(190, 198, 206, 0.25); !important;
+    box-shadow: 0 0 0 0.25rem rgba(190, 198, 206, 0.25) !important;
 }
 /* GBIF gray colored outline button START */
 
@@ -529,13 +520,16 @@ td.left_padding {
 
 
 /* Licence logos styling START */
-.i2d_logo {
-    background: url('../images/icons/i2d.png');
+.cc_logo {
     display: block;
     float: left;
     margin-right: 18px;
-    height: 40px;
-    width: 67px;
+    height: 31px;
+    width: 88px;
+}
+
+.cc_by {
+    background: url('../images/icons/cc-by.svg');
 }
 
 .cc_by_nc {
@@ -546,6 +540,20 @@ td.left_padding {
     height: 32px;
     width: 88px;
 }
+
+.cc_zero {
+    background: url('../images/icons/cc-zero.svg');
+}
+
+.i2d_logo {
+    background: url('../images/icons/i2d.png');
+    display: block;
+    float: left;
+    margin-right: 18px;
+    height: 40px;
+    width: 67px;
+}
+
 /* Licence logos styling END */
 
 
@@ -749,6 +757,11 @@ a.popover-link, a.popover-link:hover, a.popover-link:focus {
 .modal-header .close {
     padding: 1rem 1rem;
     margin: -1rem -1rem -1rem auto;
+}
+
+.my-3 {
+    margin-top: 1.3rem !important;
+    margin-bottom: 1rem !important;
 }
 
 button.close {
