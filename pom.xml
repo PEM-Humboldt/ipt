@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>ipt</artifactId>
-  <version>2.5.6-CEIBA</version>
+  <version>2.5.5-CEIBA</version>
   <packaging>war</packaging>
 
   <name>IPT</name>
@@ -106,6 +106,14 @@
     <developer>
       <name>Mikhail Podolskiy</name>
       <email>mpodolskiy@gbif.org</email>
+    </developer>
+    <developer>
+      <name>Ángela Checa</name>
+      <email>acheca@humboldt.org.co</email>
+    </developer>
+    <developer>
+      <name>Ángela Devia</name>
+      <email>adevia@humboldt.org.co</email>
     </developer>
   </developers>
 
