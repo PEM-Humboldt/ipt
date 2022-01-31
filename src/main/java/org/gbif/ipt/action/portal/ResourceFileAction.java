@@ -1,7 +1,20 @@
+/*
+ * Copyright 2021 Global Biodiversity Information Facility (GBIF)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.gbif.ipt.action.portal;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.config.DataDir;
@@ -21,6 +34,10 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
@@ -34,7 +51,6 @@ public class ResourceFileAction extends PortalBaseAction {
   private static final Logger LOG = LogManager.getLogger(ResourceFileAction.class);
 
   private final DataDir dataDir;
-  protected ResourceManager resourceManager;
   protected Source source;
   private InputStream inputStream;
   protected File data;
@@ -118,9 +134,9 @@ public class ResourceFileAction extends PortalBaseAction {
 
     // construct download filename
     StringBuilder sb = new StringBuilder();
-    sb.append("dwca-" + resource.getShortname());
+    sb.append("dwca-").append(resource.getShortname());
     if (version != null) {
-      sb.append("-v" + version.toPlainString());
+      sb.append("-v").append(version.toPlainString());
     }
     sb.append(".zip");
     filename = sb.toString();
@@ -155,9 +171,9 @@ public class ResourceFileAction extends PortalBaseAction {
 
     // construct download filename
     StringBuilder sb = new StringBuilder();
-    sb.append("eml-" + resource.getShortname());
+    sb.append("eml-").append(resource.getShortname());
     if (version != null) {
-      sb.append("-v" + version.toPlainString());
+      sb.append("-v").append(version.toPlainString());
     }
     sb.append(".xml");
     filename = sb.toString();
@@ -252,7 +268,7 @@ public class ResourceFileAction extends PortalBaseAction {
     super.prepare();
     // look for source parameter
     String src = StringUtils.trimToNull(req.getParameter(Constants.REQ_PARAM_SOURCE));
-    if (!Strings.isNullOrEmpty(src)) {
+    if (StringUtils.isNotBlank(src)) {
       source = resource.getSource(src);
     }
   }
@@ -283,9 +299,9 @@ public class ResourceFileAction extends PortalBaseAction {
 
     // construct download filename
     StringBuilder sb = new StringBuilder();
-    sb.append("rtf-" + resource.getShortname());
+    sb.append("rtf-").append(resource.getShortname());
     if (version != null) {
-      sb.append("-v" + version.toPlainString());
+      sb.append("-v").append(version.toPlainString());
     }
     sb.append(".rtf");
     filename = sb.toString();
@@ -306,10 +322,7 @@ public class ResourceFileAction extends PortalBaseAction {
       mimeType = "application/octet-stream";
 
       // construct download filename
-      StringBuilder sb = new StringBuilder();
-      sb.append(id);
-      sb.append(frSrc.getPreferredFileSuffix());
-      filename = sb.toString();
+      filename = id + frSrc.getPreferredFileSuffix();
       return execute();
     }
     else {

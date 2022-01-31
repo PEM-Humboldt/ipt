@@ -1,3 +1,18 @@
+/*
+ * Copyright 2021 Global Biodiversity Information Facility (GBIF)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.gbif.ipt.config;
 
 import org.gbif.ipt.model.FileSource;
@@ -10,14 +25,17 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
+
 import javax.validation.constraints.NotNull;
 
-import com.google.inject.Singleton;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.google.inject.Singleton;
 
 /**
  * A very simple utility class to encapsulate the basic layout of the data directory and to configure & persist the
@@ -213,7 +231,7 @@ public class DataDir {
 
   private void persistLocation() throws IOException {
     // persist location in WEB-INF
-    FileUtils.writeStringToFile(dataDirSettingFile, dataDir.getAbsolutePath());
+    FileUtils.writeStringToFile(dataDirSettingFile, dataDir.getAbsolutePath(), StandardCharsets.UTF_8);
     LOG.info("IPT DataDir location file in /WEB-INF changed to " + dataDir.getAbsolutePath());
   }
 
@@ -476,5 +494,9 @@ public class DataDir {
     else {
       return DirStatus.NOT_EXIST;
     }
+  }
+
+  public File getDataDir() {
+    return dataDir;
   }
 }

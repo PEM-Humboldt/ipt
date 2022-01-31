@@ -1,7 +1,20 @@
+/*
+ * Copyright 2021 Global Biodiversity Information Facility (GBIF)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.gbif.ipt.model;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.gbif.ipt.utils.FileUtils;
 import org.gbif.utils.file.ClosableReportingIterator;
 import org.gbif.utils.file.csv.CSVReader;
@@ -9,7 +22,14 @@ import org.gbif.utils.file.csv.CSVReaderFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * A delimited text file based source such as CSV or tab files.
@@ -50,10 +70,12 @@ public class TextFileSource extends SourceBase implements FileSource {
     return escape(fieldsTerminatedBy);
   }
 
+  @Override
   public File getFile() {
     return file;
   }
 
+  @Override
   public long getFileSize() {
     return fileSize;
   }
@@ -62,10 +84,12 @@ public class TextFileSource extends SourceBase implements FileSource {
     return FileUtils.formatSize(fileSize, 1);
   }
 
+  @Override
   public int getIgnoreHeaderLines() {
     return ignoreHeaderLines;
   }
 
+  @Override
   public Date getLastModified() {
     return lastModified;
   }
@@ -74,10 +98,12 @@ public class TextFileSource extends SourceBase implements FileSource {
     return CSVReaderFactory.build(file, encoding, fieldsTerminatedBy, getFieldQuoteChar(), ignoreHeaderLines);
   }
 
+  @Override
   public int getRows() {
     return rows;
   }
 
+  @Override
   public ClosableReportingIterator<String[]> rowIterator() {
     try {
       return getReader();
@@ -87,6 +113,7 @@ public class TextFileSource extends SourceBase implements FileSource {
     return null;
   }
 
+  @Override
   public List<String> columns() {
     try {
       CSVReader reader = getReader();
@@ -127,6 +154,7 @@ public class TextFileSource extends SourceBase implements FileSource {
     this.fieldsTerminatedBy = unescape(fieldsTerminatedBy);
   }
 
+  @Override
   public void setFile(File file) {
     this.file = file;
   }
@@ -139,6 +167,7 @@ public class TextFileSource extends SourceBase implements FileSource {
     this.ignoreHeaderLines = ignoreHeaderLines == null ? 0 : ignoreHeaderLines;
   }
 
+  @Override
   public void setLastModified(Date lastModified) {
     this.lastModified = lastModified;
   }
@@ -147,10 +176,12 @@ public class TextFileSource extends SourceBase implements FileSource {
     this.rows = rows;
   }
 
+  @Override
   public String getPreferredFileSuffix() {
     return SUFFIX;
   }
 
+  @Override
   public Set<Integer> analyze() throws IOException {
     setFileSize(getFile().length());
 
@@ -166,6 +197,7 @@ public class TextFileSource extends SourceBase implements FileSource {
     return emptyLines;
   }
 
+  @Override
   public SourceType getSourceType() {
     return SourceType.TEXT_FILE;
   }

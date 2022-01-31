@@ -1,18 +1,20 @@
-/***************************************************************************
- * Copyright 2010 Global Biodiversity Information Facility Secretariat
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * http://www.apache.org/licenses/LICENSE-2.0
+/*
+ * Copyright 2021 Global Biodiversity Information Facility (GBIF)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- ***************************************************************************/
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.gbif.ipt.action.manage;
 
-import org.apache.commons.io.FilenameUtils;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.config.DataDir;
@@ -40,12 +42,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.google.inject.Inject;
 
 public class SourceAction extends ManagerBaseAction {
 
@@ -61,8 +64,10 @@ public class SourceAction extends ManagerBaseAction {
   private Source source;
   private String rdbms;
   private String problem;
+  private String sqlSourcePassword;
   // URL
   private String url;
+  private String sourceName;
   // file upload
   private File file;
   private String fileContentType;
@@ -87,8 +92,14 @@ public class SourceAction extends ManagerBaseAction {
 
   public String add() throws IOException {
     String sessionUrl = (String) session.get(Constants.SESSION_URL);
+    String sessionSourceName = (String) session.get(Constants.SESSION_SOURCE_NAME);
 
     if (SOURCE_URL.equals(sourceType) || sessionUrl != null) {
+      if (SOURCE_URL.equals(sourceType) && StringUtils.isEmpty(url)) {
+        addActionError(getText("manage.source.url.empty"));
+        return ERROR;
+      }
+
       // prepare a new, empty url source
       source = new UrlSource();
       source.setResource(resource);
@@ -101,17 +112,29 @@ public class SourceAction extends ManagerBaseAction {
       // if present do not check sources with the same name, already overwriting
       if (sessionUrl != null) {
         url = sessionUrl;
+        sourceName = sessionSourceName;
         urlWrapped = URI.create(url);
         replaceUrl = true;
       }
 
+      // check if source with the same URL exists
       // check if source with the same name already exists
-      // if so store url in the session, and return to ask about overwriting
+      // if so store url and name in the session, and return to ask about overwriting
       if (!replaceUrl) {
-        String urlSourceName = FilenameUtils.getBaseName(url);
+        for (Source resourceSource : resource.getSources()) {
+          if (resourceSource instanceof UrlSource) {
+            UrlSource resourceUrlSource = (UrlSource) resourceSource;
+            if (resourceUrlSource.getUrl().toString().equals(url)) {
+              urlToOverwrite(getText("manage.resource.addSource.sameUrl.confirm"));
+              return INPUT;
+            }
+          }
+        }
 
-        if (resource.getSource(urlSourceName) != null) {
-          urlToOverwrite();
+        // source name is optional and may be empty
+        if ((StringUtils.isEmpty(sourceName) && resource.getSource(FilenameUtils.getBaseName(url)) != null) ||
+                resource.getSource(sourceName) != null) {
+          urlToOverwrite(getText("manage.resource.addSource.sameName.confirm"));
           return INPUT;
         }
       }
@@ -124,17 +147,20 @@ public class SourceAction extends ManagerBaseAction {
         // check not found
         if (responseCode == 404) {
           addActionError(getText("manage.source.url.notFound", new String[] {url}));
+          removeSessionData();
           return ERROR;
         }
 
         // check text file (or no extension)
         String extension = FilenameUtils.getExtension(url);
         if (!extension.isEmpty() && !"txt".equals(extension) && !"tsv".equals(extension) && !"csv".equals(extension)) {
-          addActionError(getText("manage.source.url.invalid", new String[] {url}));
+          addActionError(getText("manage.source.url.invalidExtension", new String[] {url, extension}));
+          removeSessionData();
           return ERROR;
         }
       } catch (IOException e) {
         addActionError(getText("manage.source.url.invalid", new String[] {url}));
+        removeSessionData();
         return ERROR;
       }
 
@@ -217,12 +243,11 @@ public class SourceAction extends ManagerBaseAction {
   }
 
   private void addUrl(URI url) {
-    String sourceName = FilenameUtils.getBaseName(url.toString());
     Source existingSource = resource.getSource(sourceName);
     boolean replaced = existingSource != null;
 
     try {
-      source = sourceManager.add(resource, url);
+      source = sourceManager.add(resource, url, sourceName);
       resource.setSourcesModified(new Date());
       saveResource();
       id = source.getName();
@@ -288,10 +313,9 @@ public class SourceAction extends ManagerBaseAction {
    *
    * @return true if alert was sent, false otherwise
    */
-  @VisibleForTesting
   protected boolean alertColumnNumberChange(boolean sourceIsMapped, int number, int originalNumber) {
     if (sourceIsMapped) {
-      if (Integer.compare(originalNumber, number) != 0) {
+      if (originalNumber != number) {
         addActionWarning(getText("manage.source.numColumns.changed",
           new String[] {source.getName(), String.valueOf(originalNumber), String.valueOf(number)}));
       return true;
@@ -317,10 +341,12 @@ public class SourceAction extends ManagerBaseAction {
   }
 
   /**
-   * Insert temporal session variable SESSION_URL.
+   * Insert temporal session variables related to URL sources.
    */
-  private void urlToOverwrite() {
+  private void urlToOverwrite(String message) {
     session.put(Constants.SESSION_URL, url);
+    session.put(Constants.SESSION_SOURCE_NAME, sourceName);
+    session.put(Constants.SESSION_SOURCE_OVERWRITE_MESSAGE, message);
   }
 
   @Override
@@ -369,6 +395,10 @@ public class SourceAction extends ManagerBaseAction {
 
   public String getRdbms() {
     return rdbms;
+  }
+
+  public String getSqlSourcePassword() {
+    return sqlSourcePassword;
   }
 
   public Source getSource() {
@@ -429,6 +459,8 @@ public class SourceAction extends ManagerBaseAction {
     session.remove(Constants.SESSION_FILE_NAME);
     session.remove(Constants.SESSION_FILE_CONTENT_TYPE);
     session.remove(Constants.SESSION_URL);
+    session.remove(Constants.SESSION_SOURCE_NAME);
+    session.remove(Constants.SESSION_SOURCE_OVERWRITE_MESSAGE);
   }
 
   @Override
@@ -495,6 +527,10 @@ public class SourceAction extends ManagerBaseAction {
     this.url = url;
   }
 
+  public void setSourceName(String sourceName) {
+    this.sourceName = sourceName;
+  }
+
   public void setSourceType(String sourceType) {
     this.sourceType = sourceType;
   }
@@ -513,8 +549,16 @@ public class SourceAction extends ManagerBaseAction {
 
   public void setRdbms(String jdbc) {
     this.rdbms = jdbc;
-    if (source != null && !source.isFileSource()) {
+    if (source != null && source instanceof SqlSource) {
       ((SqlSource) source).setRdbms(jdbcSupport.get(rdbms));
+    }
+  }
+
+  public void setSqlSourcePassword(String sqlSourcePassword) {
+    if (source != null && source instanceof SqlSource) {
+      ((SqlSource) source).setPassword(sqlSourcePassword);
+      // source should be re-analyzed after password update
+      this.analyze = true;
     }
   }
 

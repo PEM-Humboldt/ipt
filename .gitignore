@@ -16,5 +16,6 @@ target/
 .history
 .factorypath
 .settings/
+.vscode/
 *.log
 src/main/webapp/WEB-INF/datadir.location
