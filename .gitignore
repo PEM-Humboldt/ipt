@@ -19,3 +19,8 @@ target/
 .vscode/
 *.log
 src/main/webapp/WEB-INF/datadir.location
+
+
+# admin and debug logs
+admin.log.*
+debug.log.*
