@@ -464,8 +464,6 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
   private void loadBasisOfRecordMapFromVocabulary() {
     if (basisOfRecords == null) {
       basisOfRecords = new HashMap<>();
-      basisOfRecords
-        .putAll(vocabManager.getI18nVocab(Constants.VOCAB_URI_BASIS_OF_RECORDS, Locale.ENGLISH.getLanguage(), false));
       basisOfRecords = MapUtils.getMapWithLowercaseKeys(basisOfRecords);
     }
   }
