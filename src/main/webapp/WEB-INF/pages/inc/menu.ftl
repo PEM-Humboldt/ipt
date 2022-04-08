@@ -31,7 +31,7 @@
                         <li class="nav-item">
                             <a class="nav-link [#if currentMenu=='admin']active[/#if]" href="${baseURL}/admin/">[@s.text name="menu.admin"/]</a>
                         </li>
-                    [#else]
+                    [#elseif !managerRights]
                         <li class="nav-item">
                             <a class="nav-link [#if currentMenu=='inventory']active[/#if]" href="http://goo.gl/is7UaG" target="_blank">[@s.text name="menu.inventory"/]</a>
                         </li>
