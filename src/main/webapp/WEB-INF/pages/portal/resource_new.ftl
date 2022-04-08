@@ -494,7 +494,7 @@
                         </div>
                     </#if>
 
-                    <#if metadataOnly != true && showDwCA>
+                    <#if metadataOnly != true && showDwCA && !eml.intellectualRights.contains("I2D")>
                         <span class="anchor anchor-home-resource-page" id="anchor-dataRecords"></span>
                         <div id="dataRecords" class="mt-5 section">
                             <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fw-400">
@@ -566,7 +566,7 @@
                                 <#-- Archive, EML, and RTF download links include Google Analytics event tracking -->
                                 <#-- e.g. Archive event tracking includes components: _trackEvent method, category, action, label, (int) value -->
                                 <#-- EML and RTF versions can always be retrieved by version number but DWCA versions are only stored if IPT Archive Mode is on -->
-                                <#if metadataOnly == false && showDwCA>
+                            <#if metadataOnly == false && showDwCA && !eml.intellectualRights.contains("I2D")>
                                     <tr>
                                         <th class="col-4"><@s.text name='portal.resource.dwca.verbose'/></th>
                                         <#if version?? && version.toPlainString() != resource.emlVersion.toPlainString() && recordsPublishedForVersion??>
