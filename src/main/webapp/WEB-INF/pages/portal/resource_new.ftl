@@ -118,27 +118,16 @@
 <#-- ...Testing... -->
 <#assign showDwCA=false/>
     <#if eml.intellectualRights?has_content>
-        <#if elemInArray('Libre a nivel interno, Libre a nivel interno con notificación previa, Restringido temporalmente', eml.intellectualRights, ", ") >
+        <#if eml.intellectualRights.contains("Libre a nivel interno") || eml.intellectualRights.contains("Restringido temporalmente") || eml.intellectualRights.contains("Libre a nivel interno con notificación previa") >
             <#if (Session.curr_user)??>
-                <#if Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights == "Libre a nivel interno" >
-                    <#assign showDwCA=true/>
-                </#if>
-                <#if (Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights != "Libre a nivel interno") || !Session.curr_user.email?ends_with("@humboldt.org.co") >
-                    <#if Session.curr_user.grantedAccessTo?has_content >
-                        <h1>(${resource.shortname}) --&gt; ${Session.curr_user.grantedAccessTo}</h1>
-                        <#if elemInArray(Session.curr_user.grantedAccessTo, resource.shortname, ", ")>
-                            <#assign showDwCA=true/>
-                        <#else>
-                        </#if>
-                    </#if>
-                </#if>
+                <#assign showDwCA=true/>
+            <#else>
+                <#assign showDwCA=false/>
             </#if>
-        <#else>
-            <#assign showDwCA=true/>
         </#if>
-    <#else>
-        <#assign showDwCA=true/>
     </#if>
+
+
 <!-- /IAvH Customization-->
 
 <#assign anchor_versions>#anchor-versions</#assign>
