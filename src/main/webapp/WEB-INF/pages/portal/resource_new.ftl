@@ -120,7 +120,9 @@
     <#if eml.intellectualRights?has_content>
         <#if eml.intellectualRights.contains("Libre a nivel interno") || eml.intellectualRights.contains("Restringido temporalmente") || eml.intellectualRights.contains("Libre a nivel interno con notificación previa") >
             <#if (Session.curr_user)??>
-                <#assign showDwCA=true/>
+                <#if adminRights>
+                    <#assign showDwCA=true/>>
+                </#if>
             <#else>
                 <#assign showDwCA=false/>
             </#if>
