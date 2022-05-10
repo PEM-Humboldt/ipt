@@ -118,7 +118,9 @@
 <#-- ...Testing... -->
 <#assign showDwCA=false/>
     <#if eml.intellectualRights?has_content>
-        <#if eml.intellectualRights.contains("Libre a nivel interno") || eml.intellectualRights.contains("Restringido temporalmente") || eml.intellectualRights.contains("Libre a nivel interno con notificación previa") >
+        <#if eml.intellectualRights.contains("Libre a nivel interno y externo") >
+            <#assign showDwCA=true/>
+        <#elseif eml.intellectualRights.contains("Libre a nivel interno") || eml.intellectualRights.contains("Restringido temporalmente") || eml.intellectualRights.contains("Libre a nivel interno con notificación previa") >
             <#if (Session.curr_user)??>
                 <#if adminRights>
                     <#assign showDwCA=true/>>
@@ -126,6 +128,8 @@
             <#else>
                 <#assign showDwCA=false/>
             </#if>
+        <#else>
+            <#assign showDwCA=false/>
         </#if>
     </#if>
 
@@ -480,7 +484,17 @@
                                 <#if resource.organisation?? && action.getDefaultOrganisation()?? && resource.organisation.key.toString() != action.getDefaultOrganisation().key.toString()>
                                     <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
                                 </#if>
-                                <#noescape>${eml.intellectualRights!}</#noescape>
+                                <#if eml.intellectualRights.contains("CC-BY-NC")>
+                                    <a href="http://creativecommons.org/licenses/by-nc/4.0/legalcode" target="_blank">Libre a nivel interno y externo (Creative Commons Attribution Non Commercial (CC-BY-NC) 4.0)</a>
+                                <#elseif eml.intellectualRights.contains("Restringido temporalmente")>
+                                    <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Restringido temporalmente</a>
+                                <#elseif eml.intellectualRights.contains("Libre a nivel interno con notificación previa")>
+                                    <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Libre a nivel interno con notificación previa</a>
+                                <#elseif eml.intellectualRights.contains("Libre a nivel interno")>
+                                    <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Libre a nivel interno</a>
+                                <#else>
+                                    ---
+                                </#if>
                             </p>
                         </div>
                     </#if>
