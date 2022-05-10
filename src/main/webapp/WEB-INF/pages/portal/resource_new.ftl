@@ -118,27 +118,22 @@
 <#-- ...Testing... -->
 <#assign showDwCA=false/>
     <#if eml.intellectualRights?has_content>
-        <#if elemInArray('Libre a nivel interno, Libre a nivel interno con notificación previa, Restringido temporalmente', eml.intellectualRights, ", ") >
+        <#if eml.intellectualRights.contains("Libre a nivel interno y externo") >
+            <#assign showDwCA=true/>
+        <#elseif eml.intellectualRights.contains("Libre a nivel interno") || eml.intellectualRights.contains("Restringido temporalmente") || eml.intellectualRights.contains("Libre a nivel interno con notificación previa") >
             <#if (Session.curr_user)??>
-                <#if Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights == "Libre a nivel interno" >
-                    <#assign showDwCA=true/>
+                <#if adminRights>
+                    <#assign showDwCA=true/>>
                 </#if>
-                <#if (Session.curr_user.email?ends_with("@humboldt.org.co") && eml.intellectualRights != "Libre a nivel interno") || !Session.curr_user.email?ends_with("@humboldt.org.co") >
-                    <#if Session.curr_user.grantedAccessTo?has_content >
-                        <h1>(${resource.shortname}) --&gt; ${Session.curr_user.grantedAccessTo}</h1>
-                        <#if elemInArray(Session.curr_user.grantedAccessTo, resource.shortname, ", ")>
-                            <#assign showDwCA=true/>
-                        <#else>
-                        </#if>
-                    </#if>
-                </#if>
+            <#else>
+                <#assign showDwCA=false/>
             </#if>
         <#else>
-            <#assign showDwCA=true/>
+            <#assign showDwCA=false/>
         </#if>
-    <#else>
-        <#assign showDwCA=true/>
     </#if>
+
+
 <!-- /IAvH Customization-->
 
 <#assign anchor_versions>#anchor-versions</#assign>
@@ -489,7 +484,17 @@
                                 <#if resource.organisation?? && action.getDefaultOrganisation()?? && resource.organisation.key.toString() != action.getDefaultOrganisation().key.toString()>
                                     <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
                                 </#if>
-                                <#noescape>${eml.intellectualRights!}</#noescape>
+                                <#if eml.intellectualRights.contains("CC-BY-NC")>
+                                    <a href="http://creativecommons.org/licenses/by-nc/4.0/legalcode" target="_blank">Libre a nivel interno y externo (Creative Commons Attribution Non Commercial (CC-BY-NC) 4.0)</a>
+                                <#elseif eml.intellectualRights.contains("Restringido temporalmente")>
+                                    <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Restringido temporalmente</a>
+                                <#elseif eml.intellectualRights.contains("Libre a nivel interno con notificación previa")>
+                                    <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Libre a nivel interno con notificación previa</a>
+                                <#elseif eml.intellectualRights.contains("Libre a nivel interno")>
+                                    <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Libre a nivel interno</a>
+                                <#else>
+                                    ---
+                                </#if>
                             </p>
                         </div>
                     </#if>
