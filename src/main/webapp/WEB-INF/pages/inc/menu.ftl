@@ -19,24 +19,22 @@
                     <li class="nav-item">
                         <a class="nav-link [#if currentMenu=='home']active[/#if]" href="${baseURL}/">[@s.text name="menu.home"/]</a>
                     </li>
-                    [#if managerRights]
-                        <li class="nav-item">
-                            <a class="nav-link [#if currentMenu=='data']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/consulta?authuser=0" target="_blank">[@s.text name="menu.data"/]</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link [#if currentMenu=='manage']active[/#if]" href="${baseURL}/manage/">[@s.text name="menu.manage"/]</a>
-                        </li>
-                    [/#if]
                     [#if adminRights]
                         <li class="nav-item">
                             <a class="nav-link [#if currentMenu=='admin']active[/#if]" href="${baseURL}/admin/">[@s.text name="menu.admin"/]</a>
                         </li>
                     [#else]
                         <li class="nav-item">
-                            <a class="nav-link [#if currentMenu=='inventory']active[/#if]" href="http://goo.gl/is7UaG" target="_blank">[@s.text name="menu.inventory"/]</a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link [#if currentMenu=='data']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/consulta?authuser=0" target="_blank">[@s.text name="menu.data"/]</a>
+                        </li>
+                    [/#if]
+                    [#if managerRights]
+                        <li class="nav-item">
+                            <a class="nav-link [#if currentMenu=='manage']active[/#if]" href="${baseURL}/manage/">[@s.text name="menu.manage"/]</a>
+                        </li>
+                    [#else]
+                        <li class="nav-item">
+                            <a class="nav-link [#if currentMenu=='inventory']active[/#if]" href="http://goo.gl/is7UaG" target="_blank">[@s.text name="menu.inventory"/]</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link [#if currentMenu=='faq']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/preguntas-frecuentes/faq-ceiba?authuser=0" target="_blank">[@s.text name="menu.faq"/]</a>
@@ -48,7 +46,6 @@
                 </ul>
 
                 <div class="d-xl-flex align-content-between">
-                    
                     <!-- Login, account -->
                     [#if (Session.curr_user)??]
                         <ul class="navbar-nav">
