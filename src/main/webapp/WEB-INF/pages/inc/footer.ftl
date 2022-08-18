@@ -1,6 +1,15 @@
 <#ftl output_format="HTML">
 <footer class="footer mt-auto text-muted text-center text-smaller py-3">
     <div class="container">
+        <div class="logosI2D">
+            <a href="http://datos.humboldt.org.co" rel="home" title="Infraestructura Institucional de Datos e Información" class="image-footer" >
+                <img src="${baseURL}/images/logo-I2D.png" alt="Infraestructura Institucional de Datos e Información" class="logo-I2D"/>
+                <h6>Infraestructura <br>Institucional de <br>datos e información</h6>
+            </a>
+            <a href="http://humboldt.org.co" rel="home" title="Instituto Alexander von Humboldt" class="image-footer" >
+                <img src="${baseURL}/images/logo-IAvH.png" alt="Instituto Alexander von Humboldt" class="logo-IAvH"/>
+            </a>
+        </div>
         <div class="mb-1">
             <img class="footer-gbif-logo" alt="GBIF" src="${baseURL}/images/GBIF-2015-standard-ipt.png"/>
             Integrated Publishing Toolkit (IPT) <@s.text name="footer.version"/> ${cfg.version!"???"}
