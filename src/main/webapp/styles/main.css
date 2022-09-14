@@ -189,11 +189,11 @@ a.no-text-decoration, a.no-text-decoration:focus, a.no-text-decoration:hover {
 }
 
 .text-gbif-header {
-    color: #4E565F;
+    color: #f29131;
 }
 
 .text-gbif-header-2 {
-    color: #58687b;
+    color: #376c88;
 }
 
 .bg-gbif-primary {
@@ -553,6 +553,12 @@ td.left_padding {
     margin-right: 18px;
     height: 40px;
     width: 67px;
+}
+
+.home-title {
+    background-color: #ef5d32;
+    color:#fff;
+    font-weight: 700;
 }
 
 /* Licence logos styling END */
