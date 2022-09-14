@@ -4,9 +4,8 @@
 <body class="bg-light d-flex flex-column h-100">
 
 <header>
-    <nav class="navbar navbar-expand-xl navbar-dark bg-gbif-main-navbar fixed-top py-1 [#if !auxTopNavbar]shadow-sm[/#if]">
+    <nav class="navbar navbar-expand-xl navbar-light bg-gbif-main-navbar fixed-top py-1 [#if !auxTopNavbar]shadow-sm[/#if]">
         <div class="container">
-            <a href="http://www.humboldt.org.co" rel="home" title="IAvH"><img src="${baseURL}/images/logo-IAvH.png" class="logo-iavh"></a>
             <a href="${baseURL}/" rel="home" title="CEIBA IPT" class="navbar-brand" >
                 <img src="${baseURL}/images/logo-CEIBA.png" alt="CEIBA IPT" class="logo-ceiba"/>
             </a>

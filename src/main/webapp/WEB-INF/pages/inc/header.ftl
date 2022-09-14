@@ -28,6 +28,9 @@
     <link href="${baseURL}/rss.do" title="Latest Resources" rel="alternate" type="application/rss+xml" />
     <link rel="stylesheet" type="text/css" href="${baseURL}/styles/font-awesome.min.css" media="all" />
 
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,400;0,700;1,100;1,400;1,700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&display=swap" rel="stylesheet">
+
+
     <!-- Jquery CSS -->
     <link media="all" type="text/css" href="${baseURL}/styles/jquery/jquery-ui.min.css" rel="stylesheet"/>
     <link href="${baseURL}/styles/jquery/multi-select.css" media="screen" rel="stylesheet" type="text/css">
