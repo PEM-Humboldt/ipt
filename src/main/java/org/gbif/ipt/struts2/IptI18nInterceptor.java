@@ -36,26 +36,30 @@ public class IptI18nInterceptor extends I18nInterceptor {
 
   static {
     IPT_SUPPORTED_LOCALES = new HashSet<>();
+    IPT_SUPPORTED_LOCALES.add(Locale.UK);
     IPT_SUPPORTED_LOCALES.add(new Locale("es"));
   }
 
   @Override
   protected Locale getLocaleFromParam(Object requestedLocale) {
-    Locale locale = new Locale("es");
+    Locale locale = null;
     try {
       if (requestedLocale != null) {
         locale = (requestedLocale instanceof Locale) ? (Locale) requestedLocale
             : LocaleUtils.toLocale(requestedLocale.toString());
         if (locale != null && LOG.isDebugEnabled()) {
-          LOG.debug("Forced to applied request locale: es");
+          LOG.debug("Applied request locale: " + locale.getLanguage());
         }
       }
     } catch (IllegalArgumentException e) {
       LOG.debug("Invalid request locale: {}", requestedLocale);
-      locale = new Locale("es");
+      locale = Locale.getDefault();
     }
-    if (locale != null && !IPT_SUPPORTED_LOCALES.contains(locale)) {
-      locale = new Locale("es");
+    if (Locale.ENGLISH.equals(locale)) {
+      locale = Locale.UK;
+    }
+    if (locale != null && !IPT_SUPPORTED_LOCALES.contains(locale)) {;
+      locale = Locale.getDefault();
     }
     return locale;
   }
