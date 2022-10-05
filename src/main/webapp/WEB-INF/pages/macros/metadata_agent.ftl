@@ -477,7 +477,7 @@
             $("#" + idPrefix + index + " [id$='firstName']").val("");
             $("#" + idPrefix + index + " [id$='lastName']").val("Infraestructura Institucional de Datos");
             $("#" + idPrefix + index + " [id$='position']").val("");
-            $("#" + idPrefix + index + " [id$='organisation']").val("Instituto de Investigación de Recursos Biológicos Alexander Von Humboldt");
+            $("#" + idPrefix + index + " [id$='organisation']").val("Instituto de Investigación de Recursos Biológicos Alexander von Humboldt");
             $("#" + idPrefix + index + " [id$='address']").val("Avenida Paseo Bolívar # 16-20");
             $("#" + idPrefix + index + " [id$='city']").val("Bogotá, D.C.");
             $("#" + idPrefix + index + " [id$='province']").val("Bogotá, D.C.");
