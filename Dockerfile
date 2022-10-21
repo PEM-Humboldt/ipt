@@ -16,7 +16,7 @@ COPY ${WAR_LOCAL_DIR} /usr/local/tomcat/webapps/${IPT_NAME}
 
 WORKDIR /usr/local/tomcat/webapps/${IPT_NAME}
 RUN mv ipt-2.5.5-CEIBA.war ipt.war \
-    && yum update && yum install -y zip \
+    && yum update && yum install -y unzip \
     && unzip -d /usr/local/tomcat/webapps/${IPT_NAME} ipt.war \
     && rm -f ipt.war
 
