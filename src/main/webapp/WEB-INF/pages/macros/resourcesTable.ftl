@@ -39,7 +39,7 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
              <#list resources as r>
             [
                 "<a href='${baseURL}<#if !shownPublicly>/manage</#if>/resource?r=${r.shortname}'><if><#if r.title?has_content>${r.title?replace("\'", "\\'")?replace("\"", '\\"')}<#else>${r.shortname}</#if></a>",
-                 <#if r.eml.project.funding?has_content>'${r.eml.project.funding?replace("\n"," ")?replace("\"","")?replace("\'","")?replace("“","")?replace("”","")?replace("\\r?\\n"," ")}'<#else>'${emptyString}'</#if>,
+                <#if r.eml.project.funding?has_content>'${r.eml.project.funding?replace("\n"," ")?replace("\"","")?replace("\'","")?replace("“","")?replace("”","")?replace("\r"," ")}'<#else>'${emptyString}'</#if>,
                 <#if r.coreType?has_content && types[r.coreType?lower_case]?has_content>'${types[r.coreType?lower_case]?replace("\'", "\\'")?replace("\"", '\\"')?cap_first!}'<#else>'${emptyString}'</#if>,
                 <#if r.subtype?has_content && datasetSubtypes[r.subtype?lower_case]?has_content >'${datasetSubtypes[r.subtype?lower_case]?replace("\'", "\\'")?replace("\"", '\\"')?cap_first!}'<#else>'${emptyString}'</#if>,
                 '<a target="_blank" href="${baseURL}/resource?r=${r.shortname}#anchor-dataRecords">${(r.recordsPublished?c)!0}</a>',
