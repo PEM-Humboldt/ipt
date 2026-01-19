@@ -29,7 +29,6 @@
                 if (checkboxParam === 'true') {
                     // select checkbox
                     $inferAutomaticallyCheckbox.prop('checked', true);
-
                     // enable description input
                     $('div#static-taxanomic textarea').show().prop('disabled', false);
                 }
@@ -267,7 +266,7 @@
                             <#if resource.dataPackage==false>
                             <div class="row g-2 mt-0">
                                 <div class="col-md-6">
-                                    <@checkbox name="inferTaxonomicCoverageAutomatically" i18nkey="eml.inferAutomatically"/>
+                                    <@checkbox name="resource.inferTaxonomicCoverageAutomatically" i18nkey="eml.inferAutomatically"/>
                                 </div>
 
                                 <div id="preview-links" class="col-md-6">
