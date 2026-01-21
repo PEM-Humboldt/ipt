@@ -85,7 +85,8 @@
                 count++;
             });
 
-            if ($("#inferTemporalCoverageAutomatically").is(':checked')) {
+            let $inferTempCoverageAutomaticallyCheckbox = $("#resource\\.inferTemporalCoverageAutomatically");
+            if ($inferTempCoverageAutomaticallyCheckbox.is(':checked')) {
                 $("[id^=temporal-]").remove();
                 $('.intro').hide();
                 $('#preview-inferred-temporal').hide();
@@ -94,8 +95,8 @@
                 $("#dateInferred").show();
             }
 
-            $("#inferTemporalCoverageAutomatically").click(function() {
-                if ($("#inferTemporalCoverageAutomatically").is(':checked')) {
+            $inferTempCoverageAutomaticallyCheckbox.click(function() {
+                if ($inferTempCoverageAutomaticallyCheckbox.is(':checked')) {
                     $("[id^=temporal-]").remove();
                     $('.intro').hide();
                     $('#preview-inferred-temporal').hide();
