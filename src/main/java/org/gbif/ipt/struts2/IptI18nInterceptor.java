@@ -13,17 +13,15 @@
  */
 package org.gbif.ipt.struts2;
 
-import org.gbif.ipt.config.AppConfig;
-
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
-import javax.inject.Inject;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.struts2.interceptor.I18nInterceptor;
+import org.gbif.ipt.config.AppConfig;
 
 /**
  * An interceptor that ensures that all Locales supported by the IPT can be handled properly. Needed because
@@ -35,15 +33,14 @@ public class IptI18nInterceptor extends I18nInterceptor {
   private static final Logger LOG = LogManager.getLogger(IptI18nInterceptor.class);
   private static final Set<Locale> IPT_SUPPORTED_LOCALES;
 
+  private AppConfig appConfig;
+
   static {
     IPT_SUPPORTED_LOCALES = new HashSet<>();
     IPT_SUPPORTED_LOCALES.add(Locale.UK);
     IPT_SUPPORTED_LOCALES.add(new Locale("es"));
   }
 
-  private AppConfig appConfig;
-
-  @Override
   protected Locale getLocaleFromParam(Object requestedLocale) {
     Locale locale = null;
     try {
@@ -61,13 +58,16 @@ public class IptI18nInterceptor extends I18nInterceptor {
     if (Locale.ENGLISH.equals(locale)) {
       locale = Locale.UK;
     }
-    if (locale != null && !IPT_SUPPORTED_LOCALES.contains(locale)) {
+    if (locale != null && !isSupportedLocale(locale)) {
       locale = Locale.getDefault();
     }
     return locale;
   }
 
-  @Inject
+  private boolean isSupportedLocale(Locale locale) {
+    return appConfig != null ? appConfig.isSupportedLocale(locale) : IPT_SUPPORTED_LOCALES.contains(locale);
+  }
+
   public void setAppConfig(AppConfig appConfig) {
     this.appConfig = appConfig;
   }

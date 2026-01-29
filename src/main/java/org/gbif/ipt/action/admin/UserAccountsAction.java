@@ -154,14 +154,6 @@ public class UserAccountsAction extends POSTAction {
       r.getManagers().remove(user);
       resourceManager.save(r);
     }
-=======
-  public UserAccountsAction(SimpleTextProvider textProvider,
-      AppConfig cfg, RegistrationManager registrationManager,
-      ResourceManager resourceManager, UserAccountManager userManager) {
-    super(textProvider, cfg, registrationManager);
-    this.userManager = userManager;
-    this.resourceManager = resourceManager;
->>>>>>> ceiba_master
   }
 
   @Override

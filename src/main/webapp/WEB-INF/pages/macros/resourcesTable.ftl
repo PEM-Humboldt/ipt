@@ -14,9 +14,12 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
         <#assign visibilityPrivate><@s.text name="manage.home.visible.private"/></#assign>
         <#assign visibilityPublic><@s.text name="manage.home.visible.public"/></#assign>
         <#assign visibilityDeleted><@s.text name="manage.home.visible.deleted"/></#assign>
+        <#assign deletedString=visibilityDeleted?markup_string!''/>
         <#assign notRegistered><@s.text name="manage.home.not.registered"/></#assign>
         <#assign unknownOrganisation><@s.text name="manage.home.unknown.organisation"/></#assign>
         <#assign notPublished><@s.text name="portal.home.not.published"/></#assign>
+        <#assign types = types!{}/>
+        <#assign datasetSubtypes = datasetSubtypes!{}/>
 
         // parse a date in yyyy-mm-dd format
         function parseDate(input) {
@@ -36,7 +39,7 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
         var aDataSet = [
              <#list resources as r>
             [
-                "<a href='${baseURL}<#if !shownPublicly>/manage</#if>/resource?r=${r.shortname}'><if><#if r.title?has_content>${r.title?replace("\'", "\\'")?replace("\"", '\\"')}<#else>${r.shortname}</#if></a>",
+                "<a href='${baseURL}<#if !shownPublicly>/manage</#if>/resource?r=${r.shortname}'><#if r.title?has_content>${r.title?replace("\'", "\\'")?replace("\"", '\\"')}<#else>${r.shortname}</#if></a>",
                 <#if r.eml.project.funding?has_content>'${r.eml.project.funding?replace("\n"," ")?replace("\"","")?replace("\'","")?replace("“","")?replace("”","")?replace("\r"," ")}'<#else>'${emptyString}'</#if>,
                 <#if r.coreType?has_content && types[r.coreType?lower_case]?has_content>'${types[r.coreType?lower_case]?replace("\'", "\\'")?replace("\"", '\\"')?cap_first!}'<#else>'${emptyString}'</#if>,
                 <#if r.subtype?has_content && datasetSubtypes[r.subtype?lower_case]?has_content >'${datasetSubtypes[r.subtype?lower_case]?replace("\'", "\\'")?replace("\"", '\\"')?cap_first!}'<#else>'${emptyString}'</#if>,
@@ -50,7 +53,6 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
             <#if r_has_next>,</#if>
             </#list>
         ];
->>>>>>> ceiba_master
 
         $(document).ready(function () {
             const SEARCH_PARAM = "search";
@@ -106,7 +108,7 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                     type: 'POST'
                 },
                 responsive: true,
-                "bProcessing": true,
+                "bProcessing": false,
                 "bServerSide": true,
                 "displayStart": start,
                 "iDisplayLength": ${numResourcesShown},
@@ -124,7 +126,6 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                     }
                 },
                 "aoColumns": [
-<<<<<<< HEAD
                     {"sTitle": "<@s.text name="portal.home.logo"/>", "bSearchable": false, "bSortable": false, "sClass": "desktop", "bVisible": <#if shownPublicly>true<#else>false</#if>},
                     {"sTitle": "<@s.text name="manage.home.name"/>", "sClass": "all text-break"},
                     {"sTitle": "<@s.text name="manage.home.organisation"/>", "sClass": "desktop tablet-l"},
@@ -156,7 +157,7 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                         }
                         // warning fragile: index 9 must always equal visibility (only on manage page)
                         var visibility = oSettings.aoData[i]._aData[9];
-                        if (visibility && visibility.toLowerCase() == '${deletedString?lower_case}') {
+                        if (visibility && visibility.toLowerCase() == '${((deletedString?is_markup_output?then(deletedString?markup_string, deletedString))!'')?lower_case}') {
                             oSettings.aoData[i].nTr.className += " text-gbif-danger";
                         }
 
@@ -202,7 +203,6 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                         } );
 
                     }
->>>>>>> ceiba_master
                 }
             });
 

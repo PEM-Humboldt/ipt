@@ -418,7 +418,6 @@
                             <div class="col-12">
                                 <@select name="eml.intellectualRights.license" i18nkey="eml.intellectualRights.license" help="i18n" options=licenses value="${licenseKeySelected!}" requiredField=true/>
 
-<<<<<<< HEAD
                                 <div id="intellectualRightsDiv" class="mt-3 p-3 fs-smaller cc_main_container">
                                     <div class="cc_logo">
                                         <@licenseLogoClass eml.intellectualRights!/>
@@ -437,12 +436,6 @@
                                             </#if>
                                         </#if>
                                     </div>
-                                <div id="intellectualRightsDiv" class="mt-3 p-3">
-                                    <@licenseLogoClass eml.intellectualRights!/>
-                                    <#noescape>${eml.intellectualRights!}</#noescape>
-                                    <#if version?? && version.toPlainString() != resource.emlVersion.toPlainString() && recordsPublishedForVersion??>
-                                        <@s.text name='version.toPlainString()'/>, <@s.text name='resource.emlVersion.toPlainString()'/>, <@s.text name='recordsPublishedForVersion'/>
-                                    </#if>
                                 </div>
                                 <!-- internal parameter -->
                                 <input id="eml.intellectualRights" name="eml.intellectualRights" type="hidden" value="${eml.intellectualRights!}" />
@@ -611,7 +604,6 @@
                             <div class="col-md-6">
                                 <@input name="eml.contact.userId.identifier" help="i18n" i18nkey="eml.contact.identifier" />
                             </div>
->>>>>>> ceiba_master
                         </div>
                     </div>
 
@@ -875,7 +867,6 @@
                             </div>
                             <div class="col-md-6">
                                 <@input name="eml.metadataProvider.userId.identifier" help="i18n" i18nkey="eml.contact.identifier" />
->>>>>>> ceiba_master
                             </div>
                         </div>
 

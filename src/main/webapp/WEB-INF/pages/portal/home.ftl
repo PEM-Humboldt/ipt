@@ -7,7 +7,7 @@
 <script src="${baseURL}/js/jquery/jquery.dataTables-1.13.6.min.js"></script>
 <script src="${baseURL}/js/jquery/dataTables.responsive-2.5.0.min.js"></script>
 
-<@resourcesTable resources=resources shownPublicly=true numResourcesShown=10 sEmptyTable="dataTables.sEmptyTable.resources" columnToSortOn=1 sortOrder="asc" />
+<@resourcesTable resources=resourcesList![] shownPublicly=true numResourcesShown=10 sEmptyTable="dataTables.sEmptyTable.resources" columnToSortOn=1 sortOrder="asc" />
 
 <div class="container">
     <#include "/WEB-INF/pages/inc/action_alerts.ftl">
@@ -21,11 +21,11 @@
             </div>
 
             <div class="text-center">
-                <h1 class="pb-2 mb-0 pt-2 text-gbif-header fs-2 fw-normal">
+                <h1 class="pb-2 mb-0 pt-2 text-gbif-header fs-2 fw-normal text-uppercase">
                     <@s.text name="portal.home.title"/>
                 </h1>
 
-                <#if (resources?size>0)>
+                <#if ((resourcesList![])?size>0)>
                     <div class="text-smaller text-gbif-primary mb-2">
                         <@s.text name="portal.home.resources.available"><@s.param>${resourcesSize}</@s.param></@s.text>
                     </div>
@@ -44,7 +44,7 @@
         <div id="tableContainer" class="resource-table text-smaller pt-2"></div>
 
         <!-- RSS Feed shown if there are resources -->
-        <#if (resources?size>0)>
+        <#if ((resourcesList![])?size>0)>
             <p class="mb-0 pt-2 text-center">
                 <i class="bi bi-rss"></i>
                 <@s.text name="portal.home.feed"><@s.param>${baseURL}/rss.do</@s.param></@s.text>

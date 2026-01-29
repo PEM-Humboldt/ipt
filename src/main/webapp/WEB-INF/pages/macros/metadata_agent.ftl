@@ -1373,7 +1373,6 @@
             $("#personnel-item-"+index+" [for$='directory']").attr("for", "eml.project.personnel["+index+"].userIds[0].directory");
             $("#personnel-item-"+index+" [id$='identifier']").attr("id", "eml.project.personnel["+index+"].userIds[0].identifier").attr("name", function() {return $(this).attr("id");});
             $("#personnel-item-"+index+" [for$='identifier']").attr("for", "eml.project.personnel["+index+"].userIds[0].identifier");
->>>>>>> ceiba_master
         }
 
 });

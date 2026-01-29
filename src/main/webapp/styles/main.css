@@ -322,7 +322,6 @@ table {
 
 
 /* Logo, header, menu etc. START */
-<<<<<<< HEAD
 #gbif-logo {
     display: none;
 }
@@ -341,7 +340,6 @@ table {
     height: 55px;
     position: relative;
     line-height: 32px;
-}
     vertical-align: middle;
 }
 
@@ -374,7 +372,6 @@ table {
 }
 
 .dropdown-item:active {
-<<<<<<< HEAD
     background-color: rgb(var(--color-gbif-primary)) !important;
     color: #4e565f;
 }
@@ -420,17 +417,6 @@ table {
 }
 
 .bg-gbif-main-navbar {
-    background-image: linear-gradient(to bottom, rgba(var(--navbar-color), 1), rgba(var(--navbar-color), 0.85));
-    /*background-color: #f8f9fa !important;*/
-}
-
-.navbar-button {
-    color: rgb(var(--navbar-link-color));
-    border-color: rgb(var(--navbar-link-color));
-    background-color: #ef5d32 !important;
-}
-
-.bg-gbif-main-navbar {
     background: #ebe5de;
     border-top: 2px solid #d9d9d9;
     border-bottom: 2px solid #d9d9d9;
@@ -445,7 +431,6 @@ table {
 .navbar-button {
     color: #ffffff !important;
     background: #ef5d32;
->>>>>>> ceiba_master
 }
 
 .navbar-button:hover, .navbar-button:focus {
@@ -959,7 +944,6 @@ a.no-text-decoration, a.no-text-decoration:focus, a.no-text-decoration:hover {
     border-color: #dee2e6 !important;
 }
 .btn-outline-secondary:focus, .btn-outline-secondary:active:focus {
-<<<<<<< HEAD
     box-shadow: none !important;
     color: rgb(var(--color-gbif-secondary)) !important;
     background-color: rgba(0, 0, 0, 0.04) !important;
@@ -1119,7 +1103,6 @@ td.left_padding {
 }
 
 
-<<<<<<< HEAD
 /* DataTables styles START */
 /* DataTable loader styles */
 .resourcesTable {
@@ -1148,13 +1131,11 @@ td.left_padding {
     background-color: #e9ecef;
     outline: 0;
     box-shadow: 0 0 0 0.25rem rgba(113, 177, 113, 0.25) !important;
->>>>>>> ceiba_master
 }
 
 div.dataTables_processing>div:last-child>div {
     background: rgb(var(--color-gbif-primary)) !important;
 }
-<<<<<<< HEAD
 
 /* DataTable pagination buttons styles */
 .dataTables_wrapper .dataTables_paginate .paginate_button.current,
@@ -1484,7 +1465,6 @@ input[type="search"]:focus::-webkit-search-cancel-button {
 
 /* Style select2 component START */
 .select2-container--bootstrap4 .select2-results__option--highlighted, .select2-container--bootstrap4 .select2-results__option--highlighted.select2-results__option[aria-selected="true"] {
-<<<<<<< HEAD
     color: #4e565f !important;
     background-color: rgba(0, 0, 0, .08) !important;
 }

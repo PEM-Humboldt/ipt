@@ -27,7 +27,7 @@
       -->
     <devMode>false</devMode>
     <devModeNegated>true</devModeNegated>
-    <jetty.port>7001</jetty.port>
+    <jetty.port>8080</jetty.port>
 
     <analytics.key />
     <ipt.frontPageImageURL />

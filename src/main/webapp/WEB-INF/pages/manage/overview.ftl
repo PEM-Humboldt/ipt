@@ -49,21 +49,18 @@
 
 <!-- The short form of the license for display in the versions table -->
 <#macro shortLicense licenseUrl="">
-<<<<<<< HEAD
-    <#if licenseUrl?contains("creativecommons.org/publicdomain/zero/1.0")>
+    <#if licenseUrl == "https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d">
+        I2D
+    <#elseif licenseUrl?contains("creativecommons.org/publicdomain/zero/1.0")>
         CC0 1.0
     <#elseif licenseUrl?contains("creativecommons.org/licenses/by/4.0")>
         CC-BY 4.0
-    <#elseif licenseUrl?contains("creativecommons.org/licenses/by-nc/4.0")>
+    <#elseif licenseUrl?contains("creativecommons.org/licenses/by-nc/4.0") || licenseUrl == "http://creativecommons.org/licenses/by-nc/4.0/legalcode">
         CC-BY-NC 4.0
     <#elseif licenseUrl?contains("http://www.opendatacommons.org/licenses/pddl/1.0")>
         ODC PDDL 1.0
     <#elseif licenseUrl?contains("http://www.opendatacommons.org/licenses/by/1.0")>
         ODC-By 1.0
-    <#if licenseUrl == "https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d">
-        I2D
-    <#elseif licenseUrl == "http://creativecommons.org/licenses/by-nc/4.0/legalcode">
-        CC-BY-NC 4.0
     <#elseif licenseUrl?has_content>
         <@s.text name='manage.overview.noGBIFLicense'/>
     <#else>

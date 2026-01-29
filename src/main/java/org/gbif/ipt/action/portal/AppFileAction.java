@@ -104,18 +104,33 @@ public class AppFileAction extends PortalBaseAction {
     return mimeType;
   }
 
-  // TODO: 08/09/2022 what if logo is absent (default logo)?
+  /**
+   * Serves the custom app logo from the data dir, or a default logo from the webapp if none is configured.
+   */
   public String logo() {
     for (String type : Constants.IMAGE_TYPES) {
       data = dataDir.appLogoFile(type);
-      if (data.exists()) {
+      if (data != null && data.exists()) {
         mimeType = "image/" + type;
         filename = "logo" + type;
         break;
       }
     }
-    if (!data.exists()) {
-      // show default "empty" logo instead ?
+    if (data == null || !data.exists()) {
+      // serve default logo from webapp to avoid 404
+      String realPath = req != null && req.getServletContext() != null
+          ? req.getServletContext().getRealPath("/images/GBIF-2015-standard-ipt.png")
+          : null;
+      if (realPath != null) {
+        File defaultLogo = new File(realPath);
+        if (defaultLogo.exists()) {
+          data = defaultLogo;
+          mimeType = "image/png";
+          filename = "logo.png";
+        }
+      }
+    }
+    if (data == null || !data.exists()) {
       return NOT_FOUND;
     }
     return execute();

@@ -575,7 +575,6 @@
                                 <@checkbox name="globalCoverage" help="i18n" i18nkey="eml.geospatialCoverages.globalCoverage"/>
                             </div>
 
-<<<<<<< HEAD
                             <div id="coordinates" class="mt-0">
                                 <div id="separator-warning" class="callout callout-info text-smaller">
                                     <@s.text name='manage.metadata.geocoverage.warning'/>

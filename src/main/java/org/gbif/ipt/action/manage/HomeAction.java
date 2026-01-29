@@ -17,6 +17,7 @@ import org.gbif.ipt.action.BaseAction;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.model.Organisation;
+import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.datatable.DatatableRequest;
 import org.gbif.ipt.model.datatable.DatatableResult;
 import org.gbif.ipt.service.admin.RegistrationManager;
@@ -36,6 +37,8 @@ public class HomeAction extends BaseAction {
   private static final long serialVersionUID = -7395504502586148676L;
 
   private DatatableResult resources = new DatatableResult();
+  /** List of resources for the resourcesTable macro (manage home page). */
+  private List<Resource> resourcesList;
 
   private final ResourceManager resourceManager;
   private List<Organisation> organisations;
@@ -54,6 +57,7 @@ public class HomeAction extends BaseAction {
   public String execute() {
     DatatableRequest dr = getRequestParameters(ServletActionContext.getRequest());
     resources = resourceManager.list(getCurrentUser(), dr);
+    resourcesList = resourceManager.list(getCurrentUser());
 
     // load organisations able to host
     organisations = registrationManager.list();
@@ -95,6 +99,13 @@ public class HomeAction extends BaseAction {
 
   public int getResourcesSize() {
     return resources != null ? resources.getTotalRecords() : 0;
+  }
+
+  /**
+   * List of resources for the manage home page table (resourcesTable macro expects a list, not DatatableResult).
+   */
+  public List<Resource> getResourcesList() {
+    return resourcesList;
   }
 
   /**

@@ -155,21 +155,21 @@
 
 <#-- ...Testing... -->
 <#assign showDwCA=false/>
-    <#if eml.intellectualRights?has_content>
-        <#if eml.intellectualRights.contains("Libre a nivel interno y externo") >
-            <#assign showDwCA=true/>
-        <#elseif elemInArray('Libre a nivel interno, Libre en nivel interno con notificación previa, Restringido temporalmente', eml.intellectualRights, ", ")>
-            <#if (Session.curr_user)??>
-                <#if adminRights>
-                    <#assign showDwCA=true/>>
-                </#if>
-            <#else>
-                <#assign showDwCA=false/>
+<#if eml.intellectualRights?has_content>
+    <#if eml.intellectualRights.contains("Libre a nivel interno y externo") >
+        <#assign showDwCA=true/>
+    <#elseif elemInArray('Libre a nivel interno, Libre en nivel interno con notificación previa, Restringido temporalmente', eml.intellectualRights, ", ")>
+        <#if (Session.curr_user)??>
+            <#if adminRights>
+                <#assign showDwCA=true/>
             </#if>
         <#else>
             <#assign showDwCA=false/>
         </#if>
+    <#else>
+        <#assign showDwCA=false/>
     </#if>
+</#if>
 
 
 <!-- /IAvH Customization-->
@@ -306,41 +306,6 @@
             </#if>
 
             <#if eml.distributionUrl?has_content || resource.lastPublished??>
-                <div class="mt-2">
-
-                    <#if managerRights>
-                        <a href="${baseURL}/manage/resource.do?r=${resource.shortname}" class="btn btn-sm btn-outline-gbif-primary mt-1 me-xl-1" style="min-width: 100px">
-                            <@s.text name='button.edit'/>
-                        </a>
->>>>>>> ceiba_master
-                    </#if>
-                </div>
-
-                <#if resource.lastPublished?? && resource.organisation??>
-                    <div class="text-gbif-primary fs-smaller-2 mt-2">
-                        <span>
-                            <#-- the existence of parameter version means the version is not equal to the latest published version -->
-                            <#if version?? && version.toPlainString() != resource.emlVersion.toPlainString()>
-                                <em><@s.text name='portal.resource.version'/>&nbsp;${version.toPlainString()}</em>
-                            <#else>
-                                <@s.text name='portal.resource.latest.version'/>
-                            </#if>
-
-                            <#if action.getDefaultOrganisation()?? && resource.organisation.key.toString() == action.getDefaultOrganisation().key.toString()>
-                                ${publishedOnText?lower_case}&nbsp;<span property="dc:issued">${eml.pubDate?date?string.long}</span>
-                            <#else>
-                                <@s.text name='portal.resource.publishedOn'><@s.param>${resource.organisation.name}</@s.param></@s.text> <span property="dc:issued">${eml.pubDate?date?string("MMM d, yyyy")}</span>
-                                <span property="dc:publisher" style="display: none">${resource.organisation.name}</span>
-                            </#if>
-                        </span>
-                    </div>
-                <#else>
-                    <div class="text-gbif-danger text-smaller">
-                        <@s.text name='portal.resource.published.never.long'/>
-                    </div>
-                </#if>
-
-                <#if eml.distributionUrl?has_content || resource.lastPublished??>
                     <div class="mt-2">
 
                         <#if managerRights>
@@ -645,7 +610,6 @@
                             </h4>
 
                             <p>
-<<<<<<< HEAD
                                 <#if resource.dataPackageIdentifier??>
                                     <@s.text name='portal.resource.dataRecords.dataPackageSchema.intro'/>
                                 <#else>
@@ -745,7 +709,6 @@
                         </div>
                     </div>
 
->>>>>>> ceiba_master
                     <!-- versions section -->
                     <#if resource.versionHistory??>
                         <span class="anchor anchor-home-resource-page" id="anchor-versions"></span>
@@ -784,7 +747,6 @@
                         </div>
                     </#if>
 
-<<<<<<< HEAD
                     <!-- rights section -->
                     <#if eml.intellectualRights?has_content>
                         <span class="anchor anchor-home-resource-page" id="anchor-rights"></span>

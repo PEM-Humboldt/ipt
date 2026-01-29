@@ -36,7 +36,7 @@ public class DefaultLocaleInterceptor extends AbstractInterceptor {
                 .filter(StringUtils::isNotEmpty)
                 .map(Locale::new)
                 .filter(cfg::isSupportedLocale)
-                .orElse(Locale.UK);
+                .orElse(new Locale("es"));
 
         invocation.getInvocationContext().withLocale(locale);
 

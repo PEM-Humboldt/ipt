@@ -16,6 +16,7 @@ package org.gbif.ipt.action.portal;
 import org.gbif.ipt.action.BaseAction;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
+import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.datatable.DatatableRequest;
 import org.gbif.ipt.model.datatable.DatatableResult;
 import org.gbif.ipt.service.admin.RegistrationManager;
@@ -35,6 +36,7 @@ public class HomeAction extends BaseAction {
 
   private final ResourceManager resourceManager;
   private DatatableResult resources = new DatatableResult();
+  private java.util.List<Resource> resourcesList = java.util.Collections.emptyList();
 
   @Inject
   public HomeAction(
@@ -50,6 +52,7 @@ public class HomeAction extends BaseAction {
   public String execute() {
     DatatableRequest dr = getRequestParameters(ServletActionContext.getRequest());
     resources = resourceManager.listPublishedPublicVersionsSimplified(dr);
+    resourcesList = resourceManager.listPublishedPublicVersions();
 
     return SUCCESS;
   }
@@ -103,5 +106,12 @@ public class HomeAction extends BaseAction {
 
   public int getResourcesSize() {
     return resources != null ? resources.getTotalRecords() : 0;
+  }
+
+  /**
+   * List of resources for the portal home template (macro expects a list, not DatatableResult).
+   */
+  public java.util.List<Resource> getResourcesList() {
+    return resourcesList != null ? resourcesList : java.util.Collections.emptyList();
   }
 }
