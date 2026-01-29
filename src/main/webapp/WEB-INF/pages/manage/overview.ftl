@@ -49,6 +49,7 @@
 
 <!-- The short form of the license for display in the versions table -->
 <#macro shortLicense licenseUrl="">
+<<<<<<< HEAD
     <#if licenseUrl?contains("creativecommons.org/publicdomain/zero/1.0")>
         CC0 1.0
     <#elseif licenseUrl?contains("creativecommons.org/licenses/by/4.0")>
@@ -59,6 +60,10 @@
         ODC PDDL 1.0
     <#elseif licenseUrl?contains("http://www.opendatacommons.org/licenses/by/1.0")>
         ODC-By 1.0
+    <#if licenseUrl == "https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d">
+        I2D
+    <#elseif licenseUrl == "http://creativecommons.org/licenses/by-nc/4.0/legalcode">
+        CC-BY-NC 4.0
     <#elseif licenseUrl?has_content>
         <@s.text name='manage.overview.noGBIFLicense'/>
     <#else>
@@ -1497,11 +1502,57 @@
                                     <#assign visibilityTitleInfo>
                                         <@s.text name='manage.overview.visibility.description'/>
                                     </#assign>
-
                                     <@popoverTextInfo visibilityTitleInfo/>
                                     <@s.text name='manage.overview.visibility'/>
                                 </h5>
                             </div>
+                            <div class="d-flex justify-content-end">
+                                <#if resource.status!="REGISTERED">
+                                    <#if !currentUser.hasRegistrationRights()>
+                                        <!-- Hide register button and show warning: user must have registration rights -->
+                                        <#assign visibilityConfirmRegistrationWarning>
+                                            <@s.text name="manage.resource.status.registration.forbidden"/>&nbsp;<@s.text name="manage.resource.role.change"/>
+                                        </#assign>
+                                        <div class="btn-group my-1" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-warning" data-bs-trigger="focus" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true" data-bs-content="${visibilityConfirmRegistrationWarning}">
+                                                <i class="bi bi-exclamation-triangle"></i>
+                                            </button>
+                                            <@s.submit cssClass="confirmRegistration btn btn-sm btn-outline-secondary" name="register" key="button.register" disabled="true"/>
+                                        </div>
+                                    <#elseif missingRegistrationMetadata?string == "true">
+                                        <!-- Disable register button and show warning: user must fill in minimum registration metadata -->
+                                        <div class="btn-group my-1" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-warning" data-bs-trigger="focus" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true" data-bs-content="<@s.text name="manage.overview.visibility.missing.metadata" escapeHtml=true/>">
+                                                <i class="bi bi-exclamation-triangle"></i>
+                                            </button>
+                                            <@s.submit cssClass="confirmRegistration btn btn-sm btn-outline-secondary" name="register" key="button.register" disabled="true"/>
+                                        </div>
+                                    <#elseif !resource.isLastPublishedVersionPublic()>
+                                        <!-- Disable register button and show warning: last published version must be publicly available to register -->
+                                        <div class="btn-group my-1" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-warning" data-bs-trigger="focus" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true" data-bs-content="<@s.text name="manage.overview.prevented.resource.registration.notPublic" escapeHtml=true/>">
+                                                <i class="bi bi-exclamation-triangle"></i>
+                                            </button>
+                                            <@s.submit cssClass="confirmRegistration btn btn-sm btn-outline-secondary" name="register" key="button.register" disabled="true"/>
+                                        </div>
+                                    <#elseif !action.isLastPublishedVersionAssignedGBIFSupportedLicense(resource)>
+                                        <!-- Disable register button and show warning: resource must be assigned a GBIF-supported license to register if resource has occurrence data -->
+                                        <div class="btn-group my-1" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-warning" data-bs-trigger="focus" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true" data-bs-content="<@s.text name="manage.overview.prevented.resource.registration.noGBIFLicense" escapeHtml=true/>">
+                                                <i class="bi bi-exclamation-triangle"></i>
+                                            </button>
+                                            <@s.submit cssClass="confirmRegistration btn btn-sm btn-outline-secondary" name="register" key="button.register" disabled="true"/>
+                                        </div>
+                                    <#else>
+                                        <@s.submit cssClass="confirmRegistration btn btn-sm btn-outline-gbif-primary my-1" name="register" key="button.register"/>
+                                    </#if>
+                                <#else>
+                                    <#if resource.status=="PRIVATE">
+                                        <@s.submit name="makePrivate" cssClass="btn btn-sm btn-outline-gbif-primary my-1" key="button.public"/>
+                                    </#if>
+                                </#if>
+                            </div>
+                        </div>
 
                             <div class="d-flex justify-content-end">
                                 <#if resource.status=="PRIVATE">

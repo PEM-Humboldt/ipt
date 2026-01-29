@@ -12,7 +12,7 @@
         // buttonType: a button type (color)
         // processing: run spinner
         var theOptions = jQuery.extend({
-            titleQuestion: "Are you sure?",
+            titleQuestion: "¿Está seguro?",
             question: undefined,
             yesAnswer: "Yes",
             cancelAnswer: "Cancel",

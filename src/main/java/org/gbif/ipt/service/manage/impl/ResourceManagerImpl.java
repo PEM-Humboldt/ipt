@@ -1810,6 +1810,21 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
   }
 
   @Override
+  public List<Resource> list(List<String> intellectualRightsList) {
+    List<Resource> result = new ArrayList<Resource>();
+    for (Resource r : resources.values()) {
+      Eml eml = r.getEml();
+      for (String intellectualRights : intellectualRightsList) {
+        if (Objects.equals(eml.getIntellectualRights(), intellectualRights)) {
+          result.add(r);
+          break;
+        }
+      }
+    }
+    return result;
+  }
+
+  @Override
   public List<Resource> list(PublicationStatus status) {
     List<Resource> result = new ArrayList<>();
     for (Resource r : resources.values()) {

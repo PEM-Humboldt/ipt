@@ -32,6 +32,26 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
             }
         }
 
+        /* resources list */
+        var aDataSet = [
+             <#list resources as r>
+            [
+                "<a href='${baseURL}<#if !shownPublicly>/manage</#if>/resource?r=${r.shortname}'><if><#if r.title?has_content>${r.title?replace("\'", "\\'")?replace("\"", '\\"')}<#else>${r.shortname}</#if></a>",
+                <#if r.eml.project.funding?has_content>'${r.eml.project.funding?replace("\n"," ")?replace("\"","")?replace("\'","")?replace("“","")?replace("”","")?replace("\r"," ")}'<#else>'${emptyString}'</#if>,
+                <#if r.coreType?has_content && types[r.coreType?lower_case]?has_content>'${types[r.coreType?lower_case]?replace("\'", "\\'")?replace("\"", '\\"')?cap_first!}'<#else>'${emptyString}'</#if>,
+                <#if r.subtype?has_content && datasetSubtypes[r.subtype?lower_case]?has_content >'${datasetSubtypes[r.subtype?lower_case]?replace("\'", "\\'")?replace("\"", '\\"')?cap_first!}'<#else>'${emptyString}'</#if>,
+                '<a target="_blank" href="${baseURL}/resource?r=${r.shortname}#anchor-dataRecords">${(r.recordsPublished?c)!0}</a>',
+                '${r.modified?date}',
+                <#if r.published>'${(r.lastPublished?date)!}'<#else>'<@s.text name="portal.home.not.published"/>'</#if>,
+                <#if r.status=='PRIVATE'>'<@s.text name="manage.home.visible.private"/>'<#elseif r.status=='DELETED'>'${deletedString}'<#else>'<@s.text name="manage.home.visible.public"/>'</#if>,
+                <#if r.creator??>'${r.creator.firstname?replace("\'", "\\'")?replace("\"", '\\"')!} ${r.creator.lastname?replace("\'", "\\'")?replace("\"", '\\"')!}'<#else>'${emptyString}'</#if>,
+                '${r.shortname}'
+            ]
+            <#if r_has_next>,</#if>
+            </#list>
+        ];
+>>>>>>> ceiba_master
+
         $(document).ready(function () {
             const SEARCH_PARAM = "search";
             const SORT_PARAM = "sort";
@@ -104,6 +124,7 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                     }
                 },
                 "aoColumns": [
+<<<<<<< HEAD
                     {"sTitle": "<@s.text name="portal.home.logo"/>", "bSearchable": false, "bSortable": false, "sClass": "desktop", "bVisible": <#if shownPublicly>true<#else>false</#if>},
                     {"sTitle": "<@s.text name="manage.home.name"/>", "sClass": "all text-break"},
                     {"sTitle": "<@s.text name="manage.home.organisation"/>", "sClass": "desktop tablet-l"},
@@ -123,8 +144,65 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                     {'bSortable': false, 'aTargets': [0]}
                 ],
                 "oSearch": {"sSearch": searchParam},
-                "fnInitComplete": function (oSettings) {
-                    /* Do nothing for now, may need in the future */
+                "fnInitComplete": function(oSettings) {
+                    /* Next published date should never be before today's date, otherwise auto-publication must have failed.
+                       In this case, highlight the row to bring the problem to the resource manager's attention. */
+                    var today = new Date();
+                    for ( var i=0, iLen=oSettings.aoData.length ; i<iLen ; i++ ) {
+                        // warning fragile: index 8 must always equal next published date on both home page and manage page
+                        var nextPublishedDate = (oSettings.aoData[i]._aData[8] == '${emptyString}') ? today : parseDate(oSettings.aoData[i]._aData[8]);
+                        if (today > nextPublishedDate) {
+                            oSettings.aoData[i].nTr.className += " text-gbif-danger";
+                        }
+                        // warning fragile: index 9 must always equal visibility (only on manage page)
+                        var visibility = oSettings.aoData[i]._aData[9];
+                        if (visibility && visibility.toLowerCase() == '${deletedString?lower_case}') {
+                            oSettings.aoData[i].nTr.className += " text-gbif-danger";
+                        }
+
+                        // Set tooltips
+                        $('#rtable thead th').each( function() {
+                            var	sTitle,
+                                sColumnTitle = this.textContent;
+
+                            if ( sColumnTitle == "<@s.text name="manage.home.name" />" )
+                                sTitle = "<@s.text name="manage.home.name.title" />";
+                            else if (sColumnTitle == "<@s.text name="manage.home.organisation" />")
+                                sTitle = "<@s.text name="manage.home.organisation.title" />";
+                            else if (sColumnTitle == "<@s.text name="manage.home.type" />")
+                                sTitle = "<@s.text name="manage.home.type.title" />";
+                            else if (sColumnTitle == "<@s.text name="manage.home.subtype" />")
+                                sTitle = "<@s.text name="manage.home.subtype.title" />";
+                            else if (sColumnTitle == "<@s.text name="portal.home.records" />")
+                                sTitle = "<@s.text name="portal.home.records.title" />";
+                            else if (sColumnTitle == "<@s.text name="manage.home.last.modified" />")
+                                sTitle = "<@s.text name="manage.home.last.modified.title" />";
+                            else if (sColumnTitle == "<@s.text name="manage.home.last.publication" />")
+                                sTitle = "<@s.text name="manage.home.last.publication.title" />";
+                            else if (sColumnTitle == "<@s.text name="manage.home.visible" />")
+	        	                sTitle = "<@s.text name="manage.home.visible.title" />";
+	                        else if (sColumnTitle == "<@s.text name="portal.home.author" />")
+	        	                sTitle = "<@s.text name="portal.home.author.title" />";
+                            this.setAttribute( 'title', sTitle );
+                        } );
+                        // TODO: Define title for the other fields
+
+                        // Set tooltip to filter text field
+                        $('#rtable_filter input')[0].setAttribute('title', "<@s.text name="manage.mapping.filter.title" />");
+
+                        // Tooltip initialization
+                        $('#rtable, #rtable_filter input').tooltip( {
+                            "delay": 100,
+                            "track": true,
+                            "fade": 250,
+                            position: {
+                                my: "center bottom-20",
+                                at: "center top"
+                            }
+                        } );
+
+                    }
+>>>>>>> ceiba_master
                 }
             });
 

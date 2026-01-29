@@ -245,7 +245,7 @@
                             <#assign addAwardLink = addAwardLink?markup_string>
 
                             <div class="row g-3 mt-1 mb-2">
-                                <@input name="eml.project.title" />
+                                <@input name="eml.project.title" requiredField=true help="i18n"/>
                                 <@input name="eml.project.identifier" help="i18n"/>
                                 <@text name="eml.project.description" help="i18n"/>
                                 <@text name="eml.project.funding" help="i18n"/>
@@ -460,11 +460,11 @@
                                                     </a>
                                                 </div>
                                             </div>
-                                            <div class="col-lg-5">
-                                                <@input name="eml.project.personnel[${item_index}].firstName" i18nkey="eml.project.personnel.firstName"/>
+                                            <div class="col-lg-6">
+                                                <@input name="eml.project.personnel[${item_index}].firstName" help="i18n" i18nkey="eml.project.personnel.firstName"/>
                                             </div>
-                                            <div class="col-lg-5">
-                                                <@input name="eml.project.personnel[${item_index}].lastName" i18nkey="eml.project.personnel.lastName" requiredField=true/>
+                                            <div class="col-lg-6">
+                                                <@input name="eml.project.personnel[${item_index}].lastName" help="i18n" i18nkey="eml.project.personnel.lastName" requiredField=true/>
                                             </div>
                                             <div class="col-lg-2">
                                                 <@input name="eml.project.personnel[${item_index}].salutation" i18nkey="eml.project.personnel.salutation" />
@@ -783,3 +783,4 @@
     </div>
 
     <#include "/WEB-INF/pages/inc/footer.ftl">
+</#escape>

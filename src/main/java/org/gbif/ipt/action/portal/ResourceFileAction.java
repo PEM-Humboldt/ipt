@@ -18,20 +18,25 @@ import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.config.DataDir;
 import org.gbif.ipt.model.FileSource;
 import org.gbif.ipt.model.Source;
+import org.gbif.ipt.model.User;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
+import org.gbif.metadata.eml.Eml;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.google.common.base.Strings;
 import javax.inject.Inject;
 
 /**
@@ -73,6 +78,48 @@ public class ResourceFileAction extends PortalBaseAction {
   public String archive() {
     if (resource == null) {
       return NOT_FOUND;
+    }
+
+    // see if DwCA is restricted and logged user has been granted access to it
+    Eml eml = resource.getEml();
+    List<String> intellectualRightsList = Arrays.asList(
+      getText("eml.intellectualRights.license.text.internal"),
+      getText("eml.intellectualRights.license.text.temporalRestriction"),
+      getText("eml.intellectualRights.license.text.internalNotification")
+    );
+
+    if (intellectualRightsList.contains(eml.getIntellectualRights())) {
+      User user = (User) session.get(Constants.SESSION_USER);
+      if (user == null) {
+        return NOT_ALLOWED;
+      } else {
+        // Humboldt users have access to restricted internal resources, so just check the rest
+        if ((user.getEmail().endsWith(Constants.HUMBOLDT_MAIL_DOMAIN) &&
+        !eml.getIntellectualRights().equals(getText("eml.intellectualRights.license.text.internal"))) ||
+          !user.getEmail().endsWith(Constants.HUMBOLDT_MAIL_DOMAIN)){
+            if (!Strings.isNullOrEmpty(user.getGrantedAccessTo())){
+              if (!Arrays.asList(user.getGrantedAccessTo().split(", ")).contains(resource.getShortname())){
+                return NOT_ALLOWED;
+              }
+            } else {
+                return NOT_ALLOWED;
+            }
+        }
+      }
+    }
+
+    // see if we have a conditional get with If-Modified-Since header
+    try {
+      long since = req.getDateHeader("If-Modified-Since");
+      if (since > 0 && resource.getLastPublished() != null) {
+        long last = resource.getLastPublished().getTime();
+        if (last < since) {
+          return NOT_MODIFIED;
+        }
+      }
+    } catch (IllegalArgumentException e) {
+      // headers might not be formed correctly, swallow
+      LOG.warn("Conditional get with If-Modified-Since header couldnt be interpreted", e);
     }
 
     // if no specific version is requested, use the latest published version

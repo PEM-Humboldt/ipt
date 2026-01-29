@@ -575,6 +575,7 @@
                                 <@checkbox name="globalCoverage" help="i18n" i18nkey="eml.geospatialCoverages.globalCoverage"/>
                             </div>
 
+<<<<<<< HEAD
                             <div id="coordinates" class="mt-0">
                                 <div id="separator-warning" class="callout callout-info text-smaller">
                                     <@s.text name='manage.metadata.geocoverage.warning'/>
@@ -612,13 +613,24 @@
                                         <input type="text" id="eml.geospatialCoverages[0].boundingCoordinates.max.latitude" name="eml.geospatialCoverages[0].boundingCoordinates.max.latitude" class="form-control" <#if (eml.geospatialCoverages[0].boundingCoordinates.max.latitude)?has_content>value="${(eml.geospatialCoverages[0].boundingCoordinates.max.latitude)?string["0.###"]}" <#else>value=""</#if> />
                                         <@s.fielderror id="field-error-eml.geospatialCoverages[0].boundingCoordinates.max.latitude" cssClass="invalid-feedback list-unstyled field-error my-1" fieldName="eml.geospatialCoverages[0].boundingCoordinates.max.latitude"/>
                                     </div>
+                                <div class="col-md-6">
+                                    <@input name="eml.geospatialCoverages[0].boundingCoordinates.min.longitude" value="${(eml.geospatialCoverages[0].boundingCoordinates.min.longitude?c)!}" help="i18n" i18nkey="eml.geospatialCoverages.boundingCoordinates.min.longitude" requiredField=true />
+                                </div>
+                                <div class="col-md-6">
+                                    <@input name="eml.geospatialCoverages[0].boundingCoordinates.max.longitude" value="${(eml.geospatialCoverages[0].boundingCoordinates.max.longitude?c)!}" help="i18n" i18nkey="eml.geospatialCoverages.boundingCoordinates.max.longitude" requiredField=true />
+                                </div>
+                                <div class="col-md-6">
+                                    <@input name="eml.geospatialCoverages[0].boundingCoordinates.min.latitude" value="${(eml.geospatialCoverages[0].boundingCoordinates.min.latitude?c)!}" help="i18n" i18nkey="eml.geospatialCoverages.boundingCoordinates.min.latitude" requiredField=true />
+                                </div>
+                                <div class="col-md-6">
+                                    <@input name="eml.geospatialCoverages[0].boundingCoordinates.max.latitude" value="${(eml.geospatialCoverages[0].boundingCoordinates.max.latitude?c)!}" help="i18n" i18nkey="eml.geospatialCoverages.boundingCoordinates.max.latitude" requiredField=true />
                                 </div>
                             </div>
                         </div>
 
                         <div class="row g-3 mt-2">
                             <div class="col-12">
-                                <@text name="eml.geospatialCoverages[0].description" value="${(eml.geospatialCoverages[0].description)!}" i18nkey="eml.geospatialCoverages.description" requiredField=true minlength=2 />
+                                <@text name="eml.geospatialCoverages[0].description" value="${(eml.geospatialCoverages[0].description)!}" help="i18n" i18nkey="eml.geospatialCoverages.description" requiredField=true minlength=2 />
                             </div>
                         </div>
 
@@ -635,3 +647,4 @@
     <#include "/WEB-INF/pages/manage/eml/unsaved_changes_modal.ftl">
 
     <#include "/WEB-INF/pages/inc/footer.ftl">
+</#escape>

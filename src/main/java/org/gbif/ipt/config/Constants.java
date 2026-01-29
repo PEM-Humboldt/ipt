@@ -38,6 +38,7 @@ public final class Constants {
   public static final String SESSION_DWC_TRANSLATION = "dwcTranslation";
   public static final String SESSION_DP_TRANSLATION = "dwcTranslation";
   public static final String SESSION_FILE_NUMBER_COLUMNS = "numberColumns";
+  public static final String HUMBOLDT_MAIL_DOMAIN = "@humboldt.org.co";
   public static final String REQ_PATH_RESOURCE = "resource";
   public static final String REQ_PATH_EML = "eml.do";
   public static final String REQ_PATH_METADATA = "metadata.do";

@@ -98,7 +98,8 @@
         // remove phone/email/homepage/position/address from contact/creator/metadataProvider/associatedParty
         $(".removeSubEntity").click(function (event) {
             event.preventDefault();
-            removeSubEntityFromAgent(event);
+            copyI2DDetails(event, "associatedParty-item-");
+            // copyPrimaryContactDetails(event, "associatedParty-item-");
         });
 
         // remove identifier from contact/creator/metadataProvider
@@ -1151,6 +1152,228 @@
             $("#" + itemId + " [id$='directory']").val("${(primaryContact.userIds[0].directory)!?replace("\"", "&quot;")}");
             $("#" + itemId + " [id$='directory']").trigger('change');
             $("#" + itemId + " [id$='identifier']").val("${(primaryContact.userIds[0].identifier)!?replace("\"", "&quot;")}");
+        }
+
+        function setContactItemIndex(item, index) {
+            item.attr("id","contact-item-"+index);
+
+            $("#contact-item-"+index+" [id^='contact-removeLink']").attr("id", "contact-removeLink-"+index);
+            $("#contact-removeLink-"+index).click(function(event) {
+                removeContactItem(event);
+            });
+
+            $("#contact-item-"+index+" [id^='contact-copyDetails']").attr("id", "contact-copyDetails-"+index);
+            $("#contact-copyDetails-"+index).click(function(event) {
+                copyDetails(event, "contact-item-");
+            });
+
+            $("#contact-item-"+index+" [id$='firstName']").attr("id", "eml.contacts["+index+"].firstName").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='firstName']").attr("for", "eml.contacts["+index+"].firstName");
+            $("#contact-item-"+index+" [id$='lastName']").attr("id", "eml.contacts["+index+"].lastName").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='lastName']").attr("for", "eml.contacts["+index+"].lastName");
+            $("#contact-item-"+index+" [id$='position']").attr("id", "eml.contacts["+index+"].position").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='position']").attr("for", "eml.contacts["+index+"].position");
+            $("#contact-item-"+index+" [id$='organisation']").attr("id", "eml.contacts["+index+"].organisation").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='organisation']").attr("for", "eml.contacts["+index+"].organisation");
+            $("#contact-item-"+index+" [id$='address']").attr("id", "eml.contacts["+index+"].address.address").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='address']").attr("for", "eml.contacts["+index+"].address.address");
+            $("#contact-item-"+index+" [id$='postalCode']").attr("id", "eml.contacts["+index+"].address.postalCode").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='postalCode']").attr("for", "eml.contacts["+index+"].address.postalCode");
+            $("#contact-item-"+index+" [id$='city']").attr("id", "eml.contacts["+index+"].address.city").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='city']").attr("for", "eml.contacts["+index+"].address.city");
+            $("#contact-item-"+index+" [id$='province']").attr("id", "eml.contacts["+index+"].address.province").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='province']").attr("for", "eml.contacts["+index+"].address.province");
+            $("#contact-item-"+index+" [id$='country']").attr("id", "eml.contacts["+index+"].address.country").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='country']").attr("for", "eml.contacts["+index+"].address.country");
+            $("#contact-item-"+index+" [id$='phone']").attr("id", "eml.contacts["+index+"].phone").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='phone']").attr("for", "eml.contacts["+index+"].phone");
+            $("#contact-item-"+index+" [id$='email']").attr("id", "eml.contacts["+index+"].email").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='email']").attr("for", "eml.contacts["+index+"].email");
+            $("#contact-item-"+index+" [id$='homepage']").attr("id", "eml.contacts["+index+"].homepage").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='homepage']").attr("for", "eml.contacts["+index+"].homepage");
+            $("#contact-item-"+index+" [id$='directory']").attr("id", "eml.contacts["+index+"].userIds[0].directory").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='directory']").attr("for", "eml.contacts["+index+"].userIds[0].directory");
+            $("#contact-item-"+index+" [id$='identifier']").attr("id", "eml.contacts["+index+"].userIds[0].identifier").attr("name", function() {return $(this).attr("id");});
+            $("#contact-item-"+index+" [for$='identifier']").attr("for", "eml.contacts["+index+"].userIds[0].identifier");
+        }
+
+        function setCreatorItemIndex(item, index) {
+            item.attr("id","creator-item-"+index);
+
+            $("#creator-item-"+index+" [id^='creator-removeLink']").attr("id", "creator-removeLink-"+index);
+            $("#creator-removeLink-"+index).click(function(event) {
+                removeCreatorItem(event);
+            });
+
+            $("#creator-item-"+index+" [id^='creator-copyDetails']").attr("id", "creator-copyDetails-"+index);
+            $("#creator-copyDetails-"+index).click(function(event) {
+                copyDetails(event, "creator-item-");
+            });
+
+            $("#creator-item-"+index+" [id$='firstName']").attr("id", "eml.creators["+index+"].firstName").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='firstName']").attr("for", "eml.creators["+index+"].firstName");
+            $("#creator-item-"+index+" [id$='lastName']").attr("id", "eml.creators["+index+"].lastName").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='lastName']").attr("for", "eml.creators["+index+"].lastName");
+            $("#creator-item-"+index+" [id$='position']").attr("id", "eml.creators["+index+"].position").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='position']").attr("for", "eml.creators["+index+"].position");
+            $("#creator-item-"+index+" [id$='organisation']").attr("id", "eml.creators["+index+"].organisation").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='organisation']").attr("for", "eml.creators["+index+"].organisation");
+            $("#creator-item-"+index+" [id$='address']").attr("id", "eml.creators["+index+"].address.address").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='address']").attr("for", "eml.creators["+index+"].address.address");
+            $("#creator-item-"+index+" [id$='postalCode']").attr("id", "eml.creators["+index+"].address.postalCode").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='postalCode']").attr("for", "eml.creators["+index+"].address.postalCode");
+            $("#creator-item-"+index+" [id$='city']").attr("id", "eml.creators["+index+"].address.city").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='city']").attr("for", "eml.creators["+index+"].address.city");
+            $("#creator-item-"+index+" [id$='province']").attr("id", "eml.creators["+index+"].address.province").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='province']").attr("for", "eml.creators["+index+"].address.province");
+            $("#creator-item-"+index+" [id$='country']").attr("id", "eml.creators["+index+"].address.country").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='country']").attr("for", "eml.creators["+index+"].address.country");
+            $("#creator-item-"+index+" [id$='phone']").attr("id", "eml.creators["+index+"].phone").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='phone']").attr("for", "eml.creators["+index+"].phone");
+            $("#creator-item-"+index+" [id$='email']").attr("id", "eml.creators["+index+"].email").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='email']").attr("for", "eml.creators["+index+"].email");
+            $("#creator-item-"+index+" [id$='homepage']").attr("id", "eml.creators["+index+"].homepage").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='homepage']").attr("for", "eml.creators["+index+"].homepage");
+            $("#creator-item-"+index+" [id$='directory']").attr("id", "eml.creators["+index+"].userIds[0].directory").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='directory']").attr("for", "eml.creators["+index+"].userIds[0].directory");
+            $("#creator-item-"+index+" [id$='identifier']").attr("id", "eml.creators["+index+"].userIds[0].identifier").attr("name", function() {return $(this).attr("id");});
+            $("#creator-item-"+index+" [for$='identifier']").attr("for", "eml.creators["+index+"].userIds[0].identifier");
+        }
+
+        function setMetadataProviderItemIndex(item, index) {
+            item.attr("id","metadataProvider-item-"+index);
+
+            $("#metadataProvider-item-"+index+" [id^='metadataProvider-removeLink']").attr("id", "metadataProvider-removeLink-"+index);
+            $("#metadataProvider-removeLink-"+index).click(function(event) {
+                removeMetadataProviderItem(event);
+            });
+
+            $("#metadataProvider-item-"+index+" [id^='metadataProvider-copyDetails']").attr("id", "metadataProvider-copyDetails-"+index);
+            $("#metadataProvider-copyDetails-"+index).click(function(event) {
+                copyDetails(event, "metadataProvider-item-");
+            });
+
+            $("#metadataProvider-item-"+index+" [id$='firstName']").attr("id", "eml.metadataProviders["+index+"].firstName").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='firstName']").attr("for", "eml.metadataProviders["+index+"].firstName");
+            $("#metadataProvider-item-"+index+" [id$='lastName']").attr("id", "eml.metadataProviders["+index+"].lastName").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='lastName']").attr("for", "eml.metadataProviders["+index+"].lastName");
+            $("#metadataProvider-item-"+index+" [id$='position']").attr("id", "eml.metadataProviders["+index+"].position").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='position']").attr("for", "eml.metadataProviders["+index+"].position");
+            $("#metadataProvider-item-"+index+" [id$='organisation']").attr("id", "eml.metadataProviders["+index+"].organisation").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='organisation']").attr("for", "eml.metadataProviders["+index+"].organisation");
+            $("#metadataProvider-item-"+index+" [id$='address']").attr("id", "eml.metadataProviders["+index+"].address.address").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='address']").attr("for", "eml.metadataProviders["+index+"].address.address");
+            $("#metadataProvider-item-"+index+" [id$='postalCode']").attr("id", "eml.metadataProviders["+index+"].address.postalCode").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='postalCode']").attr("for", "eml.metadataProviders["+index+"].address.postalCode");
+            $("#metadataProvider-item-"+index+" [id$='city']").attr("id", "eml.metadataProviders["+index+"].address.city").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='city']").attr("for", "eml.metadataProviders["+index+"].address.city");
+            $("#metadataProvider-item-"+index+" [id$='province']").attr("id", "eml.metadataProviders["+index+"].address.province").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='province']").attr("for", "eml.metadataProviders["+index+"].address.province");
+            $("#metadataProvider-item-"+index+" [id$='country']").attr("id", "eml.metadataProviders["+index+"].address.country").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='country']").attr("for", "eml.metadataProviders["+index+"].address.country");
+            $("#metadataProvider-item-"+index+" [id$='phone']").attr("id", "eml.metadataProviders["+index+"].phone").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='phone']").attr("for", "eml.metadataProviders["+index+"].phone");
+            $("#metadataProvider-item-"+index+" [id$='email']").attr("id", "eml.metadataProviders["+index+"].email").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='email']").attr("for", "eml.metadataProviders["+index+"].email");
+            $("#metadataProvider-item-"+index+" [id$='homepage']").attr("id", "eml.metadataProviders["+index+"].homepage").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='homepage']").attr("for", "eml.metadataProviders["+index+"].homepage");
+            $("#metadataProvider-item-"+index+" [id$='directory']").attr("id", "eml.metadataProviders["+index+"].userIds[0].directory").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='directory']").attr("for", "eml.metadataProviders["+index+"].userIds[0].directory");
+            $("#metadataProvider-item-"+index+" [id$='identifier']").attr("id", "eml.metadataProviders["+index+"].userIds[0].identifier").attr("name", function() {return $(this).attr("id");});
+            $("#metadataProvider-item-"+index+" [for$='identifier']").attr("for", "eml.metadataProviders["+index+"].userIds[0].identifier");
+        }
+
+        function setAssociatedPartyItemIndex(item, index) {
+            item.attr("id","associatedParty-item-"+index);
+
+            $("#associatedParty-item-"+index+" [id^='associatedParty-removeLink']").attr("id", "associatedParty-removeLink-"+index);
+            $("#associatedParty-removeLink-"+index).click(function(event) {
+                removeAssociatedPartyItem(event);
+            });
+
+            $("#associatedParty-item-"+index+" [id^='associatedParty-copyDetails']").attr("id", "associatedParty-copyDetails-"+index);
+            $("#associatedParty-copyDetails-"+index).click(function(event) {
+                copyI2DDetails(event, "associatedParty-item-");
+                // copyPrimaryContactDetails(event, "associatedParty-item-");
+            });
+
+            $("#associatedParty-item-"+index+" [id$='firstName']").attr("id", "eml.associatedParties["+index+"].firstName").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='firstName']").attr("for", "eml.associatedParties["+index+"].firstName");
+            $("#associatedParty-item-"+index+" [id$='lastName']").attr("id", "eml.associatedParties["+index+"].lastName").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='lastName']").attr("for", "eml.associatedParties["+index+"].lastName");
+            $("#associatedParty-item-"+index+" [id$='position']").attr("id", "eml.associatedParties["+index+"].position").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='position']").attr("for", "eml.associatedParties["+index+"].position");
+            $("#associatedParty-item-"+index+" [id$='organisation']").attr("id", "eml.associatedParties["+index+"].organisation").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='organisation']").attr("for", "eml.associatedParties["+index+"].organisation");
+            $("#associatedParty-item-"+index+" [id$='address']").attr("id", "eml.associatedParties["+index+"].address.address").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='address']").attr("for", "eml.associatedParties["+index+"].address.address");
+            $("#associatedParty-item-"+index+" [id$='postalCode']").attr("id", "eml.associatedParties["+index+"].address.postalCode").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='postalCode']").attr("for", "eml.associatedParties["+index+"].address.postalCode");
+            $("#associatedParty-item-"+index+" [id$='city']").attr("id", "eml.associatedParties["+index+"].address.city").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='city']").attr("for", "eml.associatedParties["+index+"].address.city");
+            $("#associatedParty-item-"+index+" [id$='province']").attr("id", "eml.associatedParties["+index+"].address.province").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='province']").attr("for", "eml.associatedParties["+index+"].address.province");
+            $("#associatedParty-item-"+index+" [id$='country']").attr("id", "eml.associatedParties["+index+"].address.country").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='country']").attr("for", "eml.associatedParties["+index+"].address.country");
+            $("#associatedParty-item-"+index+" [id$='phone']").attr("id", "eml.associatedParties["+index+"].phone").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='phone']").attr("for", "eml.associatedParties["+index+"].phone");
+            $("#associatedParty-item-"+index+" [id$='email']").attr("id", "eml.associatedParties["+index+"].email").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='email']").attr("for", "eml.associatedParties["+index+"].email");
+            $("#associatedParty-item-"+index+" [id$='homepage']").attr("id", "eml.associatedParties["+index+"].homepage").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='homepage']").attr("for", "eml.associatedParties["+index+"].homepage");
+            $("#associatedParty-item-"+index+" [id$='role']").attr("id", "eml.associatedParties["+index+"].role").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='role']").attr("for", "eml.associatedParties["+index+"].role");
+            $("#associatedParty-item-"+index+" [id$='directory']").attr("id", "eml.associatedParties["+index+"].userIds[0].directory").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='directory']").attr("for", "eml.associatedParties["+index+"].userIds[0].directory");
+            $("#associatedParty-item-"+index+" [id$='identifier']").attr("id", "eml.associatedParties["+index+"].userIds[0].identifier").attr("name", function() {return $(this).attr("id");});
+            $("#associatedParty-item-"+index+" [for$='identifier']").attr("for", "eml.associatedParties["+index+"].userIds[0].identifier");
+        }
+
+        function copyI2DDetails(event, idPrefix) {
+            event.preventDefault();
+            var $target = $(event.target);
+            var index = $target.attr("id").split("-")[2];
+            // replace " with &quot; to prevent JS from failing
+            $("#" + idPrefix + index + " [id$='firstName']").val("");
+            $("#" + idPrefix + index + " [id$='lastName']").val("Infraestructura Institucional de Datos");
+            $("#" + idPrefix + index + " [id$='position']").val("");
+            $("#" + idPrefix + index + " [id$='organisation']").val("Instituto de Investigación de Recursos Biológicos Alexander von Humboldt");
+            $("#" + idPrefix + index + " [id$='address']").val("Avenida Paseo Bolívar # 16-20");
+            $("#" + idPrefix + index + " [id$='city']").val("Bogotá, D.C.");
+            $("#" + idPrefix + index + " [id$='province']").val("Bogotá, D.C.");
+            $("#" + idPrefix + index + " [id$='postalCode']").val("110321");
+            $("#" + idPrefix + index + " [id$='country']").val("COLOMBIA");
+            $("#" + idPrefix + index + " [id$='phone']").val("3202767");
+            $("#" + idPrefix + index + " [id$='email']").val("i2d@humboldt.org.co");
+            $("#" + idPrefix + index + " [id$='homepage']").val("http://www.humboldt.org.co");
+            $("#" + idPrefix + index + " [id$='directory']").val("");
+            $("#" + idPrefix + index + " [id$='identifier']").val("");
+        }
+
+        function setPersonnelItemIndex(item, index) {
+            item.attr("id","personnel-item-"+index);
+
+            $("#personnel-item-"+index+" [id^='personnel-removeLink']").attr("id", "personnel-removeLink-"+index);
+            $("#personnel-removeLink-"+index).click(function(event) {
+                removePersonnelItem(event);
+            });
+
+            $("#personnel-item-"+index+" [id^='personnel-copyDetails']").attr("id", "personnel-copyDetails-"+index);
+            $("#personnel-copyDetails-"+index).click(function(event) {
+                copyPrimaryContactDetails(event, "personnel-item-");
+            });
+
+            $("#personnel-item-"+index+" [id$='firstName']").attr("id", "eml.project.personnel["+index+"].firstName").attr("name", function() {return $(this).attr("id");});
+            $("#personnel-item-"+index+" [for$='firstName']").attr("for", "eml.project.personnel["+index+"].firstName");
+            $("#personnel-item-"+index+" [id$='lastName']").attr("id", "eml.project.personnel["+index+"].lastName").attr("name", function() {return $(this).attr("id");});
+            $("#personnel-item-"+index+" [for$='lastName']").attr("for", "eml.project.personnel["+index+"].lastName");
+            $("#personnel-item-"+index+" [id$='role']").attr("id", "eml.project.personnel["+index+"].role").attr("name", function() {return $(this).attr("id");});
+            $("#personnel-item-"+index+" [for$='role']").attr("for", "eml.project.personnel["+index+"].role");
+            $("#personnel-item-"+index+" [id$='directory']").attr("id", "eml.project.personnel["+index+"].userIds[0].directory").attr("name", function() {return $(this).attr("id");});
+            $("#personnel-item-"+index+" [for$='directory']").attr("for", "eml.project.personnel["+index+"].userIds[0].directory");
+            $("#personnel-item-"+index+" [id$='identifier']").attr("id", "eml.project.personnel["+index+"].userIds[0].identifier").attr("name", function() {return $(this).attr("id");});
+            $("#personnel-item-"+index+" [for$='identifier']").attr("for", "eml.project.personnel["+index+"].userIds[0].identifier");
+>>>>>>> ceiba_master
         }
 
 });

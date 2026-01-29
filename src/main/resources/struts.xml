@@ -204,6 +204,10 @@
       </result>
     </action>
 
+    <action name="faq">
+      <result>/WEB-INF/pages/faq.ftl</result>
+    </action>
+
   </package>
 
   <!-- Actions related to the inventory API of the IPT accessible by everyone. -->

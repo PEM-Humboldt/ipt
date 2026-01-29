@@ -5,3 +5,60 @@
  they can create their own modernizr.js with the desired supported elements. They only have to replace the 'default'
  file with their own.
 */
+.navbar-toggler {
+    box-shadow: 0 0 0 0 !important;
+}
+
+.px-1 {
+    padding:0 !important;
+}
+
+.odd {
+    background-color: #ececec;
+}
+
+h5 {
+    text-transform: uppercase;
+    font-family: 'Montserrat',Helvetica,Arial,sans-serif;
+    color: #3d3d3d;
+    font-weight: 600;
+    font-size: 1.35rem;
+}
+
+footer {
+    background-color: #23212f;
+}
+
+.logosI2D {
+    display:flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.logosI2D {
+    vertical-align: middle;
+}
+
+img.logo-I2D {
+    padding-right: 10px;
+    display: inline-block;
+    height: 60px;
+    vertical-align:middle;
+}
+
+.logosI2D h6 {
+    color:#fff;
+    padding-left: 10px;
+    border-left: 1px solid #fff;
+    text-align: left;
+    text-transform: uppercase;
+    font-family: 'Montserrat',Helvetica,Arial,sans-serif;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.logosI2D a {
+    text-decoration: none;
+    color: #fff;
+}

@@ -143,6 +143,37 @@
     </#if>
 </#macro>
 
+<!-- IAvH Customization -->
+<#function elemInArray array elem sep>
+    <#list array?split(sep) as arrayElem>
+        <#if arrayElem == elem>
+            <#return true>
+        </#if>
+    </#list>
+    <#return false>
+</#function>
+
+<#-- ...Testing... -->
+<#assign showDwCA=false/>
+    <#if eml.intellectualRights?has_content>
+        <#if eml.intellectualRights.contains("Libre a nivel interno y externo") >
+            <#assign showDwCA=true/>
+        <#elseif elemInArray('Libre a nivel interno, Libre en nivel interno con notificación previa, Restringido temporalmente', eml.intellectualRights, ", ")>
+            <#if (Session.curr_user)??>
+                <#if adminRights>
+                    <#assign showDwCA=true/>>
+                </#if>
+            <#else>
+                <#assign showDwCA=false/>
+            </#if>
+        <#else>
+            <#assign showDwCA=false/>
+        </#if>
+    </#if>
+
+
+<!-- /IAvH Customization-->
+
 <#assign anchor_versions>#anchor-versions</#assign>
 <#assign anchor_rights>#anchor-rights</#assign>
 <#assign anchor_citation>#anchor-citation</#assign>
@@ -248,6 +279,43 @@
                     </#if>
                 </div>
 
+            <#if resource.lastPublished?? && resource.organisation??>
+                <div class="text-gbif-primary text-smaller">
+                    <span>
+                        <#-- the existence of parameter version means the version is not equal to the latest published version -->
+                        <#if version?? && version.toPlainString() != resource.emlVersion.toPlainString()>
+                            <em><@s.text name='portal.resource.version'/>&nbsp;${version.toPlainString()}</em>
+                        <#else>
+                            <@s.text name='portal.resource.latest.version'/>
+                        </#if>
+
+                        <#if action.getDefaultOrganisation()?? && resource.organisation.key.toString() == action.getDefaultOrganisation().key.toString()>
+                            ${publishedOnText?lower_case}&nbsp;<span property="dc:issued">${eml.pubDate?date?string.long}</span>
+                            <#-- <br>
+                            <em class="text-gbif-danger"><@s.text name='manage.home.not.registered.verbose'/></em> -->
+                        <#else>
+                            <@s.text name='portal.resource.publishedOn'><@s.param>${resource.organisation.name}</@s.param></@s.text> <span property="dc:issued">${eml.pubDate?date?string.long_short}</span>
+                            <span property="dc:publisher" style="display: none">${resource.organisation.name}</span>
+                        </#if>
+                    </span>
+                </div>
+            <#else>
+                <div class="text-gbif-danger text-smaller">
+                    <@s.text name='portal.resource.published.never.long'/>
+                </div>
+            </#if>
+
+            <#if eml.distributionUrl?has_content || resource.lastPublished??>
+                <div class="mt-2">
+
+                    <#if managerRights>
+                        <a href="${baseURL}/manage/resource.do?r=${resource.shortname}" class="btn btn-sm btn-outline-gbif-primary mt-1 me-xl-1" style="min-width: 100px">
+                            <@s.text name='button.edit'/>
+                        </a>
+>>>>>>> ceiba_master
+                    </#if>
+                </div>
+
                 <#if resource.lastPublished?? && resource.organisation??>
                     <div class="text-gbif-primary fs-smaller-2 mt-2">
                         <span>
@@ -337,11 +405,15 @@
                                     <dt><@s.text name='portal.resource.license'/>:</dt>
                                     <dd>
                                         <#if eml.intellectualRights.contains("CC-BY-NC")>
-                                            <a href="http://creativecommons.org/licenses/by-nc/4.0/legalcode" target="_blank">CC-BY-NC 4.0</a>
-                                        <#elseif eml.intellectualRights.contains("CC-BY")>
-                                            <a href="http://creativecommons.org/licenses/by/4.0/legalcode" target="_blank">CC-BY 4.0</a>
-                                        <#elseif eml.intellectualRights.contains("CC0")>
-                                            <a href="http://creativecommons.org/publicdomain/zero/1.0/legalcode" target="_blank">CC0 1.0</a>
+                                            <a href="http://creativecommons.org/licenses/by-nc/4.0/legalcode" target="_blank">Libre a nivel interno y externo (Creative Commons Attribution Non Commercial (CC-BY-NC) 4.0)</a>
+                                        <#elseif eml.intellectualRights.contains("Restringido temporalmente")>
+                                            <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Restringido temporalmente</a>
+                                        <#elseif eml.intellectualRights.contains("Libre en nivel interno con notificación previa")>
+                                            <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Libre a nivel interno con notificación previa</a>
+                                        <#elseif eml.intellectualRights.contains("Libre a nivel interno")>
+                                            <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Libre a nivel interno</a>
+                                        <#else>
+                                            Probas
                                         </#if>
                                     </dd>
                                 </div>
@@ -536,7 +608,36 @@
                     <#assign coreExt = action.getExtensionManager().get(coreRowType)!/>
                     <#assign coreCount = recordsByExtensionOrdered.get(coreRowType)!recordsPublishedForVersion!0?c/>
 
-                    <#if metadataOnly != true>
+                                        <!-- rights section -->
+                    <#if eml.intellectualRights?has_content>
+                        <span class="anchor anchor-resource-page" id="anchor-rights"></span>
+                        <div id="rights" class="mt-5 section">
+                            <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fw-400">
+                                <@s.text name='eml.intellectualRights.simple'/>
+                            </h4>
+
+                            <p><@s.text name='portal.resource.rights.help'/>:</p>
+                            <@licenseLogoClass eml.intellectualRights!/>
+                            <p property="dc:license">
+                                <#if resource.organisation?? && action.getDefaultOrganisation()?? && resource.organisation.key.toString() != action.getDefaultOrganisation().key.toString()>
+                                    <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
+                                </#if>
+                                <#if eml.intellectualRights.contains("CC-BY-NC")>
+                                    <a href="http://creativecommons.org/licenses/by-nc/4.0/legalcode" target="_blank">Libre a nivel interno y externo (Creative Commons Attribution Non Commercial (CC-BY-NC) 4.0)</a>
+                                <#elseif eml.intellectualRights.contains("Restringido temporalmente")>
+                                    <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Restringido temporalmente</a>
+                                <#elseif eml.intellectualRights.contains("Libre en nivel interno con notificación previa")>
+                                    <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Libre a nivel interno con notificación previa</a>
+                                <#elseif eml.intellectualRights.contains("Libre a nivel interno")>
+                                    <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Libre a nivel interno</a>
+                                <#else>
+                                    ---
+                                </#if>
+                            </p>
+                        </div>
+                    </#if>
+
+                    <#if metadataOnly != true && showDwCA>
                         <span class="anchor anchor-home-resource-page" id="anchor-dataRecords"></span>
                         <div id="dataRecords" class="pb-5 section">
                             <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fw-400">
@@ -544,12 +645,13 @@
                             </h4>
 
                             <p>
+<<<<<<< HEAD
                                 <#if resource.dataPackageIdentifier??>
                                     <@s.text name='portal.resource.dataRecords.dataPackageSchema.intro'/>
                                 <#else>
                                     <@s.text name='portal.resource.dataRecords.intro'><@s.param>${action.getCoreType()?lower_case}</@s.param></@s.text>
                                 </#if>
-                                <#if coreExt?? && coreExt.name?has_content && coreCount?has_content>
+                                <#if coreExt?? && coreExt.name?has_content && coreCount?has_content && showDwCA>
                                     <@s.text name='portal.resource.dataRecords.core'><@s.param>${coreCount}</@s.param></@s.text>
                                 </#if>
                             </p>
@@ -594,6 +696,56 @@
                         </div>
                     </#if>
 
+                    <!-- downloads section -->
+                    <span class="anchor anchor-home-resource-page" id="anchor-downloads"></span>
+                    <div id="downloads" class="mt-5 section">
+                        <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fw-400">
+                            <@s.text name='portal.resource.downloads'/>
+                        </h4>
+
+                        <#if metadataOnly == true>
+                            <p><@s.text name='portal.resource.downloads.metadataOnly.verbose'/></p>
+                        <#else>
+                            <p><@s.text name='portal.resource.downloads.verbose'/></p>
+                        </#if>
+
+                        <div class="table-responsive">
+                            <table class="downloads text-smaller table table-sm table-borderless">
+                                <#-- Archive, EML, and RTF download links include Google Analytics event tracking -->
+                                <#-- e.g. Archive event tracking includes components: _trackEvent method, category, action, label, (int) value -->
+                                <#-- EML and RTF versions can always be retrieved by version number but DWCA versions are only stored if IPT Archive Mode is on -->
+                                <#if metadataOnly == false && showDwCA>
+                                    <tr>
+                                        <th class="col-4"><@s.text name='portal.resource.dwca.verbose'/></th>
+                                        <#if version?? && version.toPlainString() != resource.emlVersion.toPlainString() && recordsPublishedForVersion??>
+                                            <td><a href="${download_dwca_url}" onClick="_gaq.push(['_trackEvent', 'Archive', 'Download', '${resource.shortname}', ${recordsPublishedForVersion!0?c} ]);"><@s.text name='portal.resource.download'/></a>
+                                                ${recordsPublishedForVersion!0?c} <@s.text name='portal.resource.records'/>&nbsp;<#if eml.language?has_content && languages[eml.language]?has_content><@s.text name='eml.language.available'><@s.param>${languages[eml.language]?cap_first!}</@s.param></@s.text></#if> (${dwcaSizeForVersion!}) <#if eml.updateFrequency?has_content && eml.updateFrequency.identifier?has_content && frequencies[eml.updateFrequency.identifier]?has_content>&nbsp;-&nbsp;${updateFrequencyTitle?lower_case?cap_first}:&nbsp;${frequencies[eml.updateFrequency.identifier]?lower_case}</#if>
+                                            </td>
+                                        <#else>
+                                            <td><a href="${download_dwca_url}" onClick="_gaq.push(['_trackEvent', 'Archive', 'Download', '${resource.shortname}', ${resource.recordsPublished!0?c} ]);"><@s.text name='portal.resource.download'/></a>
+                                                ${resource.recordsPublished!0?c} <@s.text name='portal.resource.records'/>&nbsp;<#if eml.language?has_content && languages[eml.language]?has_content><@s.text name='eml.language.available'><@s.param>${languages[eml.language]?cap_first!}</@s.param></@s.text></#if> (${dwcaSizeForVersion!})<#if eml.updateFrequency?has_content && eml.updateFrequency.identifier?has_content && frequencies[eml.updateFrequency.identifier]?has_content>&nbsp;-&nbsp;${updateFrequencyTitle?lower_case?cap_first}:&nbsp;${frequencies[eml.updateFrequency.identifier]?lower_case}</#if>
+                                            </td>
+                                        </#if>
+                                    </tr>
+                                </#if>
+                                <tr>
+                                    <th><@s.text name='portal.resource.metadata.verbose'/></th>
+                                    <td><a href="${download_eml_url}" onClick="_gaq.push(['_trackEvent', 'EML', 'Download', '${resource.shortname}']);" download><@s.text name='portal.resource.download'/></a>
+                                        <#if eml.metadataLanguage?has_content && languages[eml.metadataLanguage]?has_content><@s.text name='eml.language.available'><@s.param>${languages[eml.metadataLanguage]?cap_first!}</@s.param></@s.text></#if> (${emlSizeForVersion})
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <th><@s.text name='portal.resource.rtf.verbose'/></th>
+                                    <td><a href="${download_rtf_url}" onClick="_gaq.push(['_trackEvent', 'RTF', 'Download', '${resource.shortname}']);"><@s.text name='portal.resource.download'/></a>
+                                        <#if eml.metadataLanguage?has_content && languages[eml.metadataLanguage]?has_content><@s.text name='eml.language.available'><@s.param>${languages[eml.metadataLanguage]?cap_first!}</@s.param></@s.text></#if> (${rtfSizeForVersion})
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+>>>>>>> ceiba_master
                     <!-- versions section -->
                     <#if resource.versionHistory??>
                         <span class="anchor anchor-home-resource-page" id="anchor-versions"></span>
@@ -632,6 +784,7 @@
                         </div>
                     </#if>
 
+<<<<<<< HEAD
                     <!-- rights section -->
                     <#if eml.intellectualRights?has_content>
                         <span class="anchor anchor-home-resource-page" id="anchor-rights"></span>

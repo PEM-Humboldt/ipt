@@ -15,7 +15,9 @@ package org.gbif.ipt.struts2;
 
 import org.gbif.ipt.config.AppConfig;
 
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.LocaleUtils;
@@ -31,9 +33,17 @@ public class IptI18nInterceptor extends I18nInterceptor {
 
   private static final long serialVersionUID = -177385481327691899L;
   private static final Logger LOG = LogManager.getLogger(IptI18nInterceptor.class);
+  private static final Set<Locale> IPT_SUPPORTED_LOCALES;
+
+  static {
+    IPT_SUPPORTED_LOCALES = new HashSet<>();
+    IPT_SUPPORTED_LOCALES.add(Locale.UK);
+    IPT_SUPPORTED_LOCALES.add(new Locale("es"));
+  }
 
   private AppConfig appConfig;
 
+  @Override
   protected Locale getLocaleFromParam(Object requestedLocale) {
     Locale locale = null;
     try {
@@ -51,7 +61,7 @@ public class IptI18nInterceptor extends I18nInterceptor {
     if (Locale.ENGLISH.equals(locale)) {
       locale = Locale.UK;
     }
-    if (locale != null && !appConfig.isSupportedLocale(locale)) {
+    if (locale != null && !IPT_SUPPORTED_LOCALES.contains(locale)) {
       locale = Locale.getDefault();
     }
     return locale;

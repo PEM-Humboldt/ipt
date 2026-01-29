@@ -1,3 +1,11 @@
+https://builds.gbif.org/job/ipt/lastBuild/console[image:https://builds.gbif.org/job/ipt/badge/icon[Build status]] https://crowdin.com/project/gbif-ipt[image:https://badges.crowdin.net/gbif-ipt/localized.svg[Crowdin]]
+
+# Catálogo de Información Biológica - Ceiba
+
+This is a customized version of ipt Gbif version 2.5.5 for the Alexander von Humboldt Institute's Biological Data Catalog tool.
+
+Visi the website of Ceiba (http://i2d.humboldt.org.co/ceiba/). In this catalogue you will find the metadata of the datasets with information of biological records, checklists and species cards.
+
 https://builds.gbif.org/job/ipt/lastBuild/console[image:https://builds.gbif.org/job/ipt/badge/icon[Build status]]
 https://crowdin.com/project/gbif-ipt[image:https://badges.crowdin.net/gbif-ipt/localized.svg[Crowdin]]
 
@@ -7,7 +15,7 @@ The Integrated Publishing Toolkit (IPT) is a free, open source software tool pro
 
 [TIP]
 ====
-*Most users should refer to the https://ipt.gbif.org/manual/[user manual] for further information, including https://ipt.gbif.org/manual/en/ipt/latest/releases[downloads], https://ipt.gbif.org/manual/en/ipt/latest/getting-started[installation instructions] and details of the https://ipt.gbif.org/manual/en/ipt/latest/releases[latest release].*
+*Most users should refer to the https://ipt.gbif.org/manual/[user manual] for further information, including https://ipt.gbif.org/manual/en/ipt/2.5/releases[downloads], https://ipt.gbif.org/manual/en/ipt/2.5/getting-started[installation instructions] and details of the https://ipt.gbif.org/manual/en/ipt/2.5/releases[latest release].*
 
 If you have a GitHub account, you may select "Watch" → "Custom" → "Releases" above to receive
 a notification from GitHub when there is a new IPT release. These notifications are also sent to the https://lists.gbif.org/mailman/listinfo/ipt/[mailing list].
@@ -18,9 +26,9 @@ In this repository you can find the source code for the IPT software and its htt
 == Resources
 
 * https://ipt.gbif.org/manual/[IPT User Manual]
-* Information on the https://ipt.gbif.org/manual/en/ipt/latest/releases[latest release]
-* The https://ipt.gbif.org[Demo IPT] is available online, https://ipt.gbif.org/manual/en/ipt/latest/getting-started[further information about this]
-* How to contribute https://ipt.gbif.org/manual/en/ipt/latest/translations[translations] with https://crowdin.com/project/gbif-ipt[Crowdin]
+* Information on the https://ipt.gbif.org/manual/en/ipt/2.5/releases[latest release]
+* The https://ipt.gbif.org[Demo IPT] is available online, https://ipt.gbif.org/manual/en/ipt/2.5/getting-started[further information about this]
+* How to contribute https://ipt.gbif.org/manual/en/ipt/2.5/translations[translations] with https://crowdin.com/project/gbif-ipt[Crowdin]
 * https://lists.gbif.org/mailman/listinfo/ipt/[IPT Mailing List] — please subscribe for notifications of future releases.
 
 == Acknowledgements

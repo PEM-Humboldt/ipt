@@ -24,3 +24,15 @@ package/rpm/RPMS/noarch/*
 /res1
 /resource.xml
 /rtf*.rtf
+# Updating Ceiba
+.history
+.factorypath
+.settings/
+.vscode/
+*.log
+src/main/webapp/WEB-INF/datadir.location
+
+
+# admin and debug logs
+admin.log.*
+debug.log.*

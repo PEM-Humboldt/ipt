@@ -1,4 +1,4 @@
-﻿/*
+/*
 	New styling since IPT v2.5.0 (Bootstrap 5).
 	If you consider the CSS and HTML could be improved for convenience
 	of theming, please report an enhancement request in the IPT project
@@ -275,9 +275,10 @@
 
 /* Principle settings for all pages */
 body {
-    font-family: Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif !important;
-    padding-top: 90px; /* Separates nav and main */
-    color: #575757;
+    font-family: 'Lato',Helvetica,Arial,sans-serif !important;
+    padding-top: 3.5rem; /* Separates nav and main */
+    color: #4e565f;
+    background: url('../images/bg.png') top left;
 }
 
 table {
@@ -321,6 +322,7 @@ table {
 
 
 /* Logo, header, menu etc. START */
+<<<<<<< HEAD
 #gbif-logo {
     display: none;
 }
@@ -333,6 +335,13 @@ table {
     padding-left: 8px;
     transition: all .3s;
     overflow: hidden;
+}
+
+.logo-ceiba {
+    height: 55px;
+    position: relative;
+    line-height: 32px;
+}
     vertical-align: middle;
 }
 
@@ -365,6 +374,7 @@ table {
 }
 
 .dropdown-item:active {
+<<<<<<< HEAD
     background-color: rgb(var(--color-gbif-primary)) !important;
     color: #4e565f;
 }
@@ -417,6 +427,25 @@ table {
 .navbar-button {
     color: rgb(var(--navbar-link-color));
     border-color: rgb(var(--navbar-link-color));
+    background-color: #ef5d32 !important;
+}
+
+.bg-gbif-main-navbar {
+    background: #ebe5de;
+    border-top: 2px solid #d9d9d9;
+    border-bottom: 2px solid #d9d9d9;
+    padding: 0 15px 10px;
+    margin: 1px 0 20px;
+}
+
+.logo-iavh {
+    height: 45px;
+}
+
+.navbar-button {
+    color: #ffffff !important;
+    background: #ef5d32;
+>>>>>>> ceiba_master
 }
 
 .navbar-button:hover, .navbar-button:focus {
@@ -626,7 +655,11 @@ label.icon-button:hover:not(.overview-action-button) {
 }
 
 .admin-col-listing .admin-col-listing-item .admin-icon {
-    color: rgb(var(--color-gbif-primary));
+    color: #ef5d32;
+}
+
+.admin-icon {
+    font-size: 36px;
 }
 
 .admin-col-listing .admin-col-listing-item .admin-card-title {
@@ -747,11 +780,11 @@ a.no-text-decoration, a.no-text-decoration:focus, a.no-text-decoration:hover {
 
 /* Datepicker styles START */
 .datepicker table tr td span.active, .datepicker table tr td span.active.disabled, .datepicker table tr td span.active.disabled:hover, .datepicker table tr td span.active:hover {
-    background-image: linear-gradient(to bottom, rgb(var(--color-gbif-primary)), rgb(var(--color-gbif-primary))) !important;
+    background-image: linear-gradient(to bottom, #ef5d32, #ef5d32) !important;
 }
 
 .datepicker table tr td.active, .datepicker table tr td.active.disabled, .datepicker table tr td.active.disabled:hover, .datepicker table tr td.active:hover {
-    background-image: linear-gradient(to bottom, rgb(var(--color-gbif-primary)), rgb(var(--color-gbif-primary))) !important;
+    background-image: linear-gradient(to bottom, #ef5d32, #ef5d32) !important;
 }
 
 .datepicker td, .datepicker th {
@@ -766,7 +799,7 @@ a.no-text-decoration, a.no-text-decoration:focus, a.no-text-decoration:hover {
 
 /* Custom colors */
 .text-gbif-primary {
-    color: rgb(var(--color-gbif-primary));
+    color: #ef5d32;
 }
 
 .text-gbif-danger {
@@ -778,7 +811,7 @@ a.no-text-decoration, a.no-text-decoration:focus, a.no-text-decoration:hover {
 }
 
 .text-gbif-header {
-    color: #4E565F;
+    color: #f29131;
 }
 
 .text-gbif-header-light {
@@ -786,7 +819,7 @@ a.no-text-decoration, a.no-text-decoration:focus, a.no-text-decoration:hover {
 }
 
 .text-gbif-header-2 {
-    color: #58687b;
+    color: #376c88;
 }
 
 .text-discreet {
@@ -802,7 +835,7 @@ a.no-text-decoration, a.no-text-decoration:focus, a.no-text-decoration:hover {
 }
 
 .bg-gbif-primary {
-    background-color: rgb(var(--color-gbif-primary));
+    background-color: #ef5d32;
 }
 
 .bg-gbif-danger {
@@ -926,40 +959,40 @@ a.no-text-decoration, a.no-text-decoration:focus, a.no-text-decoration:hover {
     border-color: #dee2e6 !important;
 }
 .btn-outline-secondary:focus, .btn-outline-secondary:active:focus {
+<<<<<<< HEAD
     box-shadow: none !important;
     color: rgb(var(--color-gbif-secondary)) !important;
     background-color: rgba(0, 0, 0, 0.04) !important;
     border-color: #dee2e6 !important;
+    box-shadow: 0 0 0 0.25rem rgba(190, 198, 206, 0.25) !important;
 }
 /* GBIF gray colored outline button START */
 
 
 /* GBIF green colored outline button START */
 .btn-outline-gbif-primary {
-    color: rgb(var(--color-gbif-primary));
-    border-color: rgba(var(--color-gbif-primary), 0.5);
+    color: #ef5d32;
+    border-color: rgba(239, 141, 112, 0.5);
 }
 .btn-outline-gbif-primary:hover {
-    color: rgb(var(--color-gbif-primary));
-    background-color: rgba(var(--color-gbif-primary), 0.04);
-    border-color: rgb(var(--color-gbif-primary));
+    color: #ef5d32;
+    background-color: rgba(97, 168, 97, 0.04);
+    border-color: #ef5d32;
 }
 .btn-check:focus + .btn-outline-gbif-primary, .btn-outline-gbif-primary:focus {
-    box-shadow: none;
-    color: rgb(var(--color-gbif-primary));
-    background-color: rgba(var(--color-gbif-primary), 0.04);
-    border-color: rgb(var(--color-gbif-primary));
+    box-shadow: 0 0 0 0.25rem rgba(113, 177, 113, 0.25) !important;
 }
 .btn-check:checked + .btn-outline-gbif-primary, .btn-check:active + .btn-outline-gbif-primary, .btn-outline-gbif-primary:active, .btn-outline-gbif-primary.active, .btn-outline-gbif-primary.dropdown-toggle.show {
-    color: rgb(var(--color-gbif-primary));
-    background-color: transparent;
+    color: #fff !important;
+    background-color: #ef5d32 !important;
+    border-color: #ef5d32 !important;
 }
 .btn-check:checked + .btn-outline-gbif-primary:focus, .btn-check:active + .btn-outline-gbif-primary:focus, .btn-outline-gbif-primary:active:focus, .btn-outline-gbif-primary.active:focus, .btn-outline-gbif-primary.dropdown-toggle.show:focus {
     box-shadow: none;
 }
 .btn-outline-gbif-primary:disabled, .btn-outline-gbif-primary.disabled {
-    color: rgb(var(--color-gbif-primary));
-    background-color: transparent;
+    color: #ef5d32 !important;
+    background-color: transparent !important;
 }
 /* GBIF green colored outline button END */
 
@@ -1051,26 +1084,26 @@ a.no-text-decoration, a.no-text-decoration:focus, a.no-text-decoration:hover {
 
 .form-control:focus {
     background-color: #fff;
-    border-color: rgb(var(--color-gbif-primary));
+    border-color: #ef896b;
     outline: 0;
     box-shadow: none;
 }
 
 .form-select:focus {
-    border-color: rgb(var(--color-gbif-primary));
+    border-color: #ef896b;
     outline: 0;
     box-shadow: none;
 }
 
 .form-check-input:not(.is-invalid):focus {
-    border-color: rgb(var(--color-gbif-primary));
+    border-color: #ef896b;
     outline: 0;
     box-shadow: none;
 }
 
 .form-check-input:not(.is-invalid):checked {
-    background-color: rgb(var(--color-gbif-primary));
-    border-color: rgb(var(--color-gbif-primary));
+    background-color: #ef5d32;
+    border-color: #ef5d32;
 }
 /* Style form elements END */
 
@@ -1086,15 +1119,42 @@ td.left_padding {
 }
 
 
+<<<<<<< HEAD
 /* DataTables styles START */
 /* DataTable loader styles */
 .resourcesTable {
     width: 100% !important;
 }
 
+/* Custom colors for tables pagination items START */
+.page-link {
+    position: relative;
+    display: block;
+    color: #ef5d32 !important;
+    text-decoration: none;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.page-link:hover {
+    z-index: 2;
+    color: #ef5d32 !important;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+.page-link:focus {
+    z-index: 3;
+    color: #ef5d32 !important;
+    background-color: #e9ecef;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(113, 177, 113, 0.25) !important;
+>>>>>>> ceiba_master
+}
+
 div.dataTables_processing>div:last-child>div {
     background: rgb(var(--color-gbif-primary)) !important;
 }
+<<<<<<< HEAD
 
 /* DataTable pagination buttons styles */
 .dataTables_wrapper .dataTables_paginate .paginate_button.current,
@@ -1105,6 +1165,13 @@ div.dataTables_processing>div:last-child>div {
     border: 1px solid rgba(0, 0, 0, 0.3);
     border-radius: 0.2rem;
     background: transparent;
+}
+
+.page-item.active .page-link {
+    z-index: 3;
+    color: #fff !important;
+    background-color: #ef5d32 !important;
+    border-color: #ef5d32 !important;
 }
 
 .autopublish-enabled {
@@ -1417,13 +1484,15 @@ input[type="search"]:focus::-webkit-search-cancel-button {
 
 /* Style select2 component START */
 .select2-container--bootstrap4 .select2-results__option--highlighted, .select2-container--bootstrap4 .select2-results__option--highlighted.select2-results__option[aria-selected="true"] {
+<<<<<<< HEAD
     color: #4e565f !important;
     background-color: rgba(0, 0, 0, .08) !important;
 }
 
 .select2-container--bootstrap4.select2-container--focus .select2-selection {
-    border-color: rgb(var(--color-gbif-primary)) !important;
-    box-shadow: none !important;
+    border-color: #ef896b !important;
+    -webkit-box-shadow: 0 0 0 0.25rem rgba(113, 177, 113, 0.25) !important;
+    box-shadow: 0 0 0 0.25rem rgba(113, 177, 113, 0.25) !important;
 }
 
 .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
@@ -1501,7 +1570,7 @@ input[type="search"]:focus::-webkit-search-cancel-button {
 }
 
 .ui-menu-item:hover {
-    background-color: rgb(var(--color-gbif-primary));
+    background-color: #ef5d32;
     color: #fff;
     cursor: pointer;
 }
@@ -1518,7 +1587,7 @@ input[type="search"]:focus::-webkit-search-cancel-button {
     z-index: 1000;
     left: 50%;
     transform: translate(-50%, 0);
-    color: rgb(var(--color-gbif-primary));
+    color: #ef5d32;
 }
 
 
@@ -1557,6 +1626,39 @@ input[type="search"]:focus::-webkit-search-cancel-button {
 .cc_text {
     flex: 1;
 }
+
+.cc_by {
+    background: url('../images/icons/cc-by.svg');
+}
+
+.cc_by_nc {
+    background: url('../images/icons/cc-by-nc.svg');
+    display: block;
+    float: left;
+    margin-right: 18px;
+    height: 32px;
+    width: 88px;
+}
+
+.cc_zero {
+    background: url('../images/icons/cc-zero.svg');
+}
+
+.i2d_logo {
+    background: url('../images/icons/i2d.png');
+    display: block;
+    float: left;
+    margin-right: 18px;
+    height: 40px;
+    width: 67px;
+}
+
+.home-title {
+    background-color: #ef5d32;
+    color:#fff;
+    font-weight: 700;
+}
+
 /* Licence logos styling END */
 
 
@@ -1743,7 +1845,7 @@ a.popover-link, a.popover-link:hover, a.popover-link:focus {
 }
 
 .fw-400 {
-    font-weight: 400;
+    font-weight: 800;
 }
 
 .fw-500 {
@@ -1829,6 +1931,11 @@ a.popover-link, a.popover-link:hover, a.popover-link:focus {
 
 #metadata-modal {
     z-index: 1059 !important;
+}
+
+.my-3 {
+    margin-top: 1.3rem !important;
+    margin-bottom: 1rem !important;
 }
 
 button.close {

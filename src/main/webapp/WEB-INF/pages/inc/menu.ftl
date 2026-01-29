@@ -41,18 +41,10 @@
 [#assign resourceSubtypeLowerCase = (resource.subtype?lower_case)!""]
 
 <header>
-    <nav class="main-nav navbar navbar-expand-xl navbar-dark bg-gbif-main-navbar fixed-top py-0 border-bottom">
-        <div class="container-fluid">
-            <a href="${logoRedirectURL}" rel="home" title="Logo" class="navbar-brand" >
-                <svg id="gbif-logo" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 539.7 523.9" style="enable-background:new 0 0 539.7 523.9;" xml:space="preserve">
-                    <path class="ipt-icon-piece" d="M230.7,255.5c0-102.2,49.9-190.7,198.4-190.7C429.1,167.2,361.7,255.5,230.7,255.5"/>
-                    <path class="ipt-icon-piece" d="M468.6,523.9c27.8,0,49.2-4,71.1-12c0-80.9-48.3-138.7-133.5-180.4c-65.2-32.7-145.5-49.7-218.8-49.7C219.5,185.4,196.1,65.7,165,0c-34.5,68.8-56,186.8-22.9,282.8C77,287.6,25.4,315.9,3.6,353.3c-1.6,2.8-5,8.9-3,10c1.6,0.8,4.1-1.7,5.6-3.1c23.5-21.8,54.6-32.4,84.5-32.4c69.1,0,117.8,57.3,152.3,91.7C317.1,493.5,389.4,524.1,468.6,523.9"/>
-                </svg>
-                <img id="gbif-logo-custom" src="${baseURL}/appLogo.do" onerror="handleCustomLogoError()" />
-                [#if !cfg.devMode() && cfg.getRegistryType()?has_content && cfg.getRegistryType()=='PRODUCTION']
-                [#else]
-                    <span class="test-mode-banner">TEST MODE</span>
-                [/#if]
+    <nav class="navbar navbar-expand-xl navbar-light bg-gbif-main-navbar fixed-top py-1 [#if !auxTopNavbar]shadow-sm[/#if]">
+        <div class="container">
+            <a href="${baseURL}/" rel="home" title="CEIBA IPT" class="navbar-brand" >
+                <img src="${baseURL}/images/logo-CEIBA.png" alt="CEIBA IPT" class="logo-ceiba"/>
             </a>
             <button class="navbar-toggler my-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                 <svg class="navbar-toggler-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path stroke="rgba(var(--navbar-link-color), 0.75)" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"/></svg>
@@ -63,32 +55,35 @@
                     <li class="nav-item nav-item-border-bottom">
                         <a class="nav-link custom-nav-link [#if currentMenu=='home']active[/#if]" href="${baseURL}/">[@s.text name="menu.home"/]</a>
                     </li>
-                    [#if managerRights]
-                        <li class="nav-item nav-item-border-bottom">
-                            <a class="nav-link custom-nav-link [#if currentMenu=='manage']active[/#if]" href="${baseURL}/manage/">[@s.text name="menu.manage"/]</a>
-                        </li>
-                    [/#if]
                     [#if adminRights]
                         <li class="nav-item nav-item-border-bottom">
                             <a class="nav-link custom-nav-link [#if currentMenu=='admin']active[/#if]" href="${baseURL}/admin/">[@s.text name="menu.admin"/]</a>
                         </li>
+                    [#else]
+                        <li class="nav-item">
+                            <a class="nav-link [#if currentMenu=='data']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/consulta?authuser=0" target="_blank">[@s.text name="menu.data"/]</a>
+                        </li>
                     [/#if]
-                    <li class="nav-item nav-item-border-bottom">
-                        <a class="nav-link custom-nav-link [#if currentMenu=='about']active[/#if]" href="${baseURL}/about.do">[@s.text name="menu.about"/]</a>
-                    </li>
+                    [#if managerRights]
+                        <li class="nav-item">
+                            <a class="nav-link [#if currentMenu=='manage']active[/#if]" href="${baseURL}/manage/">[@s.text name="menu.manage"/]</a>
+                        </li>
+                    [#else]
+                        <li class="nav-item">
+                            <a class="nav-link [#if currentMenu=='inventory']active[/#if]" href="http://goo.gl/is7UaG" target="_blank">[@s.text name="menu.inventory"/]</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link [#if currentMenu=='faq']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/preguntas-frecuentes/faq-ceiba?authuser=0" target="_blank">[@s.text name="menu.faq"/]</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link [#if currentMenu=='manual']active[/#if]" href="https://sites.google.com/humboldt.org.co/i2dwiki/ceiba-manual/ceiba-consulta" target="_blank">[@s.text name="menu.usermanual"/]</a>
+                        </li>
+                    [/#if]
                 </ul>
 
                 <div class="d-xl-flex align-content-between">
-                    <!-- Health -->
-                    <div class="navbar-nav nav-item-border-bottom">
-                      <a href="${baseURL}/health.do" class="nav-link position-relative health-link" title="[@s.text name="portal.health.title"/]">
-                          <svg class="gbif-heartbeat-icon [#if currentMenu=='health']active[/#if]" height="20" width="20" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="-356 246.5 90 77.6"  xml:space="preserve">
-                              <path d="M-277.2,286.2h-22.9l-5,11l-10.1-43.8l-10.9,32.8h-18.6c-1.8,0-3.2,1.4-3.2,3.2c0,1.8,1.4,3.2,3.2,3.2h23.3l5.2-15.5l9.2,40l11.1-24.5h18.7c1.8,0,3.2-1.4,3.2-3.2C-274,287.7-275.4,286.2-277.2,286.2z"/>
-                          </svg>
-                      </a>
-                    </div>
 
-                    <!-- Languages -->
+                      <!-- Languages -->
                     <div id="navbarNavDropdown">
                         [#include "/WEB-INF/pages/inc/languages.ftl"/]
                     </div>
