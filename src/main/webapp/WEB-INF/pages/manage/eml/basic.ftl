@@ -492,7 +492,7 @@
                                         <!-- Do not show copy-from-resource-contact link for for first contact -->
                                         <div>&nbsp;</div>
                                         <div>
-                                            <a id="contact-removeLink-${contact_index}" class="removeContactLink" href="">${removeContactLink?lower_case?cap_first}</a>
+                                            <a id="contact-removeLink-${contact_index}" class="removeContactLink" href="">${removeContactLink?markup_string?lower_case?cap_first}</a>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -550,7 +550,7 @@
                         </div>
 
                         <div class="addNew mt-2">
-                            <a id="plus-contact" href="">${addContactLink?lower_case?cap_first}</a>
+                            <a id="plus-contact" href="">${addContactLink?markup_string?lower_case?cap_first}</a>
                         </div>
 
                         <div id="baseItem-contact" class="item row g-3 pb-4 border-bottom" style="display:none;">
@@ -886,4 +886,3 @@
 <#include "/WEB-INF/pages/manage/eml/unsaved_changes_modal.ftl">
 
 <#include "/WEB-INF/pages/inc/footer.ftl">
-</#escape>
