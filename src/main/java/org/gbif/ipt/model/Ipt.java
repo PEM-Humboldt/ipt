@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,6 +29,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Ipt extends AgentBase implements Serializable {
 
   private static final long serialVersionUID = 78945123624747L;
+
   private UUID organisationKey;
   private String language;
   private String logoUrl;
@@ -131,6 +130,7 @@ public class Ipt extends AgentBase implements Serializable {
     if (wsPassword == null) {
       this.wsPassword = new Password();
     }
+
     this.wsPassword.password = wsPassword;
   }
 

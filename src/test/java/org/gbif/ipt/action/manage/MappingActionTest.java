@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +14,7 @@
 package org.gbif.ipt.action.manage;
 
 import org.gbif.dwc.terms.DwcTerm;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.model.Extension;
@@ -49,7 +48,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class MappingActionTest {
+public class MappingActionTest extends IptBaseTest {
 
   private MappingAction action;
   private static final String RESOURCE_SHORT_NAME = "myResource";
@@ -66,7 +65,7 @@ public class MappingActionTest {
     when(req.getMethod()).thenReturn("post");
 
     // set small list of source column names representing a source file to be mapped
-    List<String> columns = new ArrayList<String>();
+    List<String> columns = new ArrayList<>();
     columns.add("identificationID");
     columns.add("identificationQualifier");
     columns.add("unknown");
@@ -138,13 +137,13 @@ public class MappingActionTest {
   @Test
   public void testNormalizeColumnName() {
     String col1 = null;
-    assertEquals(null, action.normalizeColumnName(col1));
+    assertNull(action.normalizeColumnName(col1));
 
     String col2 = "KingDOM";
     assertEquals("kingdom", action.normalizeColumnName(col2));
 
-    String col3 = "scientificName:1";
-    assertEquals("scientificname", action.normalizeColumnName(col3));
+    String col3 = "dwc:scientificName";
+    assertEquals("dwc:scientificname", action.normalizeColumnName(col3));
   }
 
   @Disabled("the mapping and the resource's mapping are not the same object and so the remove(mapping) is always false")

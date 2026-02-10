@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 2.5//EN"
-  "http://struts.apache.org/dtds/struts-2.5.dtd">
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 6.0//EN"
+    "https://struts.apache.org/dtds/struts-6.0.dtd">
 
 <!--
 	Actions related to the data browse/search area of the IPT
@@ -13,10 +14,12 @@
     <default-interceptor-ref name="portalStack"/>
     <default-action-ref name="home"/>
     <global-results>
-      <result name="404">
+      <result name="404" type="freemarkerWithStatus">
+        <param name="status">404</param>
         <param name="location">/WEB-INF/pages/portal/404.ftl</param>
       </result>
-      <result name="410">
+      <result name="410" type="freemarkerWithStatus">
+        <param name="status">410</param>
         <param name="location">/WEB-INF/pages/portal/410.ftl</param>
       </result>
       <result name="home" type="redirect">${baseURL}/home.do</result>
@@ -28,15 +31,29 @@
     </action>
 
     <action name="resource" class="org.gbif.ipt.action.portal.ResourceAction" method="detail">
-      <result>/WEB-INF/pages/portal/resource_new.ftl</result>
+      <result>/WEB-INF/pages/portal/resource.ftl</result>
     </action>
     <action name="resource/preview" class="org.gbif.ipt.action.portal.ResourceAction" method="preview">
       <interceptor-ref name="managerStack"/>
-      <result>/WEB-INF/pages/portal/resource_new.ftl</result>
+      <result>/WEB-INF/pages/portal/resource.ftl</result>
+    </action>
+
+    <action name="fallback" class="org.gbif.ipt.action.portal.FallbackAction">
+      <result name="input">/WEB-INF/pages/portal/fallback.ftl</result>
+      <result>/WEB-INF/pages/portal/fallback.ftl</result>
     </action>
 
     <!-- data dir files -->
-    <action name="eml" class="org.gbif.ipt.action.portal.ResourceFileAction" method="eml">
+    <action name="eml" class="org.gbif.ipt.action.portal.ResourceFileAction" method="metadata">
+      <result name="success" type="stream">
+        <param name="contentType">${mimeType}</param>
+        <param name="contentCharSet">UTF-8</param>
+        <param name="inputName">inputStream</param>
+        <param name="contentDisposition">filename="${filename}"</param>
+        <param name="bufferSize">1024</param>
+      </result>
+    </action>
+    <action name="metadata" class="org.gbif.ipt.action.portal.ResourceFileAction" method="metadata">
       <result name="success" type="stream">
         <param name="contentType">${mimeType}</param>
         <param name="contentCharSet">UTF-8</param>
@@ -46,6 +63,15 @@
       </result>
     </action>
     <action name="logo" class="org.gbif.ipt.action.portal.ResourceFileAction" method="logo">
+      <result name="success" type="stream">
+        <param name="contentType">${mimeType}</param>
+        <param name="contentCharSet">UTF-8</param>
+        <param name="inputName">inputStream</param>
+        <param name="contentDisposition">filename="${filename}"</param>
+        <param name="bufferSize">1024</param>
+      </result>
+    </action>
+    <action name="appLogo" class="org.gbif.ipt.action.portal.AppFileAction" method="logo">
       <result name="success" type="stream">
         <param name="contentType">${mimeType}</param>
         <param name="contentCharSet">UTF-8</param>
@@ -80,7 +106,7 @@
         <param name="bufferSize">1024</param>
       </result>
     </action>
-    <action name="archive" class="org.gbif.ipt.action.portal.ResourceFileAction" method="dwca">
+    <action name="archive" class="org.gbif.ipt.action.portal.ResourceFileAction" method="archive">
       <result name="success" type="stream">
         <param name="contentType">${mimeType}</param>
         <param name="inputName">inputStream</param>
@@ -91,7 +117,7 @@
     <action name="dcat" class="org.gbif.ipt.action.portal.DCATAction">
       <result type="stream">
         <param name="noCache">true</param>
-        <param name="contentType">text</param>
+        <param name="contentType">text/turtle</param>
         <param name="contentCharSet">UTF-8</param>
         <param name="inputName">dcatInfo</param>
       </result>

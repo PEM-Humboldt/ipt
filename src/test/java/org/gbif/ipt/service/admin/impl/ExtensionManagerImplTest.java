@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,11 +17,12 @@ import org.gbif.dwc.terms.DcTerm;
 import org.gbif.dwc.terms.DwcTerm;
 import org.gbif.dwc.terms.Term;
 import org.gbif.dwc.terms.TermFactory;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.ConfigWarnings;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.config.DataDir;
-import org.gbif.ipt.config.IPTModule;
+import org.gbif.ipt.config.TestBeanProvider;
 import org.gbif.ipt.model.Extension;
 import org.gbif.ipt.model.ExtensionMapping;
 import org.gbif.ipt.model.PropertyMapping;
@@ -63,11 +62,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.servlet.ServletModule;
-import com.google.inject.struts2.Struts2GuicePluginModule;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -80,7 +74,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings("HttpUrlsUsage")
-public class ExtensionManagerImplTest {
+public class ExtensionManagerImplTest extends IptBaseTest {
 
   private static final TermFactory TERM_FACTORY = TermFactory.instance();
   private ExtensionManager extensionManager;
@@ -98,12 +92,10 @@ public class ExtensionManagerImplTest {
     SimpleTextProvider mockSimpleTextProvider = mock(SimpleTextProvider.class);
     RegistrationManager mockRegistrationManager = mock(RegistrationManager.class);
 
-    Injector injector = Guice.createInjector(new ServletModule(), new Struts2GuicePluginModule(), new IPTModule());
-
     // construct ExtensionFactory using injected parameters
-    HttpClient httpClient = injector.getInstance(HttpClient.class);
+    HttpClient httpClient = TestBeanProvider.provideHttpClient();
     ThesaurusHandlingRule thesaurusRule = new ThesaurusHandlingRule(mock(VocabulariesManagerImpl.class));
-    SAXParserFactory saxf = injector.getInstance(SAXParserFactory.class);
+    SAXParserFactory saxf = TestBeanProvider.provideNsAwareSaxParserFactory();
     extensionFactory = new ExtensionFactory(thesaurusRule, saxf, httpClient);
 
     // construct mock RegistryManager:
@@ -120,8 +112,9 @@ public class ExtensionManagerImplTest {
 
     // create instance of RegistryManager
     RegistryManager mockRegistryManager =
-      new RegistryManagerImpl(appConfig, mockDataDir, mockHttpUtil, saxf, warnings, mockSimpleTextProvider,
-        mockRegistrationManager, resourceManager);
+      new RegistryManagerImpl(appConfig, mockDataDir, mockHttpUtil, saxf, warnings, mockSimpleTextProvider);
+
+    ExtensionsHolder mockExtensionsHolder = new ExtensionsHolder();
 
     File myTmpDir = org.gbif.ipt.utils.FileUtils.createTempDir();
     assertTrue(myTmpDir.isDirectory());
@@ -150,6 +143,12 @@ public class ExtensionManagerImplTest {
     File tmpEventCore = new File(myTmpDir, "dwc_event_2015-04-24.xml");
     assertTrue(tmpEventCore.exists());
 
+    // copy latest version of material entity core extension to temporary directory
+    File materialEntityCore = FileUtils.getClasspathFile("extensions/dwc_material_2023-04-29.xml");
+    org.apache.commons.io.FileUtils.copyFileToDirectory(materialEntityCore, myTmpDir);
+    File tmpMaterialEntityCore = new File(myTmpDir, "dwc_material_2023-04-29.xml");
+    assertTrue(tmpMaterialEntityCore.exists());
+
     // mock returning temporary files when looked up by their 'safe' filenames
     when(mockDataDir.tmpFile("http_rs_gbif_org_core_dwc_occurrence_xml.xml")).thenReturn(tmpOccCore);
     when(mockDataDir.tmpFile("http_rs_gbif_org_sandbox_core_dwc_occurrence_2015-04-24_xml.xml"))
@@ -158,6 +157,8 @@ public class ExtensionManagerImplTest {
       .thenReturn(tmpTaxonCore);
     when(mockDataDir.tmpFile("http_rs_gbif_org_sandbox_core_dwc_event_2015-04-24_xml.xml"))
       .thenReturn(tmpEventCore);
+    when(mockDataDir.tmpFile("http_rs_gbif_org_sandbox_core_dwc_material_2023-04-29_xml.xml"))
+      .thenReturn(tmpMaterialEntityCore);
 
     // Mock downloading extension into tmpFile - we're cheating by handling the actual file already as if it
     // were downloaded already. Furthermore, mock download() response with StatusLine with 200 OK response code
@@ -180,10 +181,15 @@ public class ExtensionManagerImplTest {
     when(mockDataDir.configFile(ExtensionManagerImpl.CONFIG_FOLDER + "/http_rs_tdwg_org_dwc_terms_Event.xml"))
       .thenReturn(eventCoreExtension);
 
+    // mock returning newly created material entity core extension file
+    File materialEntityCoreExtension = new File(myTmpDir, "http_rs_tdwg_org_dwc_terms_MaterialEntity.xml");
+    when(mockDataDir.configFile(ExtensionManagerImpl.CONFIG_FOLDER + "/http_rs_tdwg_org_dwc_terms_MaterialEntity.xml"))
+      .thenReturn(materialEntityCoreExtension);
+
     // create instance
     extensionManager =
-      new ExtensionManagerImpl(appConfig, mockDataDir, extensionFactory, resourceManager, mockHttpUtil, warnings,
-        mockSimpleTextProvider, mockRegistrationManager, mockRegistryManager);
+      new ExtensionManagerImpl(appConfig, mockDataDir, extensionFactory, mockHttpUtil, warnings,
+        mockSimpleTextProvider, mockRegistrationManager, mockRegistryManager, mockExtensionsHolder);
   }
 
   @Test
@@ -289,20 +295,16 @@ public class ExtensionManagerImplTest {
     assertEquals(169, ext.getProperties().size());
     assertNotNull(ext.getIssued());
 
-    // verify migration was successful
-    ExtensionMapping migrated = r.getMapping(Constants.DWC_ROWTYPE_OCCURRENCE, 0);
-    assertNotNull(migrated.getExtension().getIssued());
-    // test for example index 3 (rights term should have been replaced by dc:license)
-    PropertyMapping licenseMapping = migrated.getField(DcTerm.license.qualifiedName());
-    assertEquals(0, licenseMapping.getIndex().compareTo(3));
+    // resource migration is now performed in ExtensionsAction#update to get rid of a circular dependency in
+    // ExtensionManager on ResourceManager
   }
 
   @Test
   public void testMigrateResourceToNewExtensionVersion() throws IOException {
     ExtensionManagerImpl manager =
       new ExtensionManagerImpl(mock(AppConfig.class), mock(DataDir.class), extensionFactory,
-        mock(ResourceManager.class), mock(HttpClient.class), mock(ConfigWarnings.class), mock(SimpleTextProvider.class),
-        mock(RegistrationManager.class), mock(RegistryManager.class));
+          mock(HttpClient.class), mock(ConfigWarnings.class), mock(SimpleTextProvider.class),
+          mock(RegistrationManager.class), mock(RegistryManager.class), mock(ExtensionsHolder.class));
     File myTmpDir = org.gbif.ipt.utils.FileUtils.createTempDir();
 
     // load current (installed) version of Occurrence extension
@@ -405,8 +407,8 @@ public class ExtensionManagerImplTest {
   public void testGetRedundantGroups() throws IOException {
     ExtensionManagerImpl manager =
       new ExtensionManagerImpl(mock(AppConfig.class), mock(DataDir.class), extensionFactory,
-        mock(ResourceManager.class), mock(HttpClient.class), mock(ConfigWarnings.class), mock(SimpleTextProvider.class),
-        mock(RegistrationManager.class), mock(RegistryManager.class));
+        mock(HttpClient.class), mock(ConfigWarnings.class), mock(SimpleTextProvider.class),
+        mock(RegistrationManager.class), mock(RegistryManager.class), mock(ExtensionsHolder.class));
     File myTmpDir = org.gbif.ipt.utils.FileUtils.createTempDir();
 
     // load Occurrence extension

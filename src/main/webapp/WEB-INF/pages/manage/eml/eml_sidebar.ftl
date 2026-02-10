@@ -2,7 +2,7 @@
 
 <nav id="sidebar-content">
     <ul>
-        <#list ["basic", "geocoverage", "taxcoverage","tempcoverage", "keywords", "parties", "project", "methods", "citations", "collections", "physical", "additional"] as it>
+        <#list ["basic", "contacts", "acknowledgements", "geocoverage", "taxcoverage", "tempcoverage", "additionalDescription", "keywords", "project", "methods", "citations", "collections", "physical", "additional"] as it>
             <li>
                 <a class="sidebar-navigation-link <#if it == currentMetadataPage>active</#if>" href="metadata-${it}.do?r=${resource.shortname!r!}">
                     <@s.text name="submenu.${it}"/>
@@ -11,8 +11,10 @@
         </#list>
     </ul>
 
-    <div class="d-flex align-content-between">
+    <div class="d-flex align-content-between" style="margin-left: -10px;">
         <@s.submit cssClass="button btn btn-sm btn-outline-gbif-primary me-1" name="save" key="button.save"/>
-        <@s.submit cssClass="button btn btn-sm btn-outline-secondary" name="cancel" key="button.back"/>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.history.back();">
+            <@s.text name="button.back"/>
+        </button>
     </div>
 </nav>

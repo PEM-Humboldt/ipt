@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -52,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.inject.Inject;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.FileUtils;
@@ -60,9 +59,6 @@ import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.http.StatusLine;
 import org.xml.sax.SAXException;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import static org.gbif.utils.HttpUtil.success;
 
 /**
@@ -70,7 +66,6 @@ import static org.gbif.utils.HttpUtil.success;
  * is keyed on a normed filename derived from a vocabularies URL. We use this derived filename instead of the proper
  * URL as we don't persist any more data than the extension file itself - which doesn't have its own URL embedded.
  */
-@Singleton
 public class VocabulariesManagerImpl extends BaseManager implements VocabulariesManager {
 
   // local lookup
@@ -93,9 +88,15 @@ public class VocabulariesManagerImpl extends BaseManager implements Vocabularies
   private BaseAction baseAction;
 
   @Inject
-  public VocabulariesManagerImpl(AppConfig cfg, DataDir dataDir, VocabularyFactory vocabFactory,
-                                 HttpClient client, RegistryManager registryManager, ConfigWarnings warnings,
-                                 SimpleTextProvider textProvider, RegistrationManager registrationManager) {
+  public VocabulariesManagerImpl(
+      AppConfig cfg,
+      DataDir dataDir,
+      VocabularyFactory vocabFactory,
+      HttpClient client,
+      RegistryManager registryManager,
+      ConfigWarnings warnings,
+      SimpleTextProvider textProvider,
+      RegistrationManager registrationManager) {
     super(cfg, dataDir);
     this.vocabFactory = vocabFactory;
     this.downloader = client;
@@ -174,6 +175,16 @@ public class VocabulariesManagerImpl extends BaseManager implements Vocabularies
     return map;
   }
 
+  @Override
+  public Map<String, String> getI18nDatasetTypesVocab(String lang, boolean sortAlphabetically) {
+    return getI18nVocab(Constants.VOCAB_URI_DATASET_TYPE, lang, sortAlphabetically);
+  }
+
+  @Override
+  public Map<String, String> getI18nDatasetSubtypesVocab(String lang, boolean sortAlphabetically) {
+    return getI18nVocab(Constants.VOCAB_URI_DATASET_SUBTYPES, lang, sortAlphabetically);
+  }
+
   /**
    * Retrieve vocabulary file by its resolvable URI.
    *
@@ -205,6 +216,51 @@ public class VocabulariesManagerImpl extends BaseManager implements Vocabularies
     }
   }
 
+  @Override
+  public synchronized Vocabulary installIfAbsentOrOutdated(URL url) throws InvalidConfigException {
+    Objects.requireNonNull(url);
+
+    try {
+      File tmpFile = download(url);
+      Vocabulary vocabulary = loadFromFile(tmpFile);
+      vocabulary.setUriResolvable(url.toURI());
+
+      Vocabulary alreadyInstalled = get(vocabulary.getUriString());
+
+      if (alreadyInstalled == null) {
+        finishInstall(tmpFile, vocabulary);
+      } else if (isLoadedVocabularyNewerThanInstalled(alreadyInstalled.getIssued(), vocabulary.getIssued())
+          || alreadyInstalled.getIssued() == null
+          || !alreadyInstalled.isLatest()) {
+        try {
+          updateToLatest(alreadyInstalled, vocabulary);
+        } catch (IOException e) {
+          throw new InvalidConfigException(InvalidConfigException.TYPE.INVALID_DATA_DIR,
+                  "Can't update installed vocabulary: " + alreadyInstalled.getUriString(), e);
+        }
+      } else {
+        LOG.info("Vocabulary {} already installed (id {}), skipping", url, vocabulary.getUriString());
+        FileUtils.deleteQuietly(tmpFile);
+        vocabulary = alreadyInstalled;
+      }
+
+      return vocabulary;
+    } catch (InvalidConfigException e) {
+      throw e;
+    } catch (Exception e) {
+      String msg = baseAction.getText("admin.vocabulary.install.error", new String[] {url.toString()});
+      LOG.error(msg, e);
+      throw new InvalidConfigException(InvalidConfigException.TYPE.INVALID_EXTENSION, msg, e);
+    }
+  }
+
+  private boolean isLoadedVocabularyNewerThanInstalled(
+      Date installedVocabularyIssuedDate, Date loadedVocabularyIssuedDate) {
+    return installedVocabularyIssuedDate != null
+        && loadedVocabularyIssuedDate != null
+        && loadedVocabularyIssuedDate.after(installedVocabularyIssuedDate);
+  }
+
   /**
    * Move and rename temporary file to final version. Update vocabulary loaded into local lookup.
    *
@@ -229,6 +285,7 @@ public class VocabulariesManagerImpl extends BaseManager implements Vocabularies
       Vocabulary fromFile = loadFromFile(installedFile);
       // don't forget to set vocabulary URL (only available from JSON)
       fromFile.setUriResolvable(vocabulary.getUriResolvable());
+      fromFile.setLatest(true);
 
       // keep vocabulary in local lookup: allowed one installed vocabulary per identifier
       vocabulariesById.put(vocabulary.getUriString(), fromFile);
@@ -491,28 +548,55 @@ public class VocabulariesManagerImpl extends BaseManager implements Vocabularies
   }
 
   @Override
-  public synchronized boolean updateIfChanged(String identifier) throws IOException, RegistryException {
-    // identify installed vocabulary by identifier
-    Vocabulary installed = get(identifier);
-    if (installed != null) {
-      // match vocabulary by identifier and issued date
-      Vocabulary matched = null;
-      for (Vocabulary v : registryManager.getVocabularies()) {
-        if (v.getUriString() != null && v.getUriString().equalsIgnoreCase(identifier)) {
-          if (installed.getIssued() == null
-              || (installed.getIssued() != null && v.getIssued() != null && installed.getIssued().compareTo(v.getIssued()) < 0)) {
-            matched = v;
-            break;
+  public synchronized void updateIfChanged() throws IOException, RegistryException {
+    List<Vocabulary> installedVocabularies = list();
+    List<Vocabulary> registryVocabularies = registryManager.getVocabularies();
+
+    for (Vocabulary installed : installedVocabularies) {
+      if (installed == null || installed.getUriString() == null) {
+        LOG.error("Installed vocabulary is null ot does not have an ID");
+      } else {
+        LOG.debug("Updating vocabulary {}", installed.getUriString());
+
+        // match vocabulary by identifier and issued date
+        Vocabulary matched = null;
+        boolean isMatched = false;
+
+        for (Vocabulary rVocab : registryVocabularies) {
+          if (rVocab.getUriString() != null
+              && rVocab.getUriString().equalsIgnoreCase(installed.getUriString())) {
+            isMatched = true;
+            if (installed.getIssued() == null
+                || (installed.getIssued() != null && rVocab.getIssued() != null && installed.getIssued().compareTo(rVocab.getIssued()) < 0)) {
+              matched = rVocab;
+              break;
+            }
+          }
+        }
+
+        // verify the version was updated
+        if (!isMatched) {
+          LOG.error("No matching vocabulary found for {}", installed.getUriString());
+        } else if (matched == null) {
+          LOG.debug("Vocabulary {} is already up-to-date", installed.getUriString());
+        } else if (matched.getUriResolvable() == null) {
+          LOG.error("Matched vocabulary {} doesn't have a URI", installed.getUriString());
+        } else {
+          LOG.debug("Found matching vocabulary {}", matched.getUriString());
+          File vocabFile = getVocabFile(matched.getUriResolvable());
+          boolean downloadResult = downloader.downloadIfChanged(matched.getUriResolvable().toURL(), vocabFile);
+
+          if (downloadResult) {
+            LOG.debug("Downloaded vocabulary {}", matched.getUriString());
+            Vocabulary result = loadFromFile(vocabFile);
+
+            // update vocabulary in local lookup
+            vocabulariesById.replace(result.getUriString(), result);
+          } else {
+            LOG.error("Failed to download vocabulary {} from {}", matched.getUriString(), matched.getUriResolvable());
           }
         }
       }
-      // verify the version was updated
-      if (matched != null && matched.getUriResolvable() != null) {
-        File vocabFile = getVocabFile(matched.getUriResolvable());
-        return downloader.downloadIfChanged(matched.getUriResolvable().toURL(), vocabFile);
-      }
-
     }
-    return false;
   }
 }

@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,16 +13,16 @@
  */
 package org.gbif.ipt.service.admin.impl;
 
-import com.thoughtworks.xstream.security.AnyTypePermission;
 import org.gbif.doi.service.DoiService;
 import org.gbif.doi.service.datacite.RestJsonApiDataCiteService;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.DataDir;
 import org.gbif.ipt.model.Ipt;
+import org.gbif.ipt.model.Network;
 import org.gbif.ipt.model.Organisation;
 import org.gbif.ipt.model.Registration;
 import org.gbif.ipt.model.Resource;
-import org.gbif.ipt.model.converter.PasswordConverter;
+import org.gbif.ipt.model.converter.PasswordEncrypter;
 import org.gbif.ipt.model.legacy.LegacyIpt;
 import org.gbif.ipt.model.legacy.LegacyOrganisation;
 import org.gbif.ipt.model.legacy.LegacyRegistration;
@@ -36,7 +34,6 @@ import org.gbif.ipt.service.DeletionNotAllowedException.Reason;
 import org.gbif.ipt.service.InvalidConfigException;
 import org.gbif.ipt.service.InvalidConfigException.TYPE;
 import org.gbif.ipt.service.admin.RegistrationManager;
-import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.service.registry.RegistryManager;
 import org.gbif.ipt.utils.FileUtils;
 
@@ -61,11 +58,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.security.AnyTypePermission;
 
-@Singleton
 public class RegistrationManagerImpl extends BaseManager implements RegistrationManager {
 
   private static final Logger LOG = LogManager.getLogger(RegistrationManagerImpl.class);
@@ -77,16 +72,16 @@ public class RegistrationManagerImpl extends BaseManager implements Registration
   private Registration registration = new Registration();
   private final XStream xstreamV1 = new XStream();
   private final XStream xstreamV2 = new XStream();
-  private ResourceManager resourceManager;
   private RegistryManager registryManager;
 
-  @Inject
-  public RegistrationManagerImpl(AppConfig cfg, DataDir dataDir, ResourceManager resourceManager,
-    RegistryManager registryManager, PasswordConverter passwordConverter) {
+  public RegistrationManagerImpl(
+      AppConfig cfg,
+      DataDir dataDir,
+      RegistryManager registryManager,
+      PasswordEncrypter passwordEncrypter) {
     super(cfg, dataDir);
-    this.resourceManager = resourceManager;
     defineXstreamMappingV1();
-    defineXstreamMappingV2(passwordConverter);
+    defineXstreamMappingV2(passwordEncrypter);
     this.registryManager = registryManager;
   }
 
@@ -102,7 +97,7 @@ public class RegistrationManagerImpl extends BaseManager implements Registration
           "Multiple DOI accounts activated in registration information - only one is allowed.");
       }
 
-      LOG.debug("Adding/updating associated organisation " + organisation.getKey() + " - " + organisation.getName());
+      LOG.debug("Adding/updating associated organisation {} - {}", organisation.getKey(), organisation.getName());
       registration.getAssociatedOrganisations().put(organisation.getKey().toString(), organisation);
     }
     return organisation;
@@ -227,6 +222,7 @@ public class RegistrationManagerImpl extends BaseManager implements Registration
    */
   private void defineXstreamMappingV1() {
     xstreamV1.addPermission(AnyTypePermission.ANY);
+    xstreamV1.ignoreUnknownElements();
     xstreamV1.omitField(LegacyRegistration.class, "associatedOrganisations");
     xstreamV1.alias("organisation", LegacyOrganisation.class);
     xstreamV1.alias("registry", LegacyRegistration.class);
@@ -235,22 +231,23 @@ public class RegistrationManagerImpl extends BaseManager implements Registration
   /**
    * Define XStream used to parse encrypted registration (registration2.xml) with passwords encrypted.
    *
-   * @param passwordConverter PasswordConverter
+   * @param passwordEncrypter PasswordConverter
    */
-  private void defineXstreamMappingV2(PasswordConverter passwordConverter) {
+  private void defineXstreamMappingV2(PasswordEncrypter passwordEncrypter) {
     xstreamV2.addPermission(AnyTypePermission.ANY);
+    xstreamV2.ignoreUnknownElements();
     xstreamV2.omitField(Registration.class, "associatedOrganisations");
     xstreamV2.alias("organisation", Organisation.class);
     xstreamV2.alias("registry", Registration.class);
     // encrypt passwords
-    xstreamV2.registerConverter(passwordConverter);
+    xstreamV2.registerConverter(passwordEncrypter);
   }
 
   @Override
-  public Organisation delete(String key) throws DeletionNotAllowedException {
+  public Organisation delete(String key, List<Resource> resources) throws DeletionNotAllowedException {
     Organisation org = get(key);
     if (org != null) {
-      for (Resource resource : resourceManager.list()) {
+      for (Resource resource : resources) {
         // Ensure the organisation is not associated to any registered resources
         if (resource.getOrganisation() != null && resource.getOrganisation().equals(org)) {
           throw new DeletionNotAllowedException(Reason.RESOURCE_REGISTERED_WITH_ORGANISATION,
@@ -292,6 +289,11 @@ public class RegistrationManagerImpl extends BaseManager implements Registration
   @Override
   public Organisation getHostingOrganisation() {
     return registration.getHostingOrganisation();
+  }
+
+  @Override
+  public Network getNetwork() {
+    return registration.getNetwork();
   }
 
   @Override
@@ -356,7 +358,11 @@ public class RegistrationManagerImpl extends BaseManager implements Registration
     }
 
     // it could be organisations have changed their name or node in the Registry, so update all organisation metadata
-    updateAssociatedOrganisationsMetadata();
+    try {
+      updateAssociatedOrganisationsMetadata();
+    } catch (IOException e) {
+      LOG.error("Failed to update associated organisations", e);
+    }
   }
 
   @Override
@@ -453,27 +459,24 @@ public class RegistrationManagerImpl extends BaseManager implements Registration
    * Update the metadata of each organization that has been added to the IPT with the latest version coming from the
    * Registry.
    */
-  private void updateAssociatedOrganisationsMetadata() {
-    try {
-      // 1. update associated organisations' metadata
-      for (Map.Entry<String, Organisation> entry : registration.getAssociatedOrganisations().entrySet()) {
-        Organisation o = entry.getValue();
-        updateOrganisationMetadata(o);
-        // replace organisation in list of associated organisations now
-        registration.getAssociatedOrganisations().put(entry.getKey(), o);
-      }
-
-      // 2. update hosting organisation's metadata
-      Organisation hostingOrganisation = registration.getHostingOrganisation();
-      if (hostingOrganisation != null) {
-        updateOrganisationMetadata(hostingOrganisation);
-      }
-
-      // ensure changes are persisted to registration2.xml
-      save();
-    } catch (IOException e) {
-      LOG.error("A problem occurred saving ");
+  @Override
+  public void updateAssociatedOrganisationsMetadata() throws IOException {
+    // 1. update associated organisations' metadata
+    for (Map.Entry<String, Organisation> entry : registration.getAssociatedOrganisations().entrySet()) {
+      Organisation o = entry.getValue();
+      updateOrganisationMetadata(o);
+      // replace organisation in list of associated organisations now
+      registration.getAssociatedOrganisations().put(entry.getKey(), o);
     }
+
+    // 2. update hosting organisation's metadata
+    Organisation hostingOrganisation = registration.getHostingOrganisation();
+    if (hostingOrganisation != null) {
+      updateOrganisationMetadata(hostingOrganisation);
+    }
+
+    // ensure changes are persisted to registration2.xml
+    save();
   }
 
   /**
@@ -523,6 +526,36 @@ public class RegistrationManagerImpl extends BaseManager implements Registration
       }
     } else {
       LOG.debug("Update of organisation failed: organisation was null");
+    }
+  }
+
+  @Override
+  public void associateWithNetwork(String networkKey, String networkName) {
+    try {
+      Network network = registration.getNetwork();
+      if (network != null) {
+        network.setKey(networkKey);
+        network.setName(networkName);
+      } else {
+        Network n = new Network();
+        n.setName(networkName);
+        n.setKey(networkKey);
+        registration.setNetwork(n);
+      }
+
+      save();
+    } catch (IOException e) {
+      LOG.error("Failed to associate with the network");
+    }
+  }
+
+  @Override
+  public void removeAssociationWithNetwork() {
+    try {
+      registration.setNetwork(null);
+      save();
+    } catch (IOException e) {
+      LOG.error("Failed to remove association with the network");
     }
   }
 

@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,14 +22,13 @@ import org.gbif.ipt.struts2.CsrfLoginInterceptor;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 
 import java.io.IOException;
-
+import java.util.List;
+import javax.inject.Inject;
 import javax.servlet.http.Cookie;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.inject.Inject;
 
 /**
  * Action handling login/logout only. Login can happen both from small login box on every page, or dedicated login
@@ -40,7 +37,9 @@ import com.google.inject.Inject;
 public class LoginAction extends POSTAction {
 
   // logging
-  private static final Logger LOG = LogManager.getLogger(AccountAction.class);
+  private static final Logger LOG = LogManager.getLogger(LoginAction.class);
+
+  private static final long serialVersionUID = -863287752175768744L;
 
   private final UserAccountManager userManager;
 
@@ -51,8 +50,11 @@ public class LoginAction extends POSTAction {
   private String csrfToken;
 
   @Inject
-  public LoginAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
-    UserAccountManager userManager) {
+  public LoginAction(
+      SimpleTextProvider textProvider,
+      AppConfig cfg,
+      RegistrationManager registrationManager,
+      UserAccountManager userManager) {
     super(textProvider, cfg, registrationManager);
     this.userManager = userManager;
   }
@@ -62,7 +64,13 @@ public class LoginAction extends POSTAction {
     super.prepare();
     adminEmail = userManager.getDefaultAdminEmail();
     if (StringUtils.isBlank(adminEmail)) {
-      adminEmail = userManager.list(User.Role.Admin).get(0).getEmail();
+      List<User> users = userManager.list(User.Role.Admin);
+
+      if (!users.isEmpty()) {
+        adminEmail = users.get(0).getEmail();
+      } else {
+        LOG.error("Failed to load the default admin email");
+      }
     }
   }
 
@@ -79,15 +87,20 @@ public class LoginAction extends POSTAction {
       // prevent login CSRF
       // Make sure the token from the login form is the same as in the cookie
         if (csrfToken.equals(csrfCookie.getValue())){
-          User authUser = userManager.authenticate(email, password);
+          User authUser = userManager.authenticate(email.trim(), password.trim());
           if (authUser == null) {
             addActionError(getText("admin.user.wrong.email.password.combination"));
-            LOG.info("User " + email + " failed to log in");
+            LOG.info("User {} failed to log in", email);
           } else {
-            LOG.info("User " + email + " logged in successfully");
+            LOG.info("User {} logged in successfully", email);
             authUser.setLastLoginToNow();
             userManager.save();
             session.put(Constants.SESSION_USER, authUser);
+
+            int sessionTimeout = cfg.getSessionTimeout();
+            LOG.debug("Setting session timeout to {} seconds", sessionTimeout);
+            req.getSession().setMaxInactiveInterval(sessionTimeout);
+
             // remember previous URL to redirect back to
             setRedirectUrl();
             return SUCCESS;
@@ -111,14 +124,14 @@ public class LoginAction extends POSTAction {
     String referer = (String) session.get(Constants.SESSION_REFERER);
     LOG.debug("Session's referer: {}", referer);
 
-    if (referer != null && !(referer.endsWith("login.do") || referer.endsWith("login"))) {
+    if (StringUtils.isNotEmpty(referer) && !(referer.endsWith("login.do") || referer.endsWith("login"))) {
       redirectUrl = getBase() + referer;
     }
 
     // remove referer from session
     session.remove(Constants.SESSION_REFERER);
 
-    LOG.info("Redirecting to " + redirectUrl);
+    LOG.info("Redirecting to {}", redirectUrl);
   }
 
   public String getRedirectUrl() {

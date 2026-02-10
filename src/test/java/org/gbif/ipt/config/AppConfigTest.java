@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,18 +15,22 @@ package org.gbif.ipt.config;
 
 import java.math.BigDecimal;
 
+import org.apache.commons.lang3.RegExUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.gbif.ipt.IptBaseTest;
 import org.junit.jupiter.api.Test;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import javax.servlet.ServletContext;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class AppConfigTest {
+public class AppConfigTest extends IptBaseTest {
 
-  Injector injector = Guice.createInjector(new IPTTestModule());
-  AppConfig cfg = injector.getInstance(AppConfig.class);
-  DataDir dd = injector.getInstance(DataDir.class);
+  ServletContext mockServletContext = new MockServletContext();
+  DataDir dd = TestBeanProvider.provideDataDir(mockServletContext);
+  AppConfig cfg = TestBeanProvider.provideAppConfig(dd);
 
   @Test
   public void testTestConfig() {
@@ -82,6 +84,12 @@ public class AppConfigTest {
   public void testGetResourceEmlUrl() {
     cfg.setProperty("ipt.baseURL", "http://ipt.gbif.org");
     assertEquals("http://ipt.gbif.org/eml.do?r=ants", cfg.getResourceEmlUrl("ants"));
+
+    cfg.setProperty("ipt.baseURL", null);
+    assertThrows(RuntimeException.class, () -> cfg.getResourceEmlUrl("ants"));
+
+    cfg.setProperty("ipt.baseURL", "");
+    assertThrows(RuntimeException.class, () -> cfg.getResourceEmlUrl("ants"));
   }
 
   @Test
@@ -100,6 +108,12 @@ public class AppConfigTest {
   public void testGetResourceArchiveUrl() {
     cfg.setProperty("ipt.baseURL", "http://ipt.gbif.org");
     assertEquals("http://ipt.gbif.org/archive.do?r=ants", cfg.getResourceArchiveUrl("ants"));
+
+    cfg.setProperty("ipt.baseURL", null);
+    assertThrows(RuntimeException.class, () -> cfg.getResourceArchiveUrl("ants"));
+
+    cfg.setProperty("ipt.baseURL", "");
+    assertThrows(RuntimeException.class, () -> cfg.getResourceArchiveUrl("ants"));
   }
 
   @Test
@@ -148,5 +162,42 @@ public class AppConfigTest {
   public void testGetResourceLinkFromLocalhost() {
     cfg.setProperty("ipt.baseURL", "http://localhost:8080");
     assertEquals("http://localhost:8080/resource?id=ants", cfg.getResourceGuid("ants"));
+  }
+
+  @Test
+  void testGetShortVersion() {
+    assertNull(RegExUtils.removePattern(null, AppConfig.BUILD_NUMBER_REGEX));
+    assertEquals("", RegExUtils.removePattern("", AppConfig.BUILD_NUMBER_REGEX));
+    assertEquals("2.6.3", RegExUtils.removePattern("2.6.3", AppConfig.BUILD_NUMBER_REGEX));
+    assertEquals("2.6.3", RegExUtils.removePattern("2.6.3-r6abcbe3", AppConfig.BUILD_NUMBER_REGEX));
+    assertEquals("2.6.3-SNAPSHOT",
+        RegExUtils.removePattern("2.6.3-SNAPSHOT-r6abcbe3", AppConfig.BUILD_NUMBER_REGEX));
+    assertEquals("2.6.3-SNAPSHOT",
+        RegExUtils.removePattern("2.6.3-SNAPSHOT-r${buildNumber}", AppConfig.BUILD_NUMBER_REGEX));
+    assertEquals("2.6.3-RC1",
+        RegExUtils.removePattern("2.6.3-RC1-r6abcbe3", AppConfig.BUILD_NUMBER_REGEX));
+    assertEquals("2.6.3-RC1-SNAPSHOT",
+        RegExUtils.removePattern("2.6.3-RC1-SNAPSHOT-r6abcbe3", AppConfig.BUILD_NUMBER_REGEX));
+    assertEquals("2.6.3-RC1-SNAPSHOT",
+        RegExUtils.removePattern("2.6.3-RC1-SNAPSHOT-r${buildNumber}", AppConfig.BUILD_NUMBER_REGEX));
+  }
+
+  @Test
+  void testGetVersion() {
+    assertNull(StringUtils.removeEnd(null, AppConfig.BUILD_NUMBER_VARIABLE_SUFFIX));
+    assertEquals("", StringUtils.removeEnd("", AppConfig.BUILD_NUMBER_VARIABLE_SUFFIX));
+    assertEquals("2.6.3", StringUtils.removeEnd("2.6.3", AppConfig.BUILD_NUMBER_VARIABLE_SUFFIX));
+    assertEquals("2.6.3-r6abcbe3",
+        StringUtils.removeEnd("2.6.3-r6abcbe3", AppConfig.BUILD_NUMBER_VARIABLE_SUFFIX));
+    assertEquals("2.6.3-SNAPSHOT-r6abcbe3",
+        StringUtils.removeEnd("2.6.3-SNAPSHOT-r6abcbe3", AppConfig.BUILD_NUMBER_VARIABLE_SUFFIX));
+    assertEquals("2.6.3-SNAPSHOT",
+        StringUtils.removeEnd("2.6.3-SNAPSHOT-r${buildNumber}", AppConfig.BUILD_NUMBER_VARIABLE_SUFFIX));
+    assertEquals("2.6.3-RC1-r6abcbe3",
+        StringUtils.removeEnd("2.6.3-RC1-r6abcbe3", AppConfig.BUILD_NUMBER_VARIABLE_SUFFIX));
+    assertEquals("2.6.3-RC1-SNAPSHOT-r6abcbe3",
+        StringUtils.removeEnd("2.6.3-RC1-SNAPSHOT-r6abcbe3", AppConfig.BUILD_NUMBER_VARIABLE_SUFFIX));
+    assertEquals("2.6.3-RC1-SNAPSHOT",
+        StringUtils.removeEnd("2.6.3-RC1-SNAPSHOT-r${buildNumber}", AppConfig.BUILD_NUMBER_VARIABLE_SUFFIX));
   }
 }

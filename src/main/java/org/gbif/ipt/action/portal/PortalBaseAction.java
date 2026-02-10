@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,12 +24,11 @@ import org.gbif.ipt.struts2.SimpleTextProvider;
 import java.math.BigDecimal;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.inject.Inject;
 
 /**
  * The base of all portal actions.
@@ -45,8 +42,11 @@ public class PortalBaseAction extends BaseAction {
   private static final Logger LOG = LogManager.getLogger(PortalBaseAction.class);
 
   @Inject
-  public PortalBaseAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
-    ResourceManager resourceManager) {
+  public PortalBaseAction(
+      SimpleTextProvider textProvider,
+      AppConfig cfg,
+      RegistrationManager registrationManager,
+      ResourceManager resourceManager) {
     super(textProvider, cfg, registrationManager);
     this.resourceManager = resourceManager;
   }

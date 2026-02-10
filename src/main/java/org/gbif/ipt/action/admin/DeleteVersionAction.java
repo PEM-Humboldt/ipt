@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,12 +22,11 @@ import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 
 import java.math.BigDecimal;
+import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.inject.Inject;
 
 public class DeleteVersionAction extends POSTAction {
 
@@ -40,7 +37,11 @@ public class DeleteVersionAction extends POSTAction {
   protected String version;
 
   @Inject
-  public DeleteVersionAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager, ResourceManager resourceManager) {
+  public DeleteVersionAction(
+      SimpleTextProvider textProvider,
+      AppConfig cfg,
+      RegistrationManager registrationManager,
+      ResourceManager resourceManager) {
     super(textProvider, cfg, registrationManager);
     this.resourceManager = resourceManager;
   }

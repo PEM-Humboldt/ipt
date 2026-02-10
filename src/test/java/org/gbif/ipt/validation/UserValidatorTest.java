@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,40 +13,40 @@
  */
 package org.gbif.ipt.validation;
 
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.action.BaseAction;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.model.User;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-public class UserValidatorTest {
+public class UserValidatorTest extends IptBaseTest {
+
   private static UserValidator USER_VALIDATOR = new UserValidator();
   private static BaseAction BASE_ACTION = new BaseAction(mock(SimpleTextProvider.class), mock(AppConfig.class), mock(
     RegistrationManager.class));
 
-  @Test
-  public void testEmail() {
-    // good emails
-    assertTrue(USER_VALIDATOR.isValidEmail("kbraak@gbif.org"));
-    assertTrue(USER_VALIDATOR.isValidEmail("kyle.braak@gmail.com"));
-    // emails in varying case? see https://code.google.com/p/gbif-providertoolkit/issues/detail?id=1013
-    assertTrue(USER_VALIDATOR.isValidEmail("JohnDoe@example.com"));
-    assertTrue(USER_VALIDATOR.isValidEmail("johndoe@example.com"));
-    // emails with .cat extension, see see https://code.google.com/p/gbif-providertoolkit/issues/detail?id=1010
-    assertTrue(USER_VALIDATOR.isValidEmail("katia@gov.cat"));
-
-    // bad emails
-    assertFalse(USER_VALIDATOR.isValidEmail(null));
-    assertFalse(USER_VALIDATOR.isValidEmail(""));
-    assertFalse(USER_VALIDATOR.isValidEmail("JohnDoe"));
-    assertFalse(USER_VALIDATOR.isValidEmail("John Doe@example.com"));
-    assertFalse(USER_VALIDATOR.isValidEmail("JohnDoe.com"));
+  @DisplayName("Test email validator")
+  @ParameterizedTest(name = "[{index}] {0}")
+  @MethodSource("emails")
+  public void testEmail(String email, String reason, boolean valid) {
+    ValidationResult result = USER_VALIDATOR.checkEmailValid(email);
+    assertEquals(valid, result.isValid());
+    assertEquals(reason, result.getMessage());
   }
 
   @Test
@@ -78,5 +76,29 @@ public class UserValidatorTest {
     user.setLastname("Cuadra");
     user.setPassword("p");
     assertFalse(USER_VALIDATOR.validate(BASE_ACTION, user));
+  }
+
+  public static Stream<Arguments> emails() throws Exception {
+    return Stream.of(
+      Arguments.of(Named.of("Email [kbraak@gbif.org] is valid", "kbraak@gbif.org"), null, true),
+      Arguments.of(Named.of("Email [kyle.braak@gmail.com] is valid", "kyle.braak@gmail.com"), null, true),
+      Arguments.of(Named.of("Email [JohnDoe@example.com] is valid (varying case)", "JohnDoe@example.com"), null, true),
+      Arguments.of(Named.of("Email [johndoe@example.com] is valid (varying case)", "johndoe@example.com"), null, true),
+      Arguments.of(Named.of("Email [katia@gov.cat] is valid (.cat extension)", "katia@gov.cat"), null, true),
+      Arguments.of(Named.of("Email null is invalid (null)", null), null, false),
+      Arguments.of(Named.of("Email [] is invalid (empty)", ""), "Illegal address", false),
+      Arguments.of(Named.of("Email [JohnDoe] is invalid (no domain)", "JohnDoe"), "Missing final '@domain'", false),
+      Arguments.of(Named.of("Email [johndoe@] is invalid (no domain)", "johndoe@"), "Missing domain", false),
+      Arguments.of(Named.of("Email [johndoe@.] is invalid (domain starts with dot)", "johndoe@."), "Domain starts with dot", false),
+      Arguments.of(Named.of("Email [johndoe@d oe] is invalid (contains space)", "johndoe@d oe"), "Domain contains control or whitespace", false),
+      Arguments.of(Named.of("Email [johndoe@\u200Bdoe.com] is invalid (contains zero width space char)", "johndoe@\u200Bdoe.com"), "Domain contains control or whitespace", false),
+      Arguments.of(Named.of("Email [johndoe@do%e.com] is invalid (contains illegal char)", "johndoe@do%e.com"), "Domain contains illegal character", false),
+      Arguments.of(Named.of("Email [johndoe@.doe.com] is invalid (starts with dot)", "johndoe@.doe.com"), "Domain starts with dot", false),
+      Arguments.of(Named.of("Email [johndoe@d..oe.com] is invalid (contains double dot)", "johndoe@d..oe.com"), "Domain contains dot-dot", false),
+      Arguments.of(Named.of("Email [johndoe@doe.] is invalid (ends with dot)", "johndoe@doe."), "Domain ends with dot", false),
+      Arguments.of(Named.of("Email [@doe] is invalid (no local name)", "@doe"), "Missing local name", false),
+      Arguments.of(Named.of("Email [john doe@doe.com] is invalid (contains space)", "john doe@doe.com"), "Local address contains control or whitespace", false),
+      Arguments.of(Named.of("Email [john\u200Bdoe@doe.com] is invalid (contains zero width space char)", "john\u200Bdoe@doe.com"), "Local address contains control or whitespace", false)
+    );
   }
 }

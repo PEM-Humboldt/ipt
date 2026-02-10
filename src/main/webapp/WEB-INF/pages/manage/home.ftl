@@ -6,26 +6,57 @@
 <#include "/WEB-INF/pages/macros/forms.ftl"/>
 <#include "/WEB-INF/pages/macros/popover.ftl">
 <#include "/WEB-INF/pages/macros/resourcesTable.ftl"/>
-<script src="${baseURL}/js/jquery/jquery-3.5.1.min.js"></script>
-<script src="${baseURL}/js/jquery/jquery.dataTables-1.10.23.min.js"></script>
-<script src="${baseURL}/js/jquery/dataTables.bootstrap5-1.10.23.min.js"></script>
+<script src="${baseURL}/js/jquery/jquery-3.7.0.min.js"></script>
+<script src="${baseURL}/js/jquery/jquery.dataTables-1.13.6.min.js"></script>
+<script src="${baseURL}/js/jquery/dataTables.responsive-2.5.0.min.js"></script>
 
-<@resourcesTable shownPublicly=false numResourcesShown=10 sEmptyTable="manage.home.resources.none" columnToSortOn=6 sortOrder="desc"/>
+<@resourcesTable resources=resourcesList![] shownPublicly=false numResourcesShown=10 sEmptyTable="manage.home.resources.none" columnToSortOn=6 sortOrder="desc"/>
 
-<main class="container">
-    <div class="my-3 p-3 bg-body rounded shadow-sm">
-        <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header fw-400 text-center">
-            <@s.text name="manage.home.title"/>
-        </h5>
-        <div id="tableContainer" class="table-responsive text-smaller mx-md-4 mx-2 pt-2"></div>
+<div class="container">
+    <#include "/WEB-INF/pages/inc/action_alerts.ftl">
+</div>
+
+<div class="container-fluid border-bottom">
+    <div class="container bg-body border rounded-2 mb-4">
+        <div class="container my-3 p-3">
+            <div class="text-center fs-smaller">
+                <@s.text name="menu.manage.short"/>
+            </div>
+
+            <div class="text-center">
+                <h1 class="pb-2 mb-0 pt-2 text-gbif-header fs-2 fw-normal">
+                    <@s.text name="manage.home.title"/>
+                </h1>
+
+                <#if (resources?size>0)>
+                    <div class="text-smaller text-gbif-primary">
+                        <@s.text name="portal.home.resources.available"><@s.param>${resourcesSize}</@s.param></@s.text>
+                    </div>
+                <#else>
+                    <div class="text-smaller text-gbif-danger">
+                        <@s.text name="manage.home.no.resources"/>
+                    </div>
+                </#if>
+
+                <#if (organisations?size==0)>
+                    <div class="text-smaller text-gbif-danger">
+                        <@s.text name="manage.resource.create.forbidden"/>
+                    </div>
+                </#if>
+
+                <#if (organisations?size>0)>
+                    <div class="mt-2">
+                        <a href="${baseURL}/manage/create.do" class="btn btn-sm btn-outline-gbif-primary top-button"><@s.text name="button.create.new"/></a>
+                    </div>
+                </#if>
+            </div>
+        </div>
     </div>
+</div>
 
-    <div class="my-3 p-3 bg-body rounded shadow-sm">
-        <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header fw-400 text-center">
-            <@s.text name="manage.resource.create.title"/>
-        </h5>
-
-        <#include "inc/create_new_resource.ftl"/>
+<main class="container main-content-container border rounded my-4">
+    <div class="py-md-4 py-3 px-md-5 px-3">
+        <div id="tableContainer" class="resource-table text-smaller pt-2"></div>
     </div>
 </main>
 

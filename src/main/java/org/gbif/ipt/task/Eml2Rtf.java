@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,21 +20,20 @@ import org.gbif.ipt.model.Vocabulary;
 import org.gbif.ipt.model.VocabularyConcept;
 import org.gbif.ipt.model.voc.PublicationStatus;
 import org.gbif.ipt.service.admin.VocabulariesManager;
-import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.utils.CoordinateUtils;
-import org.gbif.metadata.eml.Agent;
-import org.gbif.metadata.eml.BBox;
-import org.gbif.metadata.eml.Citation;
-import org.gbif.metadata.eml.Eml;
-import org.gbif.metadata.eml.GeospatialCoverage;
-import org.gbif.metadata.eml.JGTICuratorialUnit;
-import org.gbif.metadata.eml.JGTICuratorialUnitType;
-import org.gbif.metadata.eml.KeywordSet;
-import org.gbif.metadata.eml.PhysicalData;
-import org.gbif.metadata.eml.TaxonKeyword;
-import org.gbif.metadata.eml.TaxonomicCoverage;
-import org.gbif.metadata.eml.TemporalCoverage;
-import org.gbif.metadata.eml.TemporalCoverageType;
+import org.gbif.metadata.eml.ipt.model.Agent;
+import org.gbif.metadata.eml.ipt.model.BBox;
+import org.gbif.metadata.eml.ipt.model.Citation;
+import org.gbif.metadata.eml.ipt.model.Eml;
+import org.gbif.metadata.eml.ipt.model.GeospatialCoverage;
+import org.gbif.metadata.eml.ipt.model.JGTICuratorialUnit;
+import org.gbif.metadata.eml.ipt.model.JGTICuratorialUnitType;
+import org.gbif.metadata.eml.ipt.model.KeywordSet;
+import org.gbif.metadata.eml.ipt.model.PhysicalData;
+import org.gbif.metadata.eml.ipt.model.TaxonKeyword;
+import org.gbif.metadata.eml.ipt.model.TaxonomicCoverage;
+import org.gbif.metadata.eml.ipt.model.TemporalCoverage;
+import org.gbif.metadata.eml.ipt.model.TemporalCoverageType;
 
 import java.awt.Color;
 import java.text.DateFormat;
@@ -54,8 +51,6 @@ import java.util.ResourceBundle;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.WordUtils;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.lowagie.text.Anchor;
 import com.lowagie.text.Chunk;
 import com.lowagie.text.Document;
@@ -71,7 +66,6 @@ import com.lowagie.text.Phrase;
 /**
  * Populates a RTF document with a resources metadata, mainly derived from its EML.
  */
-@Singleton
 public class Eml2Rtf {
 
   private final Font font = FontFactory.getFont(FontFactory.TIMES_ROMAN, 12, Font.NORMAL, Color.BLACK);
@@ -83,12 +77,13 @@ public class Eml2Rtf {
   private static final String DEFAULT_LANGUAGE = Locale.ENGLISH.getLanguage();
   private ResourceBundle resourceBundle;
 
-  @Inject
-  private VocabulariesManager vocabManager;
-  @Inject
   private AppConfig appConfig;
-  @Inject
-  private ResourceManager resourceManager;
+  private VocabulariesManager vocabManager;
+
+  public Eml2Rtf(AppConfig appConfig, VocabulariesManager vocabManager) {
+    this.appConfig = appConfig;
+    this.vocabManager = vocabManager;
+  }
 
   /**
    * Add abstract section. This corresponds to resource's description, broken into one or more paragraphs.
@@ -105,12 +100,8 @@ public class Eml2Rtf {
       p.add(new Phrase(getText("rtf.abstract"), fontTitle));
       p.add(Chunk.NEWLINE);
       p.add(Chunk.NEWLINE);
-      for (String para : eml.getDescription()) {
-        if (StringUtils.isNotBlank(para)) {
-          p.add(para.replace("\r\n", "\n"));
-          p.add(Chunk.NEWLINE);
-        }
-      }
+      p.add(eml.getDescription());
+      p.add(Chunk.NEWLINE);
       doc.add(p);
       p.clear();
     }
@@ -292,8 +283,8 @@ public class Eml2Rtf {
         p.add(creator.getFirstName() + " ");
       }
       p.add(creator.getLastName());
-      if (StringUtils.isNotBlank(creator.getEmail())) {
-        p.add(" (" + creator.getEmail() + ")");
+      if (!creator.getEmail().isEmpty()) {
+        p.add(" (" + creator.getEmail().get(0) + ")");
       }
       isFirst = false;
     }
@@ -314,8 +305,8 @@ public class Eml2Rtf {
           p.add(metadataProvider.getFirstName() + " ");
         }
         p.add(metadataProvider.getLastName());
-        if (StringUtils.isNotBlank(metadataProvider.getEmail())) {
-          p.add(" (" + metadataProvider.getEmail() + ")");
+        if (!metadataProvider.getEmail().isEmpty()) {
+          p.add(" (" + metadataProvider.getEmail().get(0) + ")");
         }
         isFirst = false;
       }
@@ -686,7 +677,7 @@ public class Eml2Rtf {
       p.setAlignment(Element.ALIGN_JUSTIFIED);
       p.setFont(font);
 
-      for (org.gbif.metadata.eml.Collection collection: eml.getCollections()) {
+      for (org.gbif.metadata.eml.ipt.model.Collection collection: eml.getCollections()) {
         if (exists(collection.getParentCollectionId()) || exists(collection.getCollectionName()) || exists(collection.getCollectionId())) {
           p.add(new Phrase(getText("rtf.collections.description"), fontTitle));
           p.add(Chunk.NEWLINE);

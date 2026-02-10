@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,6 +32,7 @@ public class ExtensionMapping implements Serializable {
   public static final Integer NO_ID = -3;
 
   private Source source;
+  private transient String extensionVerbatim;
   private Extension extension; // persist only the rowType
   // TreeSet will ensure set of PropertyMappings remain ordered
   private Set<PropertyMapping> fields = new TreeSet<>();
@@ -75,6 +74,10 @@ public class ExtensionMapping implements Serializable {
 
   public Extension getExtension() {
     return extension;
+  }
+
+  public String getExtensionVerbatim() {
+    return extensionVerbatim;
   }
 
   public PropertyMapping getField(String qname) {
@@ -140,6 +143,10 @@ public class ExtensionMapping implements Serializable {
 
   public void setExtension(Extension extension) {
     this.extension = extension;
+  }
+
+  public void setExtensionVerbatim(String extensionVerbatim) {
+    this.extensionVerbatim = extensionVerbatim;
   }
 
   public void setFields(Set<PropertyMapping> fields) {

@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -41,6 +39,7 @@ public class Organisation extends AgentBase implements Serializable {
   private boolean canHost;
   private boolean agencyAccountPrimary;
   private DOIRegistrationAgency doiRegistrationAgency;
+  private boolean associatedWithDoiRegistrationAgency;
   private String agencyAccountUsername;
   private Password agencyAccountPassword;
   private String doiPrefix;
@@ -250,6 +249,14 @@ public class Organisation extends AgentBase implements Serializable {
     return Constants.TEST_DOI_PREFIX;
   }
 
+  public boolean isAssociatedWithDoiRegistrationAgency() {
+    return associatedWithDoiRegistrationAgency;
+  }
+
+  public void setAssociatedWithDoiRegistrationAgency(boolean associatedWithDoiRegistrationAgency) {
+    this.associatedWithDoiRegistrationAgency = associatedWithDoiRegistrationAgency;
+  }
+
   /**
    * Create new Organisation by cloning another.
    *
@@ -265,6 +272,7 @@ public class Organisation extends AgentBase implements Serializable {
     setCanHost(another.isCanHost());
     setAgencyAccountPrimary(another.isAgencyAccountPrimary());
     setDoiRegistrationAgency(another.getDoiRegistrationAgency());
+    setAssociatedWithDoiRegistrationAgency(another.isAssociatedWithDoiRegistrationAgency());
     setAgencyAccountUsername(another.getAgencyAccountUsername());
     setAgencyAccountPassword(another.getAgencyAccountPassword());
     setDoiPrefix(another.getDoiPrefix());

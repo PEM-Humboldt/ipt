@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,60 +14,76 @@
 package org.gbif.ipt.action;
 
 import org.gbif.ipt.config.AppConfig;
+import org.gbif.ipt.model.Ipt;
 import org.gbif.ipt.model.Organisation;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 
-import java.io.StringWriter;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.google.inject.Inject;
-
-import freemarker.template.Configuration;
-import freemarker.template.Template;
+import javax.inject.Inject;
+import java.util.UUID;
 
 public class AboutAction extends BaseAction {
 
   private static final long serialVersionUID = -471175839075190159L;
 
-  // logging
-  private static final Logger LOG = LogManager.getLogger(AboutAction.class);
-
-  private final Configuration ftl;
-  private String content;
+  private final AppConfig cfg;
+  private String title;
+  private UUID iptKey;
+  private String iptDescription;
+  private String hostingOrganisationName;
 
   @Inject
-  public AboutAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
-    Configuration ftl) {
+  public AboutAction(
+      SimpleTextProvider textProvider,
+      AppConfig cfg,
+      RegistrationManager registrationManager) {
     super(textProvider, cfg, registrationManager);
-    this.ftl = ftl;
+    this.cfg = cfg;
   }
 
-  public String getContent() {
-    return content;
+  public String getTitle() {
+    return title;
+  }
+
+  public String getPortalUrl() {
+    return cfg.getPortalUrl();
   }
 
   @Override
   public void prepare() {
-    try {
-      StringWriter result = new StringWriter();
-      Template tmpl = ftl.getTemplate("datadir::config/about.ftl");
-      tmpl.process(this, result);
-      content = result.toString();
-    } catch (Exception e) {
-      LOG.warn("Cannot render custom about.ftl template from data dir", e);
-      content = "";
+    Ipt ipt = registrationManager.getIpt();
+    Organisation org = registrationManager.getHostingOrganisation();
+
+    if (ipt != null) {
+      iptKey = ipt.getKey();
+      iptDescription = ipt.getDescription();
+    }
+
+    if (org != null) {
+      hostingOrganisationName = org.getName();
+    }
+
+    // if registered - get title from registration data
+    // if not - try to get title form ipt.properties
+    // otherwise, just use default value
+    if (ipt != null && ipt.getName() != null) {
+      title = ipt.getName();
+    } else if (cfg.getProperty("about.title") != null) {
+      title = cfg.getProperty("about.title");
+    } else {
+      title = getText("about.title");
     }
   }
 
-  /**
-   * This method is called from about.ftl.
-   *
-   * @return the organisation hosting this IPT instance, or null if the IPT hasn't been registered yet.
-   */
-  public Organisation getHostingOrganisation() {
-    return registrationManager.getHostingOrganisation();
+  public UUID getIptKey() {
+    return iptKey;
+  }
+
+  public String getIptDescription() {
+    return iptDescription;
+  }
+
+  public String getHostingOrganisationName() {
+    return hostingOrganisationName;
   }
 }

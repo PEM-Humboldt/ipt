@@ -1,13 +1,132 @@
-<#escape x as x?html>
     <#setting number_format="#####.##">
     <#include "/WEB-INF/pages/inc/header.ftl">
     <title><@s.text name='manage.metadata.collections.title'/></title>
+    <link rel="stylesheet" href="${baseURL}/styles/select2/select2-4.0.13.min.css">
+    <link rel="stylesheet" href="${baseURL}/styles/select2/select2-bootstrap4.min.css">
+    <link rel="stylesheet" href="${baseURL}/styles/smaller-inputs.css">
+    <script src="${baseURL}/js/select2/select2-4.0.13.min.js"></script>
     <script>
         $(document).ready(function () {
             $('#metadata-section').change(function () {
                 var metadataSection = $('#metadata-section').find(':selected').val()
                 $(location).attr('href', 'metadata-' + metadataSection + '.do?r=${resource.shortname!r!}');
             });
+
+            // scroll to the error if present
+            var invalidElements = $(".is-invalid");
+
+            if (invalidElements !== undefined && invalidElements.length > 0) {
+                var invalidElement = invalidElements.first();
+                var pos = invalidElement.offset().top - 100;
+                // scroll to the element
+                $('body, html').animate({scrollTop: pos});
+            }
+
+            // reordering
+            function initAndGetSortable(selector) {
+                return sortable(selector, {
+                    forcePlaceholderSize: true,
+                    placeholderClass: 'border',
+                    handle: '.handle'
+                });
+            }
+
+            const sortable_collections = initAndGetSortable('#collection-items');
+            const sortable_preservation_methods = initAndGetSortable('#specimenPreservationMethod-items');
+            const sortable_units = initAndGetSortable('#items');
+
+            sortable_collections[0].addEventListener('sortupdate', changeInputNamesCollectionsAfterDragging);
+            sortable_collections[0].addEventListener('drag', dragScroll);
+            sortable_preservation_methods[0].addEventListener('sortupdate', changeInputNamesPreservationMethodsAfterDragging);
+            sortable_preservation_methods[0].addEventListener('drag', dragScroll);
+            sortable_units[0].addEventListener('sortupdate', changeInputNamesUnitsAfterDragging);
+            sortable_units[0].addEventListener('drag', dragScroll);
+
+            function dragScroll(e) {
+                var cursor = e.pageY;
+                var parentWindow = parent.window;
+                var pixelsToTop = $(parentWindow).scrollTop();
+                var screenHeight = $(parentWindow).height();
+
+                if ((cursor - pixelsToTop) > screenHeight * 0.9) {
+                    parentWindow.scrollBy(0, (screenHeight / 30));
+                } else if ((cursor - pixelsToTop) < screenHeight * 0.1) {
+                    parentWindow.scrollBy(0, -(screenHeight / 30));
+                }
+            }
+
+            function changeInputNamesCollectionsAfterDragging(e) {
+                displayProcessing();
+                var contactItems = $("#collection-items div.item");
+
+                contactItems.each(function (index) {
+                    var elementId = $(this)[0].id;
+
+                    $("div#" + elementId + " input[id$='collectionName']").attr("name", "eml.collections[" + index + "].collectionName");
+                    $("div#" + elementId + " input[id$='collectionId']").attr("name", "eml.collections[" + index + "].collectionId");
+                    $("div#" + elementId + " input[id$='parentCollectionId']").attr("name", "eml.collections[" + index + "].parentCollectionId");
+                });
+
+                hideProcessing();
+            }
+
+            function changeInputNamesPreservationMethodsAfterDragging(e) {
+                displayProcessing();
+                var contactItems = $("#specimenPreservationMethod-items div.item");
+
+                contactItems.each(function (index) {
+                    var elementId = $(this)[0].id;
+
+                    $("div#" + elementId + " select").attr("name", "eml.specimenPreservationMethods[" + index + "]");
+                });
+
+                hideProcessing();
+            }
+
+            function changeInputNamesUnitsAfterDragging(e) {
+                displayProcessing();
+                var contactItems = $("#items div.item");
+
+                contactItems.each(function (index) {
+                    var elementId = $(this)[0].id;
+
+                    $("div#" + elementId + " select").attr("name", "type-" + index);
+                    $("div#" + elementId + " input[id$='rangeMean']").attr("name", "eml.jgtiCuratorialUnits[" + index + "].rangeMean");
+                    $("div#" + elementId + " input[id$='uncertaintyMeasure']").attr("name", "eml.jgtiCuratorialUnits[" + index + "].uncertaintyMeasure");
+                    $("div#" + elementId + " input[id$='rangeStart']").attr("name", "eml.jgtiCuratorialUnits[" + index + "].rangeStart");
+                    $("div#" + elementId + " input[id$='rangeEnd']").attr("name", "eml.jgtiCuratorialUnits[" + index + "].rangeEnd");
+                    $("div#" + elementId + " input[id$='unitType']").attr("name", "eml.jgtiCuratorialUnits[" + index + "].unitType");
+                });
+
+                hideProcessing();
+            }
+
+            $('[id^="eml.specimenPreservationMethods"]').select2({
+                placeholder: '${action.getText("eml.preservation.methods.selection")?js_string}',
+                language: {
+                    noResults: function () {
+                        return '${selectNoResultsFound}';
+                    }
+                },
+                width: "100%",
+                minimumResultsForSearch: 15,
+                allowClear: true,
+                theme: 'bootstrap4'
+            });
+            $('[id^=type-]').select2({
+                placeholder: '',
+                language: {
+                    noResults: function () {
+                        return '${selectNoResultsFound}';
+                    }
+                },
+                width: "100%",
+                minimumResultsForSearch: 'Infinity',
+                allowClear: false,
+                theme: 'bootstrap4'
+            });
+
+            makeSureResourceParameterIsPresentInURL('${resource.shortname}');
         });
     </script>
 
@@ -17,22 +136,40 @@
     <#include "/WEB-INF/pages/inc/menu.ftl">
     <#include "/WEB-INF/pages/macros/forms.ftl"/>
 
-    <form class="needs-validation" action="metadata-${section}.do" method="post" novalidate>
+    <div class="container px-0">
+        <#include "/WEB-INF/pages/inc/action_alerts.ftl">
+    </div>
+
+    <form class="needs-validation track-unsaved" action="metadata-${section}.do" method="post" novalidate>
         <div class="container-fluid bg-body border-bottom">
-            <div class="container pt-2">
-                <#include "/WEB-INF/pages/inc/action_alerts.ftl">
-            </div>
+            <div class="container bg-body border rounded-2 mb-4">
+                <div class="container my-3 p-3">
+                    <div class="text-center fs-smaller">
+                        <nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+                            <ol class="breadcrumb justify-content-center mb-0">
+                                <li class="breadcrumb-item"><a href="${baseURL}/manage/"><@s.text name="breadcrumb.manage"/></a></li>
+                                <li class="breadcrumb-item"><a href="resource?r=${resource.shortname}"><@s.text name="breadcrumb.manage.overview"/></a></li>
+                                <li class="breadcrumb-item active" aria-current="page"><@s.text name="breadcrumb.manage.overview.metadata"/></li>
+                            </ol>
+                        </nav>
+                    </div>
 
-            <div class="container p-3">
+                    <div class="text-center">
+                        <h1 class="py-2 mb-0 text-gbif-header fs-2 fw-normal">
+                            <@s.text name='manage.metadata.collections.title'/>
+                        </h1>
+                    </div>
 
-                <div class="text-center">
-                    <h5 class="pt-2 text-gbif-header fs-4 fw-400 text-center">
-                        <@s.text name='manage.metadata.collections.title'/>
-                    </h5>
-                </div>
+                    <div class="text-center fs-smaller">
+                        <a href="resource.do?r=${resource.shortname}" title="${resource.title!resource.shortname}">${resource.title!resource.shortname}</a>
+                    </div>
 
-                <div class="text-center fs-smaller">
-                    <a href="resource.do?r=${resource.shortname}" title="${resource.title!resource.shortname}">${resource.title!resource.shortname}</a>
+                    <div class="text-center mt-2">
+                        <@s.submit cssClass="button btn btn-sm btn-outline-gbif-primary top-button" name="save" key="button.save" />
+                        <button type="button" class="btn btn-sm btn-outline-secondary top-button" onclick="window.history.back();">
+                            <@s.text name="button.back"/>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -40,14 +177,13 @@
         <#include "metadata_section_select.ftl"/>
 
         <div class="container-fluid bg-body">
-            <div class="container bd-layout">
-
-                <main class="bd-main bd-main-right">
+            <div class="container bd-layout main-content-container">
+                <main class="bd-main">
                     <div class="bd-toc mt-4 mb-5 ps-3 mb-lg-5 text-muted">
                         <#include "eml_sidebar.ftl"/>
                     </div>
 
-                    <div class="bd-content ps-lg-4">
+                    <div class="bd-content">
                         <div class="my-md-3 p-3">
                             <p class="mb-0">
                                 <@s.text name='manage.metadata.collections.intro'/>
@@ -55,9 +191,13 @@
 
                             <!-- retrieve some link names one time -->
                             <#assign removeCollectionLink><@s.text name='manage.metadata.removethis'/> <@s.text name='eml.collection'/></#assign>
+                            <#assign removeCollectionLink = removeCollectionLink?markup_string>
                             <#assign addCollectionLink><@s.text name='manage.metadata.addnew'/> <@s.text name='eml.collection'/></#assign>
+                            <#assign addCollectionLink = addCollectionLink?markup_string>
                             <#assign removeSpecimenPreservationMethodLink><@s.text name='manage.metadata.removethis'/> <@s.text name='eml.specimenPreservationMethod.short'/></#assign>
+                            <#assign removeSpecimenPreservationMethodLink = removeSpecimenPreservationMethodLink?markup_string>
                             <#assign addSpecimenPreservationMethodLink><@s.text name='manage.metadata.addnew'/> <@s.text name='eml.specimenPreservationMethod.short'/></#assign>
+                            <#assign addSpecimenPreservationMethodLink = addSpecimenPreservationMethodLink?markup_string>
 
                         </div>
 
@@ -68,8 +208,15 @@
                                 <div id="collection-items">
                                     <#list eml.collections as item>
                                         <div id="collection-item-${item_index}" class="item clearfix row g-3 border-bottom pb-3 mt-1">
-                                            <div class="columnLinks mt-1 d-flex justify-content-end">
-                                                <a id="collection-removeLink-${item_index}" class="removeCollectionLink" href="">${removeCollectionLink?lower_case?cap_first}</a>
+                                            <div class="handle columnLinks mt-2 d-flex justify-content-end">
+                                                <a id="collection-removeLink-${item_index}" href="" class="removeCollectionLink metadata-action-link custom-link">
+                                                    <span>
+                                                        <svg viewBox="0 0 24 24" class="link-icon link-icon-danger">
+                                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5-1-1h-5l-1 1H5v2h14V4h-3.5z"></path>
+                                                        </svg>
+                                                    </span>
+                                                    <span>${removeCollectionLink?lower_case?cap_first}</span>
+                                                </a>
                                             </div>
                                             <div>
                                                 <@input name="eml.collections[${item_index}].collectionName" help="i18n" i18nkey="eml.collectionName" requiredField=true/>
@@ -83,21 +230,35 @@
                                         </div>
                                     </#list>
                                 </div>
-                                <div class="addNew col-12 mt-1">
-                                    <a id="plus-collection" href="">${addCollectionLink?lower_case?cap_first}</a>
+                                <div class="addNew col-12 mt-2">
+                                    <a id="plus-collection" class="metadata-action-link custom-link" href="">
+                                        <span>
+                                            <svg viewBox="0 0 24 24" class="link-icon link-icon-primary">
+                                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
+                                            </svg>
+                                        </span>
+                                        <span>${addCollectionLink?lower_case?cap_first}</span>
+                                    </a>
                                 </div>
                             </div>
                         </div>
 
                         <div class="my-md-3 p-3">
-                            <!-- List of Collections -->
+                            <!-- List of Specimen preservation methods -->
                             <div class="listBlock">
                                 <@textinline name="eml.specimenPreservationMethod.plural" help="i18n"/>
                                 <div id="specimenPreservationMethod-items">
                                     <#list eml.specimenPreservationMethods as item>
                                         <div id="specimenPreservationMethod-item-${item_index}" class="item clearfix row g-3 border-bottom pb-3 mt-1">
-                                            <div class="columnLinks mt-1 d-flex justify-content-end">
-                                                <a id="specimenPreservationMethod-removeLink-${item_index}" class="removeSpecimenPreservationMethodLink" href="">${removeSpecimenPreservationMethodLink?lower_case?cap_first}</a>
+                                            <div class="handle columnLinks mt-2 d-flex justify-content-end">
+                                                <a id="specimenPreservationMethod-removeLink-${item_index}" class="removeSpecimenPreservationMethodLink metadata-action-link custom-link" href="">
+                                                    <span>
+                                                        <svg viewBox="0 0 24 24" class="link-icon link-icon-danger">
+                                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path>
+                                                        </svg>
+                                                    </span>
+                                                    <span>${removeSpecimenPreservationMethodLink?lower_case?cap_first}</span>
+                                                </a>
                                             </div>
                                             <div class="col-lg-6">
                                                 <@select name="eml.specimenPreservationMethods[${item_index}]" i18nkey="eml.specimenPreservationMethod" help="i18n" options=preservationMethods value="${eml.specimenPreservationMethods[item_index]!}" />
@@ -105,8 +266,15 @@
                                         </div>
                                     </#list>
                                 </div>
-                                <div class="addNew col-12 mt-1">
-                                    <a id="plus-specimenPreservationMethod" href="">${addSpecimenPreservationMethodLink?lower_case?cap_first}</a>
+                                <div class="addNew col-12 mt-2">
+                                    <a id="plus-specimenPreservationMethod" class="metadata-action-link custom-link" href="">
+                                        <span>
+                                            <svg viewBox="0 0 24 24" class="link-icon link-icon-primary">
+                                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
+                                            </svg>
+                                        </span>
+                                        <span>${addSpecimenPreservationMethodLink?lower_case?cap_first}</span>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -119,8 +287,15 @@
                                     <#list eml.jgtiCuratorialUnits as item>
                                         <#assign type="${eml.jgtiCuratorialUnits[item_index].type}"/>
                                         <div id="item-${item_index}" class="item clearfix row g-3 border-bottom pb-3 mt-1">
-                                            <div class="mt-1 d-flex justify-content-end">
-                                                <a id="removeLink-${item_index}" class="removeLink" href=""><@s.text name='manage.metadata.removethis'/> <@s.text name='manage.metadata.collections.curatorialUnits.item'/></a>
+                                            <div class="handle mt-2 d-flex justify-content-end">
+                                                <a id="removeLink-${item_index}" href="" class="removeLink metadata-action-link custom-link d-flex align-items-center" style="display: inline-block !important;">
+                                                    <span>
+                                                        <svg viewBox="0 0 24 24" class="link-icon link-icon-danger">
+                                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path>
+                                                        </svg>
+                                                    </span>
+                                                    <span><@s.text name='manage.metadata.removethis'/> <@s.text name='manage.metadata.collections.curatorialUnits.item'/></span>
+                                                </a>
                                             </div>
 
                                             <div class="col-lg-6">
@@ -128,10 +303,10 @@
                                             </div>
 
                                             <div class="col-lg-12 mt-3">
-                                                <div class="row">
+                                                <div class="row g-3">
                                                     <div id="subitem-${item_index}" class="subitem col-lg-6">
                                                         <#if type=="COUNT_RANGE">
-                                                            <div id="range-${item_index}" class="row">
+                                                            <div id="range-${item_index}" class="row g-3">
                                                                 <div class="col-lg-6">
                                                                     <@input name="eml.jgtiCuratorialUnits[${item_index}].rangeStart" i18nkey="eml.jgtiCuratorialUnits.rangeStart" size=40/>
                                                                 </div>
@@ -140,7 +315,7 @@
                                                                 </div>
                                                             </div>
                                                         <#elseif type=="COUNT_WITH_UNCERTAINTY">
-                                                            <div id="uncertainty-${item_index}" class="row">
+                                                            <div id="uncertainty-${item_index}" class="row g-3">
                                                                 <div class="col-lg-6">
                                                                     <@input name="eml.jgtiCuratorialUnits[${item_index}].rangeMean" i18nkey="eml.jgtiCuratorialUnits.rangeMean" size=40/>
                                                                 </div>
@@ -158,22 +333,31 @@
                                         </div>
                                     </#list>
                                 </div>
-                                <div class="addNew col-12 mt-1">
-                                    <a id="plus" href=""><@s.text name='manage.metadata.addnew'/> <@s.text name='manage.metadata.collections.curatorialUnits.item'/></a>
+                                <div class="addNew col-12 mt-2">
+                                    <a id="plus" class="metadata-action-link custom-link" href="">
+                                        <span>
+                                            <svg viewBox="0 0 24 24" class="link-icon link-icon-primary">
+                                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
+                                            </svg>
+                                        </span>
+                                        <span><@s.text name='manage.metadata.addnew'/> <@s.text name='manage.metadata.collections.curatorialUnits.item'/></span>
+                                    </a>
                                 </div>
-                            </div>
-
-                            <div class="buttons col-12 mt-3">
-                                <@s.submit cssClass="button btn btn-outline-gbif-primary" name="save" key="button.save" />
-                                <@s.submit cssClass="button btn btn-outline-secondary" name="cancel" key="button.back" />
                             </div>
 
                             <!-- internal parameter -->
                             <input name="r" type="hidden" value="${resource.shortname}" />
 
                             <div id="baseItem" class="item clearfix row g-3 border-bottom pb-3 mt-1" style="display:none;">
-                                <div class="mt-1 d-flex justify-content-end">
-                                    <a id="removeLink" class="removeLink" href=""><@s.text name='manage.metadata.removethis'/> <@s.text name='manage.metadata.collections.curatorialUnits.item'/></a>
+                                <div class="handle mt-2 d-flex justify-content-end">
+                                    <a id="removeLink" class="removeLink metadata-action-link custom-link" href="">
+                                        <span>
+                                            <svg viewBox="0 0 24 24" class="link-icon link-icon-danger">
+                                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path>
+                                            </svg>
+                                        </span>
+                                        <span><@s.text name='manage.metadata.removethis'/> <@s.text name='manage.metadata.collections.curatorialUnits.item'/></span>
+                                    </a>
                                 </div>
 
                                 <div class="col-lg-6">
@@ -181,10 +365,10 @@
                                 </div>
 
                                 <div class="col-lg-12 mt-3">
-                                    <div class="row">
+                                    <div class="row g-3">
                                         <div class="subitem col-lg-6">
                                             <!-- The sub-form is here -->
-                                            <div id="range-99999" class="row" style="display:none" >
+                                            <div id="range-99999" class="row g-3" style="display:none" >
                                                 <div class="col-lg-6">
                                                     <@input name="rangeStart" i18nkey="eml.jgtiCuratorialUnits.rangeStart" size=40/>
                                                 </div>
@@ -203,8 +387,15 @@
                             </div>
 
                             <div id="baseItem-collection" class="item clearfix row g-3 border-bottom pb-3 mt-1" style="display:none;">
-                                <div class="columnLinks mt-1 d-flex justify-content-end">
-                                    <a id="collection-removeLink" class="removeCollectionLink" href="">${removeCollectionLink?lower_case?cap_first}</a>
+                                <div class="handle columnLinks mt-2 d-flex justify-content-end">
+                                    <a id="collection-removeLink" class="removeCollectionLink metadata-action-link custom-link" href="">
+                                        <span>
+                                            <svg viewBox="0 0 24 24" class="link-icon link-icon-danger">
+                                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path>
+                                            </svg>
+                                        </span>
+                                        <span>${removeCollectionLink?lower_case?cap_first}</span>
+                                    </a>
                                 </div>
                                 <div class="col-12">
                                     <@input name="collectionName" help="i18n" i18nkey="eml.collectionName" requiredField=true/>
@@ -218,15 +409,22 @@
                             </div>
 
                             <div id="baseItem-specimenPreservationMethod" class="item clearfix row g-3 border-bottom pb-3 mt-1" style="display:none;">
-                                <div class="columnLinks mt-1 d-flex justify-content-end">
-                                    <a id="specimenPreservationMethod-removeLink" class="removeSpecimenPreservationLink" href="">${removeSpecimenPreservationMethodLink?lower_case?cap_first}</a>
+                                <div class="handle columnLinks mt-2 d-flex justify-content-end">
+                                    <a id="specimenPreservationMethod-removeLink" class="removeSpecimenPreservationLink metadata-action-link custom-link" href="">
+                                        <span>
+                                            <svg viewBox="0 0 24 24" class="link-icon link-icon-danger">
+                                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path>
+                                            </svg>
+                                        </span>
+                                        <span>${removeSpecimenPreservationMethodLink?lower_case?cap_first}</span>
+                                    </a>
                                 </div>
                                 <div class="col-lg-6">
                                     <@select name="specimenPreservationMethods" i18nkey="eml.specimenPreservationMethod" help="i18n" options=preservationMethods />
                                 </div>
                             </div>
 
-                            <div id="range-99999" class="row" style="display:none" >
+                            <div id="range-99999" class="row g-3" style="display:none" >
                                 <div class="col-lg-6">
                                     <@input name="rangeStart" i18nkey="eml.jgtiCuratorialUnits.rangeStart" size=40/>
                                 </div>
@@ -234,7 +432,7 @@
                                     <@input name="rangeEnd" i18nkey="eml.jgtiCuratorialUnits.rangeEnd" size=40/>
                                 </div>
                             </div>
-                            <div id="uncertainty-99999" class="row" style="display:none" >
+                            <div id="uncertainty-99999" class="row g-3" style="display:none" >
                                 <div class="col-lg-6">
                                     <@input name="rangeMean" i18nkey="eml.jgtiCuratorialUnits.rangeMean" size=40/>
                                 </div>
@@ -249,5 +447,6 @@
         </div>
     </form>
 
+    <#include "/WEB-INF/pages/manage/eml/unsaved_changes_modal.ftl">
+
     <#include "/WEB-INF/pages/inc/footer.ftl">
-</#escape>

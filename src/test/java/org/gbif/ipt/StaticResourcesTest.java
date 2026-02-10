@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,13 +13,13 @@
  */
 package org.gbif.ipt;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +42,11 @@ public class StaticResourcesTest {
    * This test checks that all static resources take one of these options.
    * <p>
    * One way to add a BOM to a file is <code>sed -i '1s/^/\xef\xbb\xbf/' file</code>.
+   * Another is:
+   * <code>
+   *   printf '\xEF\xBB\xBF' > result_file
+   *   cat temp_file >> result_file
+   * </code>
    */
   @Test
   public void checkStaticResourcesEncodingTest() throws Exception {
@@ -53,26 +56,27 @@ public class StaticResourcesTest {
         ".ftl" // Not served as static resources by Tomcat
     };
 
-    Files.walk(Paths.get("src/main/webapp"))
-        .filter(p -> p.toFile().isFile()
-            && Arrays.stream(ignoreExtensions).noneMatch(x -> p.getFileName().toString().endsWith(x)))
-        .forEach(
-            p -> {
-              try {
-                if (!isAsciiOrHasBOM(p)) {
-                  fail("File " + p + " is not ASCII, and does not have a byte order mark.");
+    try (Stream<Path> webappFiles = Files.walk(Paths.get("src/main/webapp"))) {
+        webappFiles.filter(p -> p.toFile().isFile()
+          && Arrays.stream(ignoreExtensions).noneMatch(x -> p.getFileName().toString().endsWith(x)))
+          .forEach(
+              p -> {
+                try {
+                  if (!isAsciiOrHasBOM(p)) {
+                    fail("File " + p + " is not ASCII, and does not have a byte order mark.");
+                  }
+                } catch (IOException e) {
+                  fail("Exception when checking encoding of file " + p + ".");
                 }
-              } catch (IOException e) {
-                fail("Exception when checking encoding of file " + p + ".");
               }
-            }
-        );
+          );
+    }
   }
 
   private boolean isAsciiOrHasBOM(Path p) throws IOException {
     // Check for byte order mark
     byte[] bom = new byte[3];
-    try (InputStream is = new FileInputStream(p.toFile())) {
+    try (InputStream is = Files.newInputStream(p.toFile().toPath())) {
       is.read(bom);
 
       if (bom[0] == (0xEF - 256) && bom[1] == (0xBB - 256) && bom[2] == (0xBF - 256)) {

@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +15,8 @@ package org.gbif.ipt.model;
 
 import org.gbif.ipt.config.JdbcSupport;
 
+import java.util.Date;
+
 /**
  * A SQL view based data source.
  * The view is configured via a fully custom and raw select statement that can use any db specific feature needed.
@@ -28,6 +28,7 @@ public class SqlSource extends SourceBase {
   private String host;
   private String database;
   private String username;
+  private Date lastModified;
   private Password password = new Password();
 
   public String getDatabase() {
@@ -103,5 +104,14 @@ public class SqlSource extends SourceBase {
   @Override
   public SourceType getSourceType() {
     return SourceType.SQL;
+  }
+
+  public Date getLastModified() {
+    return lastModified;
+  }
+
+  @Override
+  public void setLastModified(Date lastModified) {
+    this.lastModified = lastModified;
   }
 }

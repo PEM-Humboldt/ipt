@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,13 +19,12 @@ import org.gbif.ipt.service.admin.VocabulariesManager;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import javax.inject.Inject;
 
 import org.apache.commons.digester.Rule;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.xml.sax.Attributes;
-
-import com.google.inject.Inject;
 
 /**
  * This will call the root of the stack to find the url2thesaurus, and then set the appropriate thesaurus on the
@@ -57,7 +54,7 @@ public class ThesaurusHandlingRule extends Rule {
           // install vocabulary if it's new
           if (tv == null) {
             LOG.warn("Installing new vocabulary with URL (" + attributes.getValue(i) + ")...");
-            tv = vocabManager.install(url);
+            tv = vocabManager.installIfAbsentOrOutdated(url);
           }
         } catch (MalformedURLException e) {
           LOG.error("Thesaurus URL (" + attributes.getValue(i) + ") is malformed: " + e.getMessage(), e);

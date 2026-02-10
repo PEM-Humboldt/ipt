@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -80,8 +78,8 @@ public class TextFileSource extends SourceBase implements FileSource {
     return fileSize;
   }
 
-  public String getFileSizeFormatted() {
-    return FileUtils.formatSize(fileSize, 1);
+  public String formattedFileSize(String locale) {
+    return FileUtils.formatSize(fileSize, 1, locale, false);
   }
 
   @Override

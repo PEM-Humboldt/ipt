@@ -1,8 +1,38 @@
 <#-- @ftlvariable name="" type="org.gbif.ipt.action.manage.MappingAction" -->
-<#escape x as x?html>
 <#include "/WEB-INF/pages/inc/header.ftl"/>
 <title><@s.text name="manage.mapping.title"/></title>
     <script src="${baseURL}/js/jconfirmation.jquery.js"></script>
+    <link rel="stylesheet" href="${baseURL}/styles/select2/select2-4.0.13.min.css">
+    <link rel="stylesheet" href="${baseURL}/styles/select2/select2-bootstrap4.min.css">
+    <style>
+        .select2-container--bootstrap4 .select2-selection--single {
+            height: calc(1.5em + 0.5rem + 2px) !important;
+        }
+
+        .select2-container--bootstrap4 .select2-results__option {
+            padding: 0.25rem 0.75rem;
+        }
+
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+            line-height: 1.5;
+            padding: 0.25rem 0.5rem !important;
+        }
+
+        .select2-container--bootstrap4 .select2-selection__clear {
+            margin-right: 0.875em;
+            margin-top: 0.275em;
+        }
+
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__placeholder {
+             line-height: 1.5;
+        }
+
+        .popover {
+            width: 50%;
+            max-width: 600px;
+        }
+    </style>
+    <script src="${baseURL}/js/select2/select2-4.0.13.full.min.js"></script>
     <script>
         $(document).ready(function(){
             function showHideIdSuffix(){
@@ -71,10 +101,15 @@
                 showAllGroups=false;
                 $("#showAllGroupsValue").val("false");
                 $("#toggleGroups").text("<@s.text name="manage.mapping.showAllGroups" />");
+                // hide redundant sections
                 $('div.redundant').each(function(index) {
                     $(this).hide();
                 });
-                // hide sidebar links too
+                // hide anchors
+                $('span.redundant').each(function(index) {
+                    $(this).hide();
+                });
+                // hide sidebar links
                 $('li.redundant').each(function(index) {
                     $(this).hide();
                 });
@@ -94,7 +129,9 @@
                 hideRedundantGroups();
             }
 
-            $('.confirm').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>", buttonType: "danger"});
+            $('.confirm').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name ="manage.mapping.confirmation.message"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>", buttonType: "danger"});
+
+            $("#save").on("click", displayProcessing);
 
             // show only required and mapped fields
             $("#toggleFields").click(function() {
@@ -118,8 +155,12 @@
                     showAllGroups=true;
                     $("#showAllGroupsValue").val("true");
                     $("#toggleGroups").text("<@s.text name="manage.mapping.hideGroups"/>");
-                    // show sidebar links too
+                    // show sidebar links
                     $('li.redundant').each(function(index) {
+                        $(this).show();
+                    });
+                    // show anchors
+                    $('span.redundant').each(function(index) {
                         $(this).show();
                     });
                     // show redundant sections
@@ -172,11 +213,91 @@
                 activateDeactivateStaticInput($(this));
             });
 
-            //Hack needed for Internet Explorer X.*x
-            $('.add').each(function() {
-                $(this).click(function() {
-                    window.location = $(this).parent('a').attr('href');
-                });
+            // Collapse/uncollapse source examples
+            $(".sample").click(function() {
+                if ($(this).hasClass("text-uncollapse")) {
+                    $(this).removeClass("text-uncollapse")
+                } else {
+                    $(this).addClass("text-uncollapse")
+                }
+            });
+
+            $("#idColumn").select2({
+                placeholder: '${action.getText("manage.mapping.noid")?js_string}',
+                language: {
+                    noResults: function () {
+                        return '${selectNoResultsFound}';
+                    }
+                },
+                width: "100%",
+                allowClear: true,
+                minimumResultsForSearch: 15,
+                dropdownCssClass: 'text-smaller',
+                theme: 'bootstrap4'
+            });
+            $("#mapping\\.filter\\.filterTime").select2({
+                placeholder: '',
+                language: {
+                    noResults: function () {
+                        return '${selectNoResultsFound}';
+                    }
+                },
+                width: "100%",
+                minimumResultsForSearch: 15,
+                dropdownCssClass: 'text-smaller',
+                theme: 'bootstrap4'
+            });
+            $("#filterName").select2({
+                placeholder: '',
+                language: {
+                    noResults: function () {
+                        return '${selectNoResultsFound}';
+                    }
+                },
+                width: "100%",
+                allowClear: true,
+                minimumResultsForSearch: 15,
+                dropdownCssClass: 'text-smaller',
+                theme: 'bootstrap4'
+            });
+            $("#filterComp").select2({
+                placeholder: '',
+                language: {
+                    noResults: function () {
+                        return '${selectNoResultsFound}';
+                    }
+                },
+                width: "100%",
+                allowClear: true,
+                minimumResultsForSearch: 15,
+                dropdownCssClass: 'text-smaller',
+                theme: 'bootstrap4'
+            });
+            $("[id^=fIdx]").select2({
+                placeholder: '',
+                language: {
+                    noResults: function () {
+                        return '${selectNoResultsFound}';
+                    }
+                },
+                width: "100%",
+                allowClear: true,
+                minimumResultsForSearch: 15,
+                dropdownCssClass: 'text-smaller',
+                theme: 'bootstrap4'
+            });
+            $(".fval-select").select2({
+                placeholder: '',
+                language: {
+                    noResults: function () {
+                        return '${selectNoResultsFound}';
+                    }
+                },
+                width: "100%",
+                allowClear: true,
+                minimumResultsForSearch: 15,
+                dropdownCssClass: 'text-smaller',
+                theme: 'bootstrap4'
             });
 
             // spy scroll and manage sidebar menu
@@ -223,13 +344,13 @@
 </#macro>
 
 <#macro sourceSample index fieldsIndex>
-    <div id="fSIdx${fieldsIndex}" class="sample mappingText mx-3 overflow-x-auto">
+    <div id="fSIdx${fieldsIndex}" class="text-collapse sample mappingText mx-lg-3">
         <@s.text name='manage.mapping.sourceSample' />:
         <em>
-            <#list peek as row>
+            <#list peek! as row>
                 <#if row??>
                     <#if row[index]?has_content && row[index]!=" ">
-                        ${row[index]}
+                        <code>${row[index]}</code>
                     <#else>
                         &nbsp;
                     </#if>
@@ -241,47 +362,55 @@
 </#macro>
 
 <#macro datasetDoiCheckbox idAttr name i18nkey classAttr requiredField value="-99999" errorfield="">
-    <div class="checkbox form-check">
-        <#-- use name if value was not supplied -->
-        <#if value == "-99999">
-            <#assign value><@s.property value="${name}"/></#assign>
-        </#if>
-        <@s.checkbox key=name id=idAttr value=value cssClass=classAttr/>
-        <#include "/WEB-INF/pages/macros/form_checkbox_label.ftl">
-        <#include "/WEB-INF/pages/macros/help_icon.ftl">
-        <#include "/WEB-INF/pages/macros/form_field_error.ftl">
-    </div>
+    <small>
+        <div class="checkbox form-check">
+            <#-- use name if value was not supplied -->
+            <#if value == "-99999">
+                <#assign value><@s.property value="${name}"/></#assign>
+            </#if>
+            <@s.checkbox key=name id=idAttr value=value cssClass=classAttr/>
+            <#include "/WEB-INF/pages/macros/form_checkbox_label.ftl">
+            <#include "/WEB-INF/pages/macros/help_icon.ftl">
+            <#include "/WEB-INF/pages/macros/form_field_error.ftl">
+        </div>
+    </small>
+</#macro>
+
+<#macro processSurroundedWithBackticksAsCode description>
+    ${description?replace("`(.*?)`", "<code>$1</code>", "r")?replace("'", "&#39;")?replace("\\[(.*)\\]\\((.*)\\)", "<a href='$2'>$1</a>", "r")?no_esc}
 </#macro>
 
 <#macro showField field index>
     <#assign p=field.term/>
     <#assign fieldsIndex = action.getFieldsTermIndices().get(p.qualifiedName())/>
 
-    <div class="row py-1 g-2 mappingRow border-bottom">
+    <div class="row py-1 g-1 mappingRow border-bottom text-smaller">
             <div class="col-lg-4 pt-1">
                 <#assign fieldPopoverInfo>
-                    <#if p.description?has_content>${p.description}<br/><br/></#if>
+                    <#if p.qualifiedName()?has_content><a href="${p.qualifiedName()}">${p.qualifiedName()}</a><#else>${p.name!}</#if><br/><br/>
+                    <#if (p.translations[currentLocale].description)?has_content><@processSurroundedWithBackticksAsCode p.translations[currentLocale].description/><br/><br/><#elseif p.description?has_content>${p.description}<br/><br/></#if>
+                    <#if (p.translations[currentLocale].comments)?has_content><@processSurroundedWithBackticksAsCode p.translations[currentLocale].comments/><br/><br/><#elseif p.comments?has_content>${p.comments}<br/><br/></#if>
+                    <#if p.vocabulary??><@s.text name="extension.vocabulary"/> <a href="vocabulary.do?id=${p.vocabulary.uriString}" class="no-text-decoration" target="_blank">${p.vocabulary.title!}</a><br/><br/></#if>
                     <#if datasetId?? && p.qualifiedName()?lower_case == datasetId.qualname?lower_case><@s.text name='manage.mapping.datasetIdColumn.help'/><br/><br/></#if>
                     <#if p.link?has_content><@s.text name="basic.seealso"/> <a href="${p.link}" target="_blank">${p.link}</a><br/><br/></#if>
-                    <#if p.examples?has_content>
-                        <em><@s.text name="basic.examples"/></em>: <code>${p.examples}</code>
+                    <#if (p.translations[currentLocale].examples)?has_content>
+                        <em><@s.text name="basic.examples"/></em>:
+                        <@processSurroundedWithBackticksAsCode p.translations[currentLocale].examples />
+                    <#elseif p.examples?has_content>
+                        <em><@s.text name="basic.examples"/></em>:
+                        <@processSurroundedWithBackticksAsCode p.examples />
                     </#if>
                 </#assign>
                 <@popoverTextInfo fieldPopoverInfo />
 
-                <strong class="<#if p.required>text-gbif-danger</#if>" >
-                    <#if !p.namespace()?starts_with("http://purl.org/dc/")>
-                        ${p.name}
-                    <#elseif p.namespace()?starts_with("http://purl.org/dc/terms")>
-                        dcterms:${p.name}
-                    <#elseif p.namespace()?starts_with("http://purl.org/dc/elements/1.1")>
-                        dc:${p.name}
-                    </#if>
+                <strong>
+                    ${(p.translations[currentLocale].label)!p.label!p.name}
+                    <span class="text-gbif-danger"><#if p.required>&#42;</#if></span>
                 </strong>
             </div>
 
             <div class="col-lg-4">
-                <select id="fIdx${fieldsIndex}" class="fidx form-select" name="fields[${fieldsIndex}].index">
+                <select id="fIdx${fieldsIndex}" class="fidx form-select form-select-sm" name="fields[${fieldsIndex}].index">
                     <option value="" <#if !field.index??> selected="selected"</#if>></option>
                     <#list columns as col>
                         <option value="${col_index}" <#if (field.index!-1)==col_index> selected="selected"</#if>>${col}</option>
@@ -293,13 +422,8 @@
                 <#if p.vocabulary??>
                     <#assign vocab=vocabTerms[p.vocabulary.uriString] />
 
-                    <div class="input-group">
-                        <label class="input-group-text" for="fVal${fieldsIndex}">
-                            <a href="vocabulary.do?id=${p.vocabulary.uriString}" class="no-text-decoration" target="_blank">
-                                <i class="bi bi-book"></i>
-                            </a>
-                        </label>
-                        <select id="fVal${fieldsIndex}" class="fval form-select" name="fields[${fieldsIndex}].defaultValue">
+                    <div class="input-group input-group-sm">
+                        <select id="fVal${fieldsIndex}" class="fval fval-select form-select form-select-sm" name="fields[${fieldsIndex}].defaultValue">
                             <option value="" <#if !field.defaultValue??> selected="selected"</#if>></option>
                             <#list vocab?keys as code>
                                 <option value="${code}" <#if (field.defaultValue!"")==code> selected="selected"</#if>>${vocab.get(code)}</option>
@@ -307,21 +431,23 @@
                         </select>
                     </div>
                 <#else>
-                    <input id="fVal${fieldsIndex}" class="fval form-control" name="fields[${fieldsIndex}].defaultValue" value="${field.defaultValue!}"/>
+                    <input id="fVal${fieldsIndex}" class="fval form-control form-control-sm" name="fields[${fieldsIndex}].defaultValue" value="${field.defaultValue!}"/>
                 </#if>
             </div>
 
             <#if field.index??>
-                <small class="text-truncate"><@sourceSample field.index fieldsIndex/></small>
+                <small><@sourceSample field.index fieldsIndex/></small>
                 <div id="fTIdx${fieldsIndex}" class="sample mappingText">
-                    <small class="mx-3"><@s.text name='manage.mapping.translation' />:</small>
-                    <a href="translation.do?r=${resource.shortname}&rowtype=${p.extension.rowType?url}&mid=${mid}&term=${p.qualname?url}" class="text-smaller">
-                        <#if (((field.translation?size)!0)>0)>
-                            ${(field.translation?size)!0} terms
-                        <#else>
-                            <button type="button" class="add btn btn-sm btn-outline-gbif-primary" onclick="window.location.href"><@s.text name="button.add"/></button>
-                        </#if>
-                    </a>
+                    <small class="mx-lg-3"><@s.text name='manage.mapping.translation' />:</small>
+                    <small>
+                        <a href="translation.do?r=${resource.shortname}&rowtype=${p.extension.rowType?url}&mid=${mid}&term=${p.qualname?url}">
+                            <#if (((field.translation?size)!0)>0)>
+                                ${(field.translation?size)!0} terms
+                            <#else>
+                                <@s.text name="button.add"/>
+                            </#if>
+                        </a>
+                    </small>
                 </div>
             </#if>
 
@@ -334,59 +460,93 @@
         </div>
 </#macro>
 
-<#-- return struts param: an HTML anchor to the extension link, or the extension title if no link exists -->
-<#macro linkOrNameParam ext>
-    <#if ext.link?has_content>
-        <@s.param><a href="${ext.link}">${ext.title!}</a></@s.param>
-    <#else>
-        <@s.param>${ext.title!}</@s.param>
-    </#if>
-</#macro>
-
 <form id="mappingForm" class="needs-validation" action="mapping.do" method="post">
-<div class="container-fluid bg-body border-bottom">
 
-    <div class="container pt-2">
-        <#include "/WEB-INF/pages/inc/action_alerts.ftl">
-    </div>
-
-    <div class="container p-3">
-
-        <div class="text-center">
-            <h5 property="dc:title" class="rtitle pt-2 text-gbif-header fs-4 fw-400 text-center">
-                <@popoverPropertyInfo "manage.mapping.intro"/>
-                <@s.text name='manage.mapping.title'/>
-            </h5>
-
-            <div class="text-center fs-smaller">
-                <a href="resource.do?r=${resource.shortname}" title="${resource.title!resource.shortname}">${resource.title!resource.shortname}</a>
+<div class="container px-0">
+    <#if (redundants?size>0)>
+        <div class="alert alert-success alert-dismissible fade show d-flex" role="alert">
+            <div class="me-3">
+                <i class="bi bi-check2-circle alert-green-2 fs-bigger-2 me-2"></i>
             </div>
+            <div class="overflow-x-hidden pt-1">
+                <@s.text name="manage.mapping.redundant.info"><@s.param>${redundants?size}</@s.param></@s.text>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </#if>
 
-            <#if action.isCoreMapping()>
-                <#assign extensionType><@s.text name='extension.core'/></#assign>
-            <#else>
-                <#assign extensionType><@s.text name='extension'/></#assign>
-            </#if>
+    <#include "/WEB-INF/pages/inc/action_alerts.ftl">
+</div>
 
-            <p class="mt-3">
-                <@s.text name='manage.mapping.intro1'><@s.param><a href="source.do?r=${resource.shortname}&id=${mapping.source.name}" title="<@s.text name='manage.overview.source.data'/>">${mapping.source.name}</a></@s.param><@s.param>${extensionType?lower_case}:</@s.param><@linkOrNameParam mapping.extension/></@s.text>
-            </p>
+<div class="container-fluid border-bottom">
+    <div class="container bg-body border rounded-2 mb-4">
+        <div class="container my-3 p-3">
+            <div class="text-center">
+                <div class="text-center fs-smaller">
+                    <nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+                        <ol class="breadcrumb justify-content-center mb-0">
+                            <li class="breadcrumb-item"><a href="${baseURL}/manage/"><@s.text name="breadcrumb.manage"/></a></li>
+                            <li class="breadcrumb-item"><a href="resource?r=${resource.shortname}"><@s.text name="breadcrumb.manage.overview"/></a></li>
+                            <li class="breadcrumb-item active" aria-current="page"><@s.text name="breadcrumb.manage.overview.mapping"/></li>
+                        </ol>
+                    </nav>
+                </div>
+
+                <h5 property="dc:title" class="rtitle pt-2 text-gbif-header fs-2 fw-400 text-center">
+                    <@s.text name='manage.mapping.title'/>
+                </h5>
+
+                <div class="text-center fs-smaller">
+                    <a href="resource.do?r=${resource.shortname}" title="${resource.title!resource.shortname}">${resource.title!resource.shortname}</a>
+                </div>
+
+                <#if action.isCoreMapping()>
+                    <#assign extensionType><@s.text name='extension.core'/></#assign>
+                <#else>
+                    <#assign extensionType><@s.text name='extension'/></#assign>
+                </#if>
+                <#assign extensionType = extensionType?markup_string>
+
+                <div class="mt-2">
+                    <@s.submit cssClass="button btn btn-sm btn-outline-gbif-primary top-button" name="save" key="button.save"/>
+                    <@s.submit cssClass="confirm btn btn-sm btn-outline-gbif-danger top-button" name="delete" key="button.delete"/>
+                    <@s.submit cssClass="button btn btn-sm btn-outline-secondary top-button" name="cancel" key="button.back"/>
+                </div>
+
+                <p class="mt-3 mb-0 text-smaller fst-italic">
+                    <@s.text name='manage.mapping.intro1'>
+                        <@s.param>
+                            <a href="source.do?r=${resource.shortname}&id=${mapping.source.name}" title="<@s.text name='manage.overview.source.data'/>">
+                                ${mapping.source.name}
+                            </a>
+                        </@s.param>
+                        <@s.param>${extensionType?lower_case}:</@s.param>
+                        <@s.param><a href="${baseURL}/admin/extension.do?id=${mapping.extension.rowType!}" target="_blank">${mapping.extension.title!}</a></@s.param>
+                    </@s.text>
+                </p>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="container-fluid bg-body">
-    <div class="container bd-layout">
-
+<div class="container-fluid bg-body mt-2">
+    <div class="container bd-layout main-content-container">
         <main class="bd-main">
-
             <div class="bd-toc mt-4 mb-5 ps-3 mb-lg-5 text-muted">
                 <#assign groups = fieldsByGroup?keys/>
                 <nav id="sidebar-content">
                     <ul>
                         <#if (groups?size>0)>
                             <#list groups as g>
-                                <li <#if redundants?seq_contains(g)> class="redundant" </#if> ><a class="sidebar-navigation-link" href="#anchor-group_${g}">${g}</a></li>
+                                <li <#if redundants?seq_contains(g)> class="redundant" </#if> >
+                                    <a class="sidebar-navigation-link" href="#anchor-group_${g?replace(' ', '_')}">
+                                        <#if g?has_content>
+                                            ${g}
+                                        <#else>
+                                            <@s.text name="manage.mapping.noClass"/>
+                                        </#if>
+                                    </a>
+                                </li>
                             </#list>
                         </#if>
 
@@ -406,7 +566,7 @@
                         </#if>
                     </ul>
 
-                    <div class="d-flex align-content-between">
+                    <div class="d-flex align-content-between" style="margin-left: -10px;">
                         <@s.submit cssClass="button btn btn-sm btn-outline-gbif-primary me-1" name="save" key="button.save"/>
                         <@s.submit cssClass="confirm btn btn-sm btn-outline-gbif-danger me-1" name="delete" key="button.delete"/>
                         <@s.submit cssClass="button btn btn-sm btn-outline-secondary" name="cancel" key="button.back"/>
@@ -436,27 +596,33 @@
                 </div>
 
                 <#-- Filter and required mapping -->
-                <div class="border-bottom mb-2">
+                <div class="border-bottom mb-2 text-smaller">
                     <div class="row pt-3 pb-2 g-2 requiredMapping">
                         <div class="col-lg-4 pt-1" id="coreID">
                             <#if coreid??>
                                 <#assign text1>
-                                    <#if coreid.description?has_content>${coreid.description}</#if>
-                                    <#if coreid.link?has_content><@s.text name="basic.seealso"/> <a href="${coreid.link}" target="_blank">${coreid.link}</a></#if>
+                                    <#if coreid.qualifiedName()?has_content><a href="${coreid.qualifiedName()}">${coreid.qualifiedName()}</a><#else>${coreid.name!}</#if><br/><br/>
+                                    <#if (coreid.translations[currentLocale].description)?has_content><@processSurroundedWithBackticksAsCode coreid.translations[currentLocale].description/><br/><br/><#elseif coreid.description?has_content>${coreid.description}<br/><br/></#if>
+                                    <#if (coreid.translations[currentLocale].comments)?has_content><@processSurroundedWithBackticksAsCode coreid.translations[currentLocale].comments/><br/><br/><#elseif coreid.comments?has_content>${coreid.comments}<br/><br/></#if>
+                                    <#if coreid.link?has_content><@s.text name="basic.seealso"/> <a href="${coreid.link}" target="_blank">${coreid.link}</a><br/><br/></#if>
                                     <span class="idSuffix">
-                                    <@s.text name='manage.mapping.info.linenumbers'/>
-                                </span>
-                                    <#if coreid.examples?has_content>
-                                        <em><@s.text name="basic.examples"/></em>: ${coreid.examples}
+                                        <@s.text name='manage.mapping.info.linenumbers'/>
+                                    </span>
+                                    <#if (coreid.translations[currentLocale].examples)?has_content>
+                                        <em><@s.text name="basic.examples"/></em>:
+                                        <@processSurroundedWithBackticksAsCode coreid.translations[currentLocale].examples />
+                                    <#elseif coreid.examples?has_content>
+                                        <em><@s.text name="basic.examples"/></em>:
+                                        <@processSurroundedWithBackticksAsCode coreid.examples />
                                     </#if>
                                 </#assign>
                                 <@popoverTextInfo text1/>
                             </#if>
-                            <strong>${coreid.name!"Record ID"}</strong>
+                            <strong>${(coreid.translations[currentLocale].label)!coreid.label!coreid.name!"Record ID"}</strong>
                         </div>
 
                         <div class="col-lg-4">
-                            <select name="mapping.idColumn" id="idColumn" class="form-select">
+                            <select name="mapping.idColumn" id="idColumn" class="form-select form-select-sm">
                                 <#if action.isCoreMapping()>
                                     <option value="" <#if !mapping.idColumn??> selected="selected"<#elseif (mapping.idColumn!-99)==-3> selected="selected"</#if>><@s.text name="manage.mapping.noid"/></option>
                                 </#if>
@@ -472,7 +638,7 @@
                         </div>
 
                         <div class="col-lg-4">
-                            <input type="text" name="mapping.idSuffix" value="${mapping.idSuffix!}" class="form-control" />
+                            <input type="text" name="mapping.idSuffix" value="${mapping.idSuffix!}" class="form-control form-control-sm" />
                         </div>
 
                         <#if ((mapping.idColumn!-99)>=0)>
@@ -489,7 +655,7 @@
                             </div>
 
                             <div class="col-lg-3">
-                                <select name="mapping.filter.filterTime" id="mapping.filter.filterTime" class="form-select">
+                                <select name="mapping.filter.filterTime" id="mapping.filter.filterTime" class="form-select form-select-sm">
                                     <#list mapping.filter.filterTimes?keys as filterTime>
                                         <option value="${filterTime}" <#if (mapping.filter.filterTime!"")==filterTime> selected="selected"</#if>>${filterTime}</option>
                                     </#list>
@@ -497,7 +663,7 @@
                             </div>
 
                             <div class="col-lg-4">
-                                <select id="filterName" name="mapping.filter.column" class="form-select">
+                                <select id="filterName" name="mapping.filter.column" class="form-select form-select-sm">
                                     <option value="" <#if !mapping.filter.column??> selected="selected"</#if>></option>
                                     <#list columns as c>
                                         <option value="${c_index}" <#if c_index==mapping.filter.column!-999> selected="selected"</#if>>${c}</option>
@@ -506,7 +672,7 @@
                             </div>
 
                             <div class="col-lg-2">
-                                <select id="filterComp" name="mapping.filter.comparator" class="form-select">
+                                <select id="filterComp" name="mapping.filter.comparator" class="form-select form-select-sm">
                                     <option value="" <#if !mapping.filter.comparator??> selected="selected"</#if>></option>
                                     <#list comparators as c>
                                         <option value="${c}" <#if c==mapping.filter.comparator!""> selected="selected"</#if>>${c}</option>
@@ -515,7 +681,7 @@
                             </div>
 
                             <div class="col-lg-2">
-                                <input id="filterParam" name="mapping.filter.param" class="form-control" value="${mapping.filter.param!}" />
+                                <input id="filterParam" name="mapping.filter.param" class="form-control form-control-sm" value="${mapping.filter.param!}" />
                             </div>
                         </div>
 
@@ -528,16 +694,19 @@
                         <#list fieldsByGroup?keys as g>
                             <#assign groupsFields = fieldsByGroup.get(g)/>
                             <#if (groupsFields?size>0)>
-                                <span class="anchor anchor-base" id="anchor-group_${g}"></span>
+                                <span class="anchor anchor-base <#if redundants?seq_contains(g)>redundant</#if> " id="anchor-group_${g?replace(' ', '_')}"></span>
                                 <div class="mt-5 <#if redundants?seq_contains(g)>redundant</#if>">
-                                    <div id="group_${g}" <#if redundants?seq_contains(g)>class="redundant"</#if> >
-                                        <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fs-5 fw-400">${g}</h4>
+                                    <div id="group_${g?replace(' ', '_')}" <#if redundants?seq_contains(g)>class="redundant"</#if> >
+                                        <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fs-5 fw-400">
+                                            <#if g?has_content>
+                                                ${g}
+                                            <#else>
+                                                <@s.text name="manage.mapping.noClass"/>
+                                            </#if>
+                                        </h4>
                                         <#list groupsFields as field>
                                             <@showField field field_index/>
                                         </#list>
-                                        <div>
-                                            <@threeButtons/>
-                                        </div>
                                     </div>
                                 </div>
                             </#if>
@@ -550,9 +719,6 @@
                             <#list fields as field>
                                 <@showField field field_index/>
                             </#list>
-                            <div>
-                                <@threeButtons/>
-                            </div>
                         </div>
                     </#if>
 
@@ -566,32 +732,35 @@
 
                     <#if (nonMapped?size>0)>
                         <span class="anchor anchor-base" id="anchor-nonmapped"></span>
-                        <div class="mt-5">
+                        <div class="mt-5" <#if (action.getRedundantGroups()?size==0)>style="height: 100vh; min-height: 200px;"</#if> >
                             <h4 id="nonmapped" class="pb-2 mb-2 pt-2 text-gbif-header-2 fs-5 fw-400">
                                 <@s.text name="manage.mapping.no.mapped.title"/>
                             </h4>
                             <p><@s.text name="manage.mapping.no.mapped.columns"/>:</p>
-                            <ul>
-                                <#list nonMapped as col>
-                                    <li>${col}</li>
-                                </#list>
-                            </ul>
 
+                            <div class="text-smaller">
+                                <#list nonMapped as col>
+                                    <#if col?has_content>
+                                        <span class="unmapped-field"><strong>${col}</strong></span><#sep> </#sep>
+                                    </#if>
+                                </#list>
+                            </div>
                         </div>
                     </#if>
 
-                    <#if (action.getRedundantGroups()?size>0)>
+                    <#if (redundants?size>0)>
                         <span class="anchor anchor-base" id="anchor-redundant"></span>
-                        <div class="mt-5">
+                        <div class="mt-5" style="height: 100vh; min-height: 200px;">
                             <h4 id="redundant" class="pb-2 mb-2 pt-2 text-gbif-header-2 fs-5 fw-400">
                                 <@s.text name="manage.mapping.redundant.classes.title"/>
                             </h4>
                             <p><@s.text name="manage.mapping.redundant.classes.intro"/>:</p>
-                            <ul>
-                                <#list action.getRedundantGroups() as gr>
-                                    <li>${gr}</li>
+
+                            <div class="text-smaller">
+                                <#list redundants as gr>
+                                    <span class="redundant-section"><strong>${gr}</strong></span><#sep> </#sep>
                                 </#list>
-                            </ul>
+                            </div>
                         </div>
                     </#if>
                 </div>
@@ -604,4 +773,3 @@
 </form>
 
 <#include "/WEB-INF/pages/inc/footer.ftl"/>
-</#escape>

@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,6 +17,8 @@ import org.gbif.ipt.action.BaseAction;
 import org.gbif.ipt.model.Resource;
 
 import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
 
 public class ResourceValidator {
 
@@ -45,6 +45,16 @@ public class ResourceValidator {
       if (shortname.length() < 3 || !shortnamePattern.matcher(shortname).matches()) {
         action.addFieldError("resource.shortname", action.getText("validation.resource.shortname.invalid"));
       }
+    }
+  }
+
+  public void validateCreateNew(BaseAction action, String shortname, String resourceType) {
+    if (shortname == null) {
+      action.addFieldError("resource.shortname", action.getText("validation.resource.shortname.required"));
+    } else if (shortname.length() < 3 || !shortnamePattern.matcher(shortname).matches()) {
+      action.addFieldError("resource.shortname", action.getText("validation.resource.shortname.invalid"));
+    } else if (StringUtils.isEmpty(resourceType)) {
+      action.addFieldError("resourceType", action.getText("validation.resource.type.required"));
     }
   }
 }

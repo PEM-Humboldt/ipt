@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,6 +34,9 @@ import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.service.admin.VocabulariesManager;
 import org.gbif.ipt.service.manage.SourceManager;
 import org.gbif.ipt.utils.MapUtils;
+import org.gbif.metadata.eml.EMLProfileVersion;
+import org.gbif.metadata.eml.EmlValidator;
+import org.gbif.metadata.eml.InvalidEmlException;
 import org.gbif.utils.file.ClosableReportingIterator;
 import org.gbif.utils.file.CompressionUtil;
 import org.gbif.utils.file.csv.CSVReader;
@@ -45,6 +46,7 @@ import org.gbif.utils.text.LineComparator;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -75,8 +77,7 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 
-import com.google.inject.Inject;
-import com.google.inject.assistedinject.Assisted;
+import org.xml.sax.SAXException;
 
 public class GenerateDwca extends ReportingTask implements Callable<Map<String, Integer>> {
 
@@ -98,6 +99,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
   private final SourceManager sourceManager;
   private final VocabulariesManager vocabManager;
   private Map<String, String> basisOfRecords;
+  private Map<String, String> basisOfRecordsSnakeCase;
   private Exception exception;
   private AppConfig cfg;
   private static final int ID_COLUMN_INDEX = 0;
@@ -137,9 +139,8 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
     DWC_MULTI_VALUE_TERMS = Collections.unmodifiableSet(dwcTermsInternal);
   }
 
-  @Inject
-  public GenerateDwca(@Assisted Resource resource, @Assisted ReportHandler handler, DataDir dataDir,
-    SourceManager sourceManager, AppConfig cfg, VocabulariesManager vocabManager) throws IOException {
+  public GenerateDwca(Resource resource, ReportHandler handler, DataDir dataDir,
+    SourceManager sourceManager, AppConfig cfg, VocabulariesManager vocabManager) {
     super(1000, resource.getShortname(), handler, dataDir);
     this.resource = resource;
     this.sourceManager = sourceManager;
@@ -212,7 +213,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
     File dataFile = new File(dwcaFolder, fn);
     // add source file location
 
-    // ready to go though each mapping and dump the data
+    // ready to go through each mapping and dump the data
     try (Writer writer = org.gbif.utils.file.FileUtils.startNewUtf8File(dataFile)) {
       af.addLocation(dataFile.getName());
       addMessage(Level.INFO, "Start writing data file for " + currExtension);
@@ -264,7 +265,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
 
   /**
    * Write the header column line to file.
-   * 
+   *
    * @param propertyList ordered list of all ExtensionProperty that have been mapped across all mappings for a single
    *        Extension
    * @param totalColumns total number of columns in header
@@ -291,13 +292,35 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
 
   /**
    * Adds EML file to DwC-A folder.
-   * 
+   *
    * @throws GeneratorException if EML file could not be copied to DwC-A folder
    * @throws InterruptedException if executing thread was interrupted
    */
   private void addEmlFile() throws GeneratorException, InterruptedException {
     checkForInterruption();
     setState(STATE.METADATA);
+
+    // validate EML
+    try {
+      addMessage(Level.INFO, "? Validating EML file");
+      EmlValidator emlValidator = org.gbif.metadata.eml.EmlValidator.newValidator(EMLProfileVersion.GBIF_1_3);
+
+      try (InputStream is = FileUtils.openInputStream(dataDir.resourceEmlFile(resource.getShortname()))) {
+        emlValidator.validate(is);
+        addMessage(Level.INFO, "✓ Validated EML file");
+      }
+    } catch (IOException | SAXException e) {
+      // some error validating this file, report
+      log.error("Exception caught while validating EML file", e);
+      addMessage(Level.ERROR, "Failed to validate EML file");
+      setState(e);
+      throw new GeneratorException("Problem occurred while validating DwC-A (EML)", e);
+    } catch (InvalidEmlException e) {
+      // InvalidEmlException - log ERROR, but still proceed
+      log.error("Invalid EML", e);
+      addMessage(Level.ERROR, "Invalid EML file: " + e.getMessage());
+    }
+
     try {
       FileUtils.copyFile(dataDir.resourceEmlFile(resource.getShortname()), new File(dwcaFolder,
         DataDir.EML_XML_FILENAME));
@@ -314,7 +337,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
    * </br>
    * Since all default values ​​will be written in the data file, they won't be expressed in the archive file (meta.xml).
    * That's why the default value is always set to null.
-   * 
+   *
    * @param term ConceptTerm
    * @param delimitedBy multi-value delimiter
    *
@@ -336,7 +359,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
   /**
    * Zips the DwC-A folder. A temp version is created first, and when successful, it it moved into the resource's
    * data directory.
-   * 
+   *
    * @throws GeneratorException if DwC-A could not be zipped or moved
    * @throws InterruptedException if executing thread was interrupted
    */
@@ -347,7 +370,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
     BigDecimal version = resource.getEmlVersion();
     try {
       // create zip
-      zip = dataDir.tmpFile("dwca", ".zip");
+      zip = dataDir.tmpFile(Constants.DWC_ARCHIVE_NAME, Constants.DWC_ARCHIVE_EXTENSION);
       CompressionUtil.zipDir(dwcaFolder, zip);
       if (zip.exists()) {
         // move to data dir with versioned name
@@ -376,7 +399,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
    * Validate the DwC-A:
    * -ensure that if the core record identifier is mapped (e.g. occurrenceID, taxonID, etc) it is present on all
    * rows, and is unique
-   * 
+   *
    * @throws GeneratorException if DwC-A could not be validated
    * @throws InterruptedException if executing thread was interrupted
    */
@@ -387,6 +410,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
     try {
       // retrieve newly generated archive - decompressed
       Archive arch = DwcFiles.fromLocation(dwcaFolder.toPath());
+
       // populate basisOfRecord lookup HashMap
       loadBasisOfRecordMapFromVocabulary();
       // perform validation on core file (includes core ID and basisOfRecord validation)
@@ -403,12 +427,12 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
       throw new GeneratorException("Problem occurred while validating DwC-A", e);
     }
     // final reporting
-    addMessage(Level.INFO, "Archive validated");
+    addMessage(Level.INFO, "✓ Archive validated");
   }
 
   /**
    * Sort the data file of a Darwin Core Archive by a column. Sorting is case sensitive.
-   * 
+   *
    * @param file unsorted file
    * @param column column to sort by file by
    *
@@ -417,7 +441,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
    */
   private File sortCoreDataFile(ArchiveFile file, int column) throws IOException {
     // retrieve the core file
-    File unsorted = file.getLocationFile();
+    File unsorted = file.getLocationFiles().get(0);
 
     // create a new file that will store the records sorted by column
     File sorted = new File(unsorted.getParentFile(), SORTED_FILE_PREFIX + unsorted.getName());
@@ -462,11 +486,13 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
    * Populate basisOfRecords map from XML vocabulary, used to validate basisOfRecord values.
    */
   private void loadBasisOfRecordMapFromVocabulary() {
-    if (basisOfRecords == null) {
+    if (basisOfRecords == null || basisOfRecordsSnakeCase == null) {
       basisOfRecords = new HashMap<>();
-      basisOfRecords
-        .putAll(vocabManager.getI18nVocab(Constants.VOCAB_URI_BASIS_OF_RECORDS, Locale.ENGLISH.getLanguage(), false));
-      basisOfRecords = MapUtils.getMapWithLowercaseKeys(basisOfRecords);
+      basisOfRecordsSnakeCase = new HashMap<>();
+      Map<String, String> basisOfRecordsVocab =
+          vocabManager.getI18nVocab(Constants.VOCAB_URI_BASIS_OF_RECORDS, Locale.ENGLISH.getLanguage(), false);
+      basisOfRecords = MapUtils.getMapWithLowercaseKeys(basisOfRecordsVocab);
+      basisOfRecordsSnakeCase = MapUtils.getMapWithSnakecaseKeys(basisOfRecordsVocab);
     }
   }
 
@@ -616,7 +642,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
       throw new GeneratorException(
         "Can't validate DwC-A for resource " + resource.getShortname() + ". Each line in extension must have an ID " + id.simpleName() + ", which is required in order to link the extension to the core ");
     } else {
-      addMessage(Level.INFO, "\u2713 Validated each line in extension has an ID " + id.simpleName());
+      addMessage(Level.INFO, "✓ Validated each line in extension has an ID " + id.simpleName());
       writePublicationLogMessage("No lines in extension are missing an ID " + id.simpleName());
     }
 
@@ -810,7 +836,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
       recordsWithNoBasisOfRecord.getAndIncrement();
     } else {
       // check basisOfRecord matches vocabulary (lower case comparison). E.g. specimen matches Specimen are equal
-      if (!basisOfRecords.containsKey(bor.toLowerCase())) {
+      if (!basisOfRecords.containsKey(bor.toLowerCase()) && !basisOfRecordsSnakeCase.containsKey(bor.toLowerCase())) {
         writePublicationLogMessage("Line #" + line + " has basisOfRecord [" + bor
                                    + "] that does not match the Darwin Core Type Vocabulary");
         recordsWithNonMatchingBasisOfRecord.getAndIncrement();
@@ -866,7 +892,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
       writePublicationLogMessage("No lines are missing a basisOfRecord");
     }
 
-    // add non matching BoR user message
+    // add non-matching BoR user message
     if (recordsWithNonMatchingBasisOfRecord.get() > 0) {
       addMessage(Level.ERROR, recordsWithNonMatchingBasisOfRecord
                               + " line(s) have basisOfRecord that does not match the Darwin Core Type Vocabulary "
@@ -956,7 +982,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
 
   /**
    * Method responsible for all stages of DwC-A file generation.
-   * 
+   *
    * @return number of records published in core file
    * @throws GeneratorException if DwC-A generation fails for any reason
    */
@@ -1030,7 +1056,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
 
   /**
    * Checks if the executing thread has been interrupted, i.e. DwC-A generation was cancelled.
-   * 
+   *
    * @throws InterruptedException if the thread was found to be interrupted
    */
   private void checkForInterruption() throws InterruptedException {
@@ -1044,7 +1070,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
 
   /**
    * Checks if the executing thread has been interrupted, i.e. DwC-A generation was cancelled.
-   * 
+   *
    * @param line number of lines currently processed at the time of the check
    * @throws InterruptedException if the thread was found to be interrupted
    */
@@ -1064,7 +1090,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
 
   /**
    * Create data files.
-   * 
+   *
    * @throws GeneratorException if the resource had no core file that was mapped
    * @throws InterruptedException if the thread was interrupted
    */
@@ -1090,7 +1116,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
 
   /**
    * Create meta.xml file.
-   * 
+   *
    * @throws GeneratorException if meta.xml file creation failed
    * @throws InterruptedException if the thread was interrupted
    */
@@ -1106,10 +1132,6 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
     addMessage(Level.INFO, "meta.xml archive descriptor written");
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.gbif.ipt.task.ReportingTask#currentException()
-   */
   @Override
   protected Exception currentException() {
     return exception;
@@ -1322,7 +1344,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
 
   /**
    * Sets an exception and state of the worker to FAILED. The final StatusReport is generated at the end.
-   * 
+   *
    * @param e exception
    */
   private void setState(Exception e) {
@@ -1333,7 +1355,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
 
   /**
    * Sets only the state of the worker. The final StatusReport is generated at the end.
-   * 
+   *
    * @param s STATE of worker
    */
   private void setState(STATE s) {
@@ -1411,7 +1433,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
 
   /**
    * Print a line representation of a string array used for logging.
-   * 
+   *
    * @param in String array
    * @return line
    */
@@ -1430,7 +1452,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
 
   /**
    * Write message from exception to publication log file as a new line but suffocate any exception thrown.
-   * 
+   *
    * @param e exception to write message from
    */
   private void writeFailureToPublicationLog(Throwable e) {
@@ -1450,7 +1472,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
    * First we need to find the union of all terms mapped (in all files) for a single Extension. Then make each mapped
    * term a field in the final archive. Static/default mappings are not stored for a field, since they are not
    * expressed in meta.xml but instead get written to the data file.
-   * 
+   *
    * @param mappings list of ExtensionMapping
    * @param af ArchiveFile
    *
@@ -1511,7 +1533,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
    * Iterate through ordered list of those ExtensionProperty that have been mapped, and reassign the ArchiveFile
    * ArchiveField indexes, based on the order of their appearance in the ordered list be careful to reserve index 0 for
    * the ID column
-   * 
+   *
    * @param propertyList ordered list of those ExtensionProperty that have been mapped
    * @param af ArchiveFile
    */
@@ -1536,7 +1558,7 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
 
   /**
    * Retrieve the ordered list of all Extension's mapped ExtensionProperty. Ordering is done according to Extension.
-   * 
+   *
    * @param ext Extension
    * @param mappedConceptTerms set of all mapped ConceptTerm
    * @return ordered list of mapped ExtensionProperty
@@ -1569,9 +1591,8 @@ public class GenerateDwca extends ReportingTask implements Callable<Map<String, 
    * If a competing file name exists, a numerical suffix is appended to the file name, to differentiate it from the
    * existing files' names. The numerical suffix is incrementing, and is equal to the number of existing files with
    * this name.
-   * </br>
    * E.g. the initial name has no suffix (taxon.txt), but subsequent names look like (taxon2.txt, taxon3.txt, etc).
-   *
+   * <p>
    * Before IPT v2.2 the DwC-A file name has been determined from the extension name. When two extensions had the same
    * name, this caused one file to be overwritten - see Issue 1087.
    *

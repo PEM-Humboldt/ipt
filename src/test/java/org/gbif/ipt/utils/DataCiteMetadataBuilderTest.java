@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,6 +22,7 @@ import org.gbif.doi.metadata.datacite.NameIdentifier;
 import org.gbif.doi.metadata.datacite.RelatedIdentifierType;
 import org.gbif.doi.metadata.datacite.RelationType;
 import org.gbif.doi.service.InvalidMetadataException;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.model.Organisation;
 import org.gbif.ipt.model.Resource;
@@ -31,17 +30,17 @@ import org.gbif.ipt.model.User;
 import org.gbif.ipt.model.VersionHistory;
 import org.gbif.ipt.model.voc.IdentifierStatus;
 import org.gbif.ipt.model.voc.PublicationStatus;
-import org.gbif.metadata.eml.Agent;
-import org.gbif.metadata.eml.BBox;
-import org.gbif.metadata.eml.BibliographicCitationSet;
-import org.gbif.metadata.eml.Citation;
-import org.gbif.metadata.eml.Eml;
-import org.gbif.metadata.eml.GeospatialCoverage;
-import org.gbif.metadata.eml.KeywordSet;
-import org.gbif.metadata.eml.PhysicalData;
-import org.gbif.metadata.eml.Point;
-import org.gbif.metadata.eml.TemporalCoverage;
-import org.gbif.metadata.eml.UserId;
+import org.gbif.metadata.eml.ipt.model.Agent;
+import org.gbif.metadata.eml.ipt.model.BBox;
+import org.gbif.metadata.eml.ipt.model.BibliographicCitationSet;
+import org.gbif.metadata.eml.ipt.model.Citation;
+import org.gbif.metadata.eml.ipt.model.Eml;
+import org.gbif.metadata.eml.ipt.model.GeospatialCoverage;
+import org.gbif.metadata.eml.ipt.model.KeywordSet;
+import org.gbif.metadata.eml.ipt.model.PhysicalData;
+import org.gbif.metadata.eml.ipt.model.Point;
+import org.gbif.metadata.eml.ipt.model.TemporalCoverage;
+import org.gbif.metadata.eml.ipt.model.UserId;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -57,12 +56,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class DataCiteMetadataBuilderTest {
+public class DataCiteMetadataBuilderTest extends IptBaseTest {
 
   @Test
   public void testBuilder() throws InvalidMetadataException {
     Resource resource = new Resource();
-    resource.setEmlVersion(new BigDecimal("2.0"));
+    resource.setMetadataVersion(new BigDecimal("2.0"));
 
     DOI doi = new DOI("10.5072/ipt12");
     resource.setDoi(doi);
@@ -85,9 +84,7 @@ public class DataCiteMetadataBuilderTest {
     resource.setEml(eml);
 
     eml.setTitle("Ants of New York State");
-    List<String> description = new ArrayList<>();
-    description.add("Comprehensive ants collection.");
-    description.add("Mostly dried preserved.");
+    String description = "Comprehensive ants collection. Mostly dried preserved.";
     eml.setDescription(description);
     eml.setMetadataLanguage("eng");
     eml.setLanguage("heb");
@@ -126,14 +123,14 @@ public class DataCiteMetadataBuilderTest {
 
     // associatedProvider = contributor
     Agent contributor3 = new Agent();
-    contributor3.setPosition("Insects Curator");
+    contributor3.addPosition("Insects Curator");
     contributor3.setRole("curator");
     List<UserId> contributorUserIds3 = new ArrayList<>();
     contributor3.setUserIds(contributorUserIds3);
     eml.addAssociatedParty(contributor3);
 
     Agent contributor4 = new Agent();
-    contributor4.setPosition("Programmer");
+    contributor4.addPosition("Programmer");
     contributor4.setRole("programmer");
     eml.addAssociatedParty(contributor4);
     // TODO add more associatedParties covering all roles
@@ -338,10 +335,8 @@ public class DataCiteMetadataBuilderTest {
       dataCiteMetadata.getRightsList().getRights().get(0).getValue());
 
     // Abstract aka description
-    assertEquals("Comprehensive ants collection.",
+    assertEquals("Comprehensive ants collection. Mostly dried preserved.",
       dataCiteMetadata.getDescriptions().getDescription().get(0).getContent().get(0));
-    assertEquals("Mostly dried preserved.",
-      dataCiteMetadata.getDescriptions().getDescription().get(1).getContent().get(0));
     assertEquals(DescriptionType.ABSTRACT,
       dataCiteMetadata.getDescriptions().getDescription().get(0).getDescriptionType());
     assertEquals("eng", dataCiteMetadata.getDescriptions().getDescription().get(0).getLang());
@@ -446,7 +441,7 @@ public class DataCiteMetadataBuilderTest {
   @Test
   public void testConvertEmlCreatorsWithPositionName() {
     Agent creator1 = new Agent();
-    creator1.setPosition("President");
+    creator1.addPosition("President");
     List<Agent> creators = new ArrayList<>();
     creators.add(creator1);
     assertThrows(InvalidMetadataException.class, () -> DataCiteMetadataBuilder.convertEmlCreators(creators));

@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +13,7 @@
  */
 package org.gbif.ipt.model.factory;
 
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.IPTModule;
 import org.gbif.ipt.model.Vocabulary;
 import org.gbif.ipt.model.VocabularyConcept;
@@ -38,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Test XML vocabulary parsed correctly.
  */
-public class VocabularyFactoryTest {
+public class VocabularyFactoryTest extends IptBaseTest {
 
   private VocabularyFactory getFactory() throws ParserConfigurationException, SAXException {
     IPTModule mod = new IPTModule();

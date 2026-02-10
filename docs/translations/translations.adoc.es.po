@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gbif-ipt\n"
-"POT-Creation-Date: 2021-09-04 19:48+0000\n"
-"PO-Revision-Date: 2021-12-02 03:17\n"
+"POT-Creation-Date: 2024-02-19 08:36+0000\n"
+"PO-Revision-Date: 2024-02-22 01:05\n"
 "Last-Translator: \n"
 "Language-Team: Spanish, Colombia\n"
 "Language: es_CO\n"
@@ -25,7 +25,7 @@ msgstr "Cómo traducir"
 #. type: Plain text
 #: en/modules/ROOT/pages/translations.adoc:4
 msgid "The IPT user interface and user manual both benefit from internationalization. Internationalization is a community effort, and everyone is welcome to join."
-msgstr "Tanto la interfaz como el manual de usuario del IPT se benefician de la internacionalización. La internacionalización es un esfuerzo de la comunidad, y todos son bienvenidos a unirse."
+msgstr "Tanto la interfaz, como el manual de usuario del IPT se benefician de la internacionalización. La internacionalización es un esfuerzo de la comunidad y todos son bienvenidos a unirse."
 
 #. type: Plain text
 #: en/modules/ROOT/pages/translations.adoc:6
@@ -45,8 +45,8 @@ msgstr "Traduciendo la interfaz de usuario"
 
 #. type: Plain text
 #: en/modules/ROOT/pages/translations.adoc:12
-msgid "Translations for the user interface are contained in the file `ApplicationResources_en.properties`.  You are welcome to ask mailto:helpdesk@gbif.org[the helpdesk] for an account on https://ipt.gbif-uat.org/[GBIF's development IPT], where new translations will be applied."
-msgstr "Las traducciones para la interfaz de usuario están contenidas en el archivo `ApplicationResources_en.properties`.  Puede pedir a mailto:helpdesk@gbif.org[el centro de ayuda] una cuenta en https://ipt.gbif-uat.org/[el desarrollo del IPT de GBIF], donde se aplicarán las nuevas traducciones."
+msgid "Translations for the user interface are contained in the file `ApplicationResources_en.properties`.  You are welcome to ask mailto:helpdesk@gbif.org[the Help Desk] for an account on https://ipt.gbif-uat.org/[GBIF's development IPT], where new translations will be applied."
+msgstr "Las traducciones para la interfaz de usuario están contenidas en el fichero `ApplicationResources_en.properties`.  Puede pedir a mailto:helpdesk@gbif.org[la Mesa de ayuda] una cuenta en https://ipt.gbif-uat.org/[el IPT de desarrollo de GBIF], donde se aplicarán las nuevas traducciones."
 
 #. type: Target for macro image
 #: en/modules/ROOT/pages/translations.adoc:13
@@ -92,8 +92,8 @@ msgstr "Chino tradicional"
 
 #. type: Plain text
 #: en/modules/ROOT/pages/translations.adoc:24
-msgid "Persian (in progress)"
-msgstr "Persa (en curso)"
+msgid "Persian (incomplete)"
+msgstr "Persa (incompleto)"
 
 #. type: Plain text
 #: en/modules/ROOT/pages/translations.adoc:26
@@ -104,12 +104,12 @@ msgstr "Si desea traducir la interfaz de usuario a otro idioma, envíe un correo
 #: en/modules/ROOT/pages/translations.adoc:27
 #, no-wrap
 msgid "Translating the User Manual"
-msgstr "Traducir el manual de usuario"
+msgstr "Traducción el manual de usuario"
 
 #. type: Plain text
 #: en/modules/ROOT/pages/translations.adoc:30
 msgid "Translations for the user manual are in the Crowdin folder `docs/translations`.  The user manual is written in https://docs.asciidoctor.org/asciidoc/latest/[Asciidoctor], and some syntax is necessary in the translations – for example, `+++*bold*, _italic_ or `monospaced` text+++`."
-msgstr "Las traducciones del manual de usuario están en la carpeta de Crowdin `docs/translations`.  El manual de usuario está escrito en https://docs.asciidoctor.org/asciidoc/latest/[Asciidoctor], y es necesaria cierta sintaxis en las traducciones - por ejemplo, `+++*negrita*, _cursiva_ o `texto monoespaciado` +++`."
+msgstr "Las traducciones del manual de usuario están en la carpeta de Crowdin `docs/translations`.  El manual de usuario está escrito en https://docs.asciidoctor.org/asciidoc/latest/[Asciidoctor], y es necesaria cierta sintaxis en las traducciones , por ejemplo, `+++*negrita*, _cursiva_ o `texto monoespaciado` +++`."
 
 #. type: Plain text
 #: en/modules/ROOT/pages/translations.adoc:32
@@ -118,8 +118,8 @@ msgstr "Hay que prestar especial atención a que las referencias cruzadas (enlac
 
 #. type: Plain text
 #: en/modules/ROOT/pages/translations.adoc:34
-msgid "New translations added using Crowdin should appear in the https://ipt.gbif-uat.org/manual/[UAT version of this manual] around 15-60 minutes later."
-msgstr "Las nuevas traducciones añadidas mediante Crowdin deberían aparecer en https://ipt.gbif-uat.org/manual/[versión UAT de este manual] unos 15-60 minutos después."
+msgid "New translations added using Crowdin should appear in the https://ipt.gbif-uat.org/manual/[UAT version of this manual] around 15-60 minutes later. You can use this to check your translations appear as you wanted."
+msgstr "Las traducciones nuevas añadidas mediante Crowdin deberían aparecer en https://ipt.gbif-uat.org/manual/[versión UAT de este manual] entre 15 y 60 minutos después. Puede usar esta función para verificar que sus traducciones aparezcan de manera adecuada."
 
 #. type: Title ===
 #: en/modules/ROOT/pages/translations.adoc:35
@@ -136,7 +136,7 @@ msgstr "Al traducirlos, es conveniente enlazar con una versión traducida de la 
 #: en/modules/ROOT/pages/translations.adoc:42
 #, no-wrap
 msgid "https://www.gbif.org/the-gbif-network[GBIF's diverse Participants]\n"
-msgstr "https://www.gbif.org/the-gbif-network[GBIF's diverse Participants]\n"
+msgstr "https://www.gbif.org/the-gbif-network[La diversidad de los participantes en GBIF]\n"
 
 #. type: delimited block -
 #: en/modules/ROOT/pages/translations.adoc:44
@@ -144,123 +144,179 @@ msgstr "https://www.gbif.org/the-gbif-network[GBIF's diverse Participants]\n"
 msgid "https://www.gbif.org/es/the-gbif-network[los diversos Aliados de GBIF]\n"
 msgstr "https://www.gbif.org/es/the-gbif-network[los diversos Aliados de GBIF]\n"
 
+#. type: Plain text
+#: en/modules/ROOT/pages/translations.adoc:47
+msgid "Note the text of the link (between `[square brackets]`) has been translated."
+msgstr "Tenga en cuenta que el texto del enlace (entre `[corchetes cuadrados]`) ha sido traducido."
+
 #. type: Title ===
-#: en/modules/ROOT/pages/translations.adoc:46
+#: en/modules/ROOT/pages/translations.adoc:48
 #, no-wrap
 msgid "Same-page crossreferences"
 msgstr "Referencias cruzadas en la misma página"
 
 #. type: Plain text
-#: en/modules/ROOT/pages/translations.adoc:49
+#: en/modules/ROOT/pages/translations.adoc:51
 msgid "These are links to locations within a page, and are usually made with the crossreference syntax: `\\<<Target Heading Text>>`, and sometimes the form `\\<<Target Heading Text,display text>>` when the text shown should not be the same as the heading to which the link points."
-msgstr "Se trata de enlaces a lugares dentro de una página, y suelen hacerse con la sintaxis de referencia cruzada: `\\<Titular de destino>>, y a veces con la forma `\\<Titular de destino,texto mostrado>> cuando el texto mostrado no debe ser el mismo que el del título al que apunta el enlace."
+msgstr "Se trata de enlaces a lugares dentro de una página y suelen hacerse con la sintaxis de referencia cruzada:  `\\<<Encabezado de destino>>`, y a veces con la forma `\\<<TEncabezado de destino,texto mostrado>>` cuando el texto a mostrar no debe ser el mismo que el del encabezado al que apunta el enlace."
 
 #. type: Plain text
-#: en/modules/ROOT/pages/translations.adoc:51
+#: en/modules/ROOT/pages/translations.adoc:53
 msgid "Therefore, a crossreference translation is like this:"
 msgstr "Por lo tanto, una traducción cruzada es así:"
 
 #. type: delimited block -
-#: en/modules/ROOT/pages/translations.adoc:55
+#: en/modules/ROOT/pages/translations.adoc:57
 #, no-wrap
 msgid "click on the button labelled \"Add\" to open the <<Data Source selection page>>.\n"
-msgstr "click on the button labelled \"Add\" to open the <<Data Source selection page>>.\n"
+msgstr "clic en el botón \"Agregar\" para abrir la <<Página de selección de la fuente de datos>>.\n"
 
 #. type: delimited block -
-#: en/modules/ROOT/pages/translations.adoc:57
+#: en/modules/ROOT/pages/translations.adoc:59
 #, no-wrap
 msgid "clic en el botón \"Agregar\" para abrir la <<Página de selección del Conjunto de Datos>>.\n"
 msgstr "clic en el botón \"Agregar\" para abrir la <<Página de selección del Conjunto de Datos>>.\n"
 
 #. type: Title ===
-#: en/modules/ROOT/pages/translations.adoc:59
+#: en/modules/ROOT/pages/translations.adoc:61
 #, no-wrap
 msgid "Different-page crossreferences"
 msgstr "Referencias cruzadas de diferentes páginas"
 
 #. type: Plain text
-#: en/modules/ROOT/pages/translations.adoc:62
+#: en/modules/ROOT/pages/translations.adoc:64
 msgid "The simplest links to different pages are to the top of the linked page.  These have the form `\\xref:filename.adoc[display text]`.  Only the display text should be translated, the file name does not change:"
 msgstr "Los enlaces más sencillos a las diferentes páginas se encuentran en la parte superior de la página enlazada. Tienen la forma `\\xref:filename.adoc[texto a mostrar]`. Sólo debe traducirse el texto a mostrar, el nombre del archivo no cambia:"
 
 #. type: delimited block -
-#: en/modules/ROOT/pages/translations.adoc:66
-#, no-wrap
-msgid "refer to the xref:doi-workflow.adoc[DOI Workflows] page\n"
-msgstr ""
-
-#. type: delimited block -
 #: en/modules/ROOT/pages/translations.adoc:68
 #, no-wrap
+msgid "refer to the xref:doi-workflow.adoc[DOI Workflows] page\n"
+msgstr "consulte la página xref:doi-workflow.adoc[Flujos de trabajo para el DOI]\n"
+
+#. type: delimited block -
+#: en/modules/ROOT/pages/translations.adoc:70
+#, no-wrap
 msgid "consulte la página de xref:doi-workflow.adoc[flujo de trabajo de los DOIs].\n"
-msgstr ""
+msgstr "consulte la página de xref:doi-workflow.adoc[flujo de trabajo de los DOIs].\n"
 
 #. type: Plain text
-#: en/modules/ROOT/pages/translations.adoc:71
+#: en/modules/ROOT/pages/translations.adoc:73
 msgid "More complicated are links to a specific section within another page.  These must use the link target, which is generated automatically on each heading: spaces in the heading text are replaced with hyphens (`-`) and the result is converted to lower case.  In a web browser, they are shown in the URL bar following a `#`, in the \"Contents\" menu, or with the \"§\" symbol next to a heading."
 msgstr "Los enlaces a una sección específica dentro de otra página son más complicados. Estos deben utilizar el enlace objetivo, que se genera automáticamente en cada encabezado: los espacios en el texto del encabezado se sustituyen por guiones (`-`) y el resultado se convierte a minúsculas. En un navegador web, se muestran en la barra de URL tras un `#`, en el menú \"Contenido\" o con el símbolo \"§\" junto a un encabezado."
 
 #. type: Plain text
-#: en/modules/ROOT/pages/translations.adoc:73
+#: en/modules/ROOT/pages/translations.adoc:75
 msgid "The crossreference is then written as `\\xref:filename.adoc#link-target[display text]`, for example `\\xref:manage-resources.adoc#resource-managers[read about resource managers]` shows as xref:manage-resources.adoc#resource-managers[read about resource managers]."
-msgstr "La referencia cruzada se escribe entonces como \\xref:filename.adoc#link-target[texto a mostrar]`, por ejemplo `\\xref:manage-resources.adoc#resource-managers[leer sobre gestores de recursos]` se muestra como xref:manage-resources.adoc#resource-managers[leer sobre gestores de recursos]."
+msgstr "La referencia cruzada se escribe entonces como `\\xref:filename.adoc#link-target[texto a mostrar]`, por ejemplo `\\xref:manage-resources.adoc#resource-managers[leer sobre gestores de recursos]` se muestra como xref:manage-resources.adoc#resource-managers[leer sobre gestores de recursos]."
 
 #. type: Plain text
-#: en/modules/ROOT/pages/translations.adoc:75
+#: en/modules/ROOT/pages/translations.adoc:77
 msgid "An English heading `Source Data` has the link target `source-data`.  The Spanish translation of the heading, `Conjunto de datos`, has the target `conjunto-de-datos`."
 msgstr "Un encabezado en inglés, `Source Data`, tiene como enlace objetivo `source-data`.  La traducción al español del encabezado, `Conjunto de datos`, tiene como enlace objetivo `conjunto-de-datos`."
 
 #. type: delimited block -
-#: en/modules/ROOT/pages/translations.adoc:79
-#, no-wrap
-msgid "Files can be uploaded … when xref:manage-resources.adoc#source-data[adding new source data files].\n"
-msgstr ""
-
-#. type: delimited block -
 #: en/modules/ROOT/pages/translations.adoc:81
 #, no-wrap
+msgid "Files can be uploaded … when xref:manage-resources.adoc#source-data[adding new source data files].\n"
+msgstr "Los archivos se pueden cargar ... cuando xref:manage-resources.adoc#source-data[se agregan nuevos archivos de datos fuente].\n"
+
+#. type: delimited block -
+#: en/modules/ROOT/pages/translations.adoc:83
+#, no-wrap
 msgid "La carga de archivos al se puede … cuando se xref:manage-resources.adoc#conjunto-de-datos[agregan nuevos archivos de conjuntos de datos].\n"
-msgstr ""
+msgstr "La carga de archivos al se puede … cuando se xref:manage-resources.adoc#conjunto-de-datos[agregan nuevos archivos de conjuntos de datos].\n"
 
 #. type: Title ===
-#: en/modules/ROOT/pages/translations.adoc:83
+#: en/modules/ROOT/pages/translations.adoc:85
 #, no-wrap
 msgid "Images and downloads"
 msgstr "Imágenes y descargas"
 
 #. type: Plain text
-#: en/modules/ROOT/pages/translations.adoc:86
+#: en/modules/ROOT/pages/translations.adoc:88
 msgid "Some screenshot images can be translated, and others (without any English text) can be the same across all languages.  The default is for the same image to be used in all languages.  A different image must be uploaded in https://github.com/gbif/ipt[GitHub].  Create an image with the same filename and path, except with `en` changed to the target language."
 msgstr "Algunas imágenes de capturas de pantalla pueden traducirse y otras (sin texto en inglés) pueden ser las mismas en todos los idiomas. Por defecto, se utiliza la misma imagen en todos los idiomas. Se debe subir una imagen diferente en https://github.com/gbif/ipt[GitHub].  Cree una imagen con el mismo nombre de archivo y la misma ruta, excepto con `en` cambiado al idioma de destino."
 
 #. type: Plain text
-#: en/modules/ROOT/pages/translations.adoc:88
+#: en/modules/ROOT/pages/translations.adoc:90
 msgid "For example, the default (English) image shown on the xref:home.adoc[home menu page] is stored in GitHub at https://github.com/gbif/ipt/blob/master/docs/en/modules/ROOT/assets/images/ipt2/home/IPTHome.png[`docs/en/modules/ROOT/assets/images/ipt2/home/IPTHome.png`], and its Spanish translation is at https://github.com/gbif/ipt/blob/master/docs/es/modules/ROOT/assets/images/ipt2/home/IPTHome.png[`docs/es/modules/ROOT/assets/images/ipt2/home/IPTHome.png`]."
 msgstr "Por ejemplo, la imagen por defecto (Inglés) que se muestra en xref:home.adoc[página de menú de inicio] se guarda en GitHub en https://github.com/gbif/ipt/blob/master/docs/en/modules/ROOT/assets/images/ipt2/home/IPTHome.png[`docs/en/modules/ROOT/assets/images/ipt2/home/IPTHome.png`] y su traducción a español se encuentra en https://github.com/gbif/ipt/blob/master/docs/es/modules/ROOT/assets/images/ipt2/home/IPTHome.png[`docs/es/modules/ROOT/assets/images/ipt2/home/IPTHome.png`]."
 
 #. type: Plain text
-#: en/modules/ROOT/pages/translations.adoc:90
+#: en/modules/ROOT/pages/translations.adoc:92
 msgid "The syntax to include this image in the manual, `image::ipt2/home/IPTHome.png[]`, does not require translation."
 msgstr "La sintaxis para incluir esta imagen en el manual, `image::ipt2/home/IPTHome.png[]`, no requiere traducción."
 
 #. type: Title ===
-#: en/modules/ROOT/pages/translations.adoc:91
+#: en/modules/ROOT/pages/translations.adoc:93
+#, no-wrap
+msgid "Japanese, Chinese and Korean"
+msgstr "Japonés, Chino y Coreano."
+
+#. type: Plain text
+#: en/modules/ROOT/pages/translations.adoc:96
+msgid "These languages do not use spaces between words, so some abbreviated syntax used in the English text will not work."
+msgstr "Estos idiomas no utilizan espacios entre palabras, por lo que la sintaxis abreviada usada en inglés o español no funcionarán."
+
+#. type: Plain text
+#: en/modules/ROOT/pages/translations.adoc:98
+msgid "Plain hyperlinks must be prefixed with `link:`.  The short form without `link:` only works if there is a space before the `https:` or `http:`."
+msgstr "Los hipervínculos simples deben tener el prefijo `link:`. La forma abreviada sin `link:` solo funciona si hay un espacio antes de `https:` o `http:`"
+
+#. type: delimited block -
+#: en/modules/ROOT/pages/translations.adoc:102
+#, no-wrap
+msgid "Be sure to sign up to the https://lists.gbif.org/mailman/listinfo/ipt/[IPT Mailing List], which serves as a support group for IPT users.\n"
+msgstr "Asegúrese de inscribirse en https://lists.gbif.org/mailman/listinfo/ipt/[Lista de correo del IPT], que sirve como grupo de apoyo para los usuarios de IPT.\n"
+
+#. type: delimited block -
+#: en/modules/ROOT/pages/translations.adoc:104
+#, no-wrap
+msgid "IPTユーザーのサポートグループであるlink:https://lists.gbif.org/mailman/listinfo/ipt/[IPTメーリングリスト]に必ずご登録ください。\n"
+msgstr ""
+
+#. type: Plain text
+#: en/modules/ROOT/pages/translations.adoc:107
+#, no-wrap
+msgid "*Bold*, _italic_ and `monospace` text formatted with single `*`, `_` and `+++`+++` characters only works if there are spaces outside those characters.  Where there are no spaces, the characters must be doubled:\n"
+msgstr "El texto *Negrita*, _cursiva_ y `monoespaciado` formateado con caracteres `*`, `_` y `++++`+++` solo funciona si hay espacios por fuera de esos caracteres. Donde no haya espacios, los caracteres deben ser duplicados:\n"
+
+#. type: delimited block -
+#: en/modules/ROOT/pages/translations.adoc:111
+#, no-wrap
+msgid "Double click the executable to start installation wizard. *Do* fill information to specify *the connector port, Tomcat administrator login credentials* without changing the Roles. If you forget to provide the credential information, you’ll have to edit the `conf/tomcat-users.xml` file from the Tomcat configuration directory, then restart Tomcat to flush the privileges. (Note that when testing this scenario, the default suggested *connector port* settings worked).\n"
+msgstr "Haga doble clic en el ejecutable para iniciar el asistente de instalación. *Llene la información para especificar *el puerto del conector, las credenciales de inicio de sesión del administrador de Tomcat* sin cambiar los Roles. Si olvida proporcionar la información de las credenciales, tendrá que editar el archivo `conf/tomcat-users.xml` del directorio de configuración de Tomcat, y luego reiniciar Tomcat para eliminar los privilegios. (Tenga en cuenta que al probar este escenario, la configuración por defecto sugerida de *puerto conector* funcionó).\n"
+
+#. type: delimited block -
+#: en/modules/ROOT/pages/translations.adoc:113
+#, no-wrap
+msgid "実行ファイルをダブルクリックすると、インストールウィザードが起動します。ロールを変更せずに、コネクタポート、**Tomcat管理者ログイン情報**を**入力**します。資格情報を記入し忘れた場合は、Tomcatの設定ディレクトリから``conf/tomcat-users.xml``ファイルを編集し、Tomcatを再起動して、権限をフラッシュする必要があります。(このシナリオをテストしたとき、デフォルトで提案された**コネクタ・ポート**設定が機能したことに注意してください）。\n"
+msgstr ""
+
+#. type: Title ===
+#: en/modules/ROOT/pages/translations.adoc:115
 #, no-wrap
 msgid "Languages"
 msgstr "Idiomas"
 
 #. type: Plain text
-#: en/modules/ROOT/pages/translations.adoc:94
-msgid "Spanish (partial)"
-msgstr "Español (parcial)"
+#: en/modules/ROOT/pages/translations.adoc:118
+msgid "Spanish (complete)"
+msgstr "Español (completo)"
 
 #. type: Plain text
-#: en/modules/ROOT/pages/translations.adoc:95
+#: en/modules/ROOT/pages/translations.adoc:119
+msgid "Japanese (complete)"
+msgstr "Japonés (completo)"
+
+#. type: Plain text
+#: en/modules/ROOT/pages/translations.adoc:120
 msgid "Traditional Chinese (started)"
 msgstr "Chino tradicional (iniciado)"
 
 #. type: Plain text
-#: en/modules/ROOT/pages/translations.adoc:96
+#: en/modules/ROOT/pages/translations.adoc:121
 msgid "If you want to translate the user manual into another language, please email helpdesk@gbif.org.  It is not necessary to translate the entire manual – untranslated sections will be shown in English."
 msgstr "Si desea traducir el manual de usuario a otro idioma, envíe un correo electrónico a helpdesk@gbif.org. No es necesario traducir todo el manual: las secciones no traducidas se mostrarán en inglés."
 

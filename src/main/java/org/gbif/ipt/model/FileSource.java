@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,8 +29,6 @@ public interface FileSource extends Source, RowIterable, SourceWithHeader {
   void setFile(File file);
 
   Date getLastModified();
-
-  void setLastModified(Date lastModified);
 
   long getFileSize();
 

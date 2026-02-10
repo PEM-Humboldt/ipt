@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,13 +18,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.gbif.ipt.IptBaseTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class MapUtilsTest {
+public class MapUtilsTest extends IptBaseTest {
 
   private Map<String, String> map;
 

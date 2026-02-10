@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,12 +13,14 @@
  */
 package org.gbif.ipt.task;
 
+import org.gbif.ipt.IptBaseTest;
+import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.mock.MockVocabulariesManager;
 import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.User;
 import org.gbif.ipt.service.admin.VocabulariesManager;
-import org.gbif.metadata.eml.Eml;
-import org.gbif.metadata.eml.EmlFactory;
+import org.gbif.metadata.eml.ipt.EmlFactory;
+import org.gbif.metadata.eml.ipt.model.Eml;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -39,16 +39,19 @@ import com.lowagie.text.DocumentException;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.rtf.RtfWriter2;
 
-public class Eml2RtfTest {
+import static org.mockito.Mockito.mock;
 
+public class Eml2RtfTest extends IptBaseTest {
+
+  private AppConfig mockedAppConfig;
   private VocabulariesManager mockedVocabManager;
   private Eml2Rtf eml2Rtf;
 
   @BeforeEach
   public void setUp() throws ParserConfigurationException, SAXException {
-    eml2Rtf = new Eml2Rtf();
+    mockedAppConfig = mock(AppConfig.class);
     mockedVocabManager = new MockVocabulariesManager();
-    eml2Rtf.setVocabManager(mockedVocabManager);
+    eml2Rtf = new Eml2Rtf(mockedAppConfig, mockedVocabManager);
   }
 
   @Test

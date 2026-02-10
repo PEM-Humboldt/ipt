@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,8 +28,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
-
-import com.google.inject.Singleton;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -110,7 +106,6 @@ public class ReadRSSTest {
     return rss;
   }
 
-  @Singleton
   private static SAXParserFactory provideNsAwareSaxParserFactory() {
     SAXParserFactory saxf = null;
     try {

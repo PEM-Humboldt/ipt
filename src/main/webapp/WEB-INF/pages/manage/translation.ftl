@@ -1,138 +1,384 @@
 <#-- @ftlvariable name="" type="org.gbif.ipt.action.manage.TranslationAction" -->
-<#escape x as x?html>
-    <#include "/WEB-INF/pages/inc/header.ftl">
-    <title><@s.text name="manage.translation.title"/></title>
-    <script src="${baseURL}/js/jconfirmation.jquery.js"></script>
+<#include "/WEB-INF/pages/inc/header.ftl">
+<title><@s.text name="manage.translation.title"/></title>
+<script src="${baseURL}/js/jconfirmation.jquery.js"></script>
+<link rel="stylesheet" href="${baseURL}/styles/select2/select2-4.0.13.min.css">
+<link rel="stylesheet" href="${baseURL}/styles/select2/select2-bootstrap4.min.css">
+<script src="${baseURL}/js/select2/select2-4.0.13.full.min.js"></script>
 
-    <script>
-        $(document).ready(function(){
-            $('.confirm').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>", buttonType: "danger"});
-            $("table input").focus(function() {
-                $(this).parent().parent().addClass("highlight");
-            });
-            $("table input").blur(function() {
-                $(this).parent().parent().removeClass("highlight")
-            });
-            //Hack needed for Internet Explorer X.*x
-            $('.reload').each(function() {
-                $(this).click(function() {
-                    window.location = $(this).parent('a').attr('href');
-                });
-            });
-            $('.automap').each(function() {
-                $(this).click(function() {
-                    window.location = $(this).parent('a').attr('href');
-                });
-            });
-            $('.cancel').each(function() {
-                $(this).click(function() {
-                    window.location = $(this).parent('a').attr('href');
-                });
-            });
-            // end hack
-            <#-- use vocabulary -->
-            <#if (vocabTerms?size>0)>
-            var vocab = [<#list vocabTerms?keys as code>{"value":"${code?replace('"','\"')}","label":"${vocabTerms[code]}"},</#list>];
-            $("#translation input").autocomplete({
-                source: vocab
-            })
-            </#if>
+<script>
+    $(document).ready(function(){
+        $('.confirm').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>", buttonType: "danger"});
+        $("table input").focus(function() {
+            $(this).parent().parent().addClass("highlight");
         });
-    </script>
-    <#assign currentMenu = "manage"/>
-    <#include "/WEB-INF/pages/inc/menu.ftl">
-    <#include "/WEB-INF/pages/macros/forms.ftl"/>
-    <#include "/WEB-INF/pages/macros/manage/translation_buttons.ftl"/>
+        $("table input").blur(function() {
+            $(this).parent().parent().removeClass("highlight")
+        });
+        //Hack needed for Internet Explorer X.*x
+        $('.reload').each(function() {
+            $(this).click(function() {
+                window.location = $(this).parent('a').attr('href');
+            });
+        });
+        $('.automap').each(function() {
+            $(this).click(function() {
+                window.location = $(this).parent('a').attr('href');
+            });
+        });
+        $('.cancel').each(function() {
+            $(this).click(function() {
+                window.location = $(this).parent('a').attr('href');
+            });
+        });
+        // end hack
 
-<main class="container">
-    <form class="topForm" action="translation.do" method="post">
-        <div class="my-3 p-3 bg-body rounded shadow-sm">
+        $('#plus').click(function (e) {
+            e.preventDefault();
+            showAddNewTranslationModal();
+        });
 
-            <#include "/WEB-INF/pages/inc/action_alerts.ftl">
+        function addNewTranslation() {
+            // get selected option from dropdown
+            var selected = $('#addNewTranslation').find(":selected");
+            // get selected option's id
+            var optionId = selected.attr("id");
 
-            <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header fw-400 text-center">
-                <@s.text name="manage.translation.title"/>
-            </h5>
+            if (optionId) {
+                // get index from id (e.g. option-k2, k2 is the index)
+                var elementIndex = optionId.split("option-")[1];
+                // get value from option
+                var value = selected.val()
 
-            <p class="mx-md-4 mx-2"><@s.text name="manage.translation.intro"/></p>
+                // add new line (item)
+                addNewItem(value, elementIndex);
+            }
+        }
+
+        function addNewItem(value, index) {
+            // clone template and temporarily hide it
+            var newItem = $('#baseItem').clone();
+            newItem.hide();
+
+            // add it to translation div
+            $("#translation").append(newItem)
+
+            // show item
+            newItem.slideDown('slow');
+
+            // set values and properties
+            setItemValueAndIndex(newItem, value, index);
+        }
+
+        function setItemValueAndIndex(item, value, index) {
+            // set id with index
+            item.attr("id", "item-" + index);
+            // set id to item's remove link
+            $("#item-" + index + " .removeLink").attr("id", "removeLink-" + index);
+            // set value to input
+            $("#item-" + index + " .value").val(value);
+            // set name attribute of the translated input
+            $("#item-" + index + " .translated-value").attr("name", "tmap['" + index + "']");
+            // remove this option from dropdown - translation already added
+            $("#option-" + index).remove();
+
+            // initialize remove link
+            $("#removeLink-" + index).click(function (e) {
+                e.preventDefault();
+                remove(e);
+            });
+        }
+
+        $(".removeLink").click(function (e) {
+            e.preventDefault();
+            remove(e);
+        });
+
+        function remove(e) {
+            e.preventDefault();
+
+            // get clicked target
+            var $target = $(e.target);
+            // make sure it's a link
+            if (!$target.is('a')) {
+                $target = $(e.target).closest('a');
+            }
+
+            // get element index
+            var index = $target.attr("id").split("-")[1];
+
+            // remove element by index
+            $('#item-' + index).slideUp('slow', function () {
+                // find deleted value and return it back to select options
+                var value = $(this).find("input.value").val();
+                var o = new Option(value, value);
+                o.id = "option-" + index;
+                $("#addNewTranslation").append(o);
+
+                // remove
+                $(this).remove();
+            });
+        }
+
+        function showAddNewTranslationModal() {
+            var dialogWindow = $("#dialog");
+
+            $("#add-button").off('click').on("click", function () {
+                addNewTranslation();
+            });
+
+            dialogWindow.modal('show');
+        }
+
+        $("#addNewTranslation").select2({
+            placeholder: '${action.getText("manage.translation.select")?js_string}',
+            dropdownParent: $('#dialog'),
+            language: {
+                noResults: function () {
+                    return '${selectNoResultsFound}';
+                }
+            },
+            width: "100%",
+            allowClear: true,
+            minimumResultsForSearch: 15,
+            dropdownCssClass: 'text-smaller',
+            theme: 'bootstrap4'
+        });
+
+    });
+</script>
+<#assign currentMenu = "manage"/>
+<#include "/WEB-INF/pages/inc/menu.ftl">
+<#include "/WEB-INF/pages/macros/forms.ftl"/>
+
+    <div class="container px-0">
+        <#include "/WEB-INF/pages/inc/action_alerts.ftl">
+    </div>
+
+    <div class="container-fluid border-bottom">
+        <div class="container bg-body border rounded-2 mb-4">
+            <div class="container my-3 p-3">
+                <div class="text-center fs-smaller">
+                    <nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+                        <ol class="breadcrumb justify-content-center mb-0">
+                            <li class="breadcrumb-item"><a href="${baseURL}/manage/"><@s.text name="breadcrumb.manage"/></a></li>
+                            <li class="breadcrumb-item"><a href="resource?r=${resource.shortname}"><@s.text name="breadcrumb.manage.overview"/></a></li>
+                            <li class="breadcrumb-item"><a href="mapping.do?r=${resource.shortname}&id=${property.extension.rowType?url}&mid=${mid}"><@s.text name="breadcrumb.manage.overview.mapping"/></a></li>
+                            <li class="breadcrumb-item active" aria-current="page"><@s.text name="breadcrumb.manage.overview.mapping.translation"/></li>
+                        </ol>
+                    </nav>
+                </div>
+
+                <div class="text-center">
+                    <h1 class="pb-2 mb-0 pt-2 text-gbif-header fs-2 fw-normal">
+                        <@s.text name="manage.translation.title"/>
+                    </h1>
+                </div>
+
+                <div class="text-center fs-smaller">
+                    <a href="resource.do?r=${resource.shortname}" title="${resource.title!resource.shortname}">${resource.title!resource.shortname}</a>
+                </div>
+
+                <div class="mt-2 text-center">
+                    <div>
+                        <@s.submit form="translation" cssClass="button btn btn-sm btn-outline-gbif-primary top-button mt-1" name="save" key="button.save"/>
+
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button id="btnGroup" type="button" class="btn btn-sm btn-outline-gbif-primary dropdown-toggle align-self-start top-button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <@s.text name="button.options"/>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="btnGroup" style="">
+                                <li>
+                                    <a class="button btn btn-sm btn-outline-secondary w-100 dropdown-button" href='translationReload.do?r=${resource.shortname}&mapping=${property.extension.rowType?url}&term=${property.qualname?url}&mid=${mid}&rowtype=${property.extension.rowType?url}'>
+                                        <@s.text name="button.reload"/>
+                                    </a>
+                                </li>
+                                <#if property.vocabulary?has_content>
+                                    <li>
+                                        <a class="button btn btn-sm btn-outline-secondary w-100 dropdown-button" role="button" href='translationAutomap.do?r=${resource.shortname}&mapping=${property.extension.rowType?url}&rowtype=${property.extension.rowType?url}&term=${property.qualname?url}&mid=${mid}'>
+                                            <@s.text name="button.automap"/>
+                                        </a>
+                                    </li>
+                                </#if>
+                                <li>
+                                    <@s.submit form="translation" cssClass="confirm btn btn-sm btn-outline-gbif-danger w-100 dropdown-button" name="delete" key="button.delete"/>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <a class="button btn btn-sm btn-outline-secondary top-button mt-1" role="button" href="mapping.do?r=${resource.shortname}&id=${property.extension.rowType?url}&mid=${mid}">
+                            <@s.text name='button.cancel'/>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="container main-content-container">
+        <div class="my-3 p-3">
+            <p><@s.text name="manage.translation.intro"/></p>
         </div>
 
-        <div class="my-3 p-3 bg-body rounded shadow-sm">
-            <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header fw-400">
+        <div class="my-3 p-3">
+            <h5 class="pb-2 mb-2 pt-2 text-gbif-header-2 fw-400">
                 <@s.text name="manage.translation.property"/> <em>${property.name}</em>
             </h5>
 
-            <p class="mx-md-4 mx-2">&quot;${property.description!}&quot;</p>
+            <span class="fst-italic">${property.description!}</span>
 
             <#if property.vocabulary?has_content>
-                <p class="mx-md-4 mx-2">
-                    <strong><@s.text name="manage.translation.vocabulary.required"/></strong>:
-                    <@s.text name="manage.translation.vocabulary.required.intro"/>
-                </p>
-                <p class="mx-md-4 mx-2">
-                    <em>${property.vocabulary.title!property.vocabulary.uriString}</em>:
+                <div class="callout callout-info text-smaller">
+                    <strong><@s.text name="manage.translation.vocabulary.required"/></strong>
+                </div>
+                <p>
                     <a href="vocabulary.do?id=${property.vocabulary.uriString}" class="no-text-decoration" target="_blank">
                         <i class="bi bi-book"></i>
+                        <span>${property.vocabulary.title!property.vocabulary.uriString}</span>
                     </a>
-                    &quot;${property.vocabulary.description!}&quot;
+                </p>
+                <p>
+                    <span class="fst-italic">${property.vocabulary.description!}</span>
                 </p>
             </#if>
-
-            <!-- buttons loaded from macro -->
-            <@buttons/>
         </div>
 
-        <div class="my-3 p-3 bg-body rounded shadow-sm">
-            <input type="hidden" name="r" value="${resource.shortname}"/>
-            <input type="hidden" name="rowtype" value="${property.extension.rowType}"/>
-            <input type="hidden" name="mid" value="${mid}"/>
-            <input type="hidden" name="term" value="${property.qualname}"/>
+        <div class="my-3 p-3">
+            <form id="translation" class="translation-form" action="translation.do" method="post">
+                <input type="hidden" name="r" value="${resource.shortname}"/>
+                <input type="hidden" name="rowtype" value="${property.extension.rowType}"/>
+                <input type="hidden" name="mid" value="${mid}"/>
+                <input type="hidden" name="term" value="${property.qualname}"/>
 
-            <div class="mx-md-4 mx-2 table-responsive">
-                <table id="translation" class="simple table">
-                <colgroup>
-                    <col width="400">
-                    <!-- do not show column if term does not relate to vocabulary -->
-                    <#if (vocabTerms?size>0)>
-                        <col width="16">
-                    </#if>
-                    <col width="400">
-                </colgroup>
-                <tr>
-                    <th><@s.text name="manage.translation.source.value"/></th>
-                    <!-- do not show column if term does not relate to vocabulary -->
-                    <#if (vocabTerms?size>0)>
-                        <th></th>
-                    </#if>
-                    <th><@s.text name="manage.translation.translated.value"/></th>
-                </tr>
-                <#list sourceValuesMap?keys as k>
-                    <tr>
-                        <td>${sourceValuesMap.get(k)!}</td>
-                        <!-- do not show column if term does not relate to vocabulary -->
-                        <#if (vocabTerms?size>0)>
-                            <td>
-                                <#if vocabTerms[tmap.get(k)!k]??>
-                                    <i class="bi bi-check-circle text-gbif-primary"></i>
+                <div id="translation">
+                    <div class="row g-2 border-bottom pb-2">
+                        <div class="col-6">
+                            <strong><@s.text name="manage.translation.source.value"/></strong>
+                        </div>
+
+                        <div class="col-6" >
+                            <strong><@s.text name="manage.translation.translated.value"/></strong>
+                        </div>
+                    </div>
+
+                    <#list sourceValuesMap?keys as k>
+                        <#if (tmap.get(k))??>
+                            <div id="item-${k}" class="item row g-2 border-bottom pb-2">
+                                <div class="d-flex justify-content-end mt-3">
+                                    <a id="removeLink-${k}" class="removeLink text-smaller" href="">
+                                            <span>
+                                                <svg viewBox="0 0 24 24" class="link-icon">
+                                                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5-1-1h-5l-1 1H5v2h14V4h-3.5z"></path>
+                                                </svg>
+                                            </span>
+                                        <span><@s.text name="manage.translation.remove"/></span>
+                                    </a>
+                                </div>
+
+                                <div class="col-6">
+                                    <input type="text" class="value form-control" value="${sourceValuesMap.get(k)!}" disabled/>
+                                </div>
+
+                                <#if (vocabTermsSize>0)>
+                                    <div class="col-6">
+                                        <select name="tmap['${k}']" class="form-select">
+                                            <option value="" disabled selected><@s.text name="manage.translation.vocabulary"/></option>
+                                            <#list vocabTermsKeys as code>
+                                                <option value="${code?replace('"','\"')}" <#if tmap.get(k) == code>selected</#if> >
+                                                    ${vocabTerms[code]}
+                                                </option>
+                                            </#list>
+                                        </select>
+                                    </div>
                                 <#else>
-                                    <i class="bi bi-exclamation-circle text-gbif-danger"></i>
+                                    <div class="col-6">
+                                        <input type="text" placeholder="<@s.text name='manage.translation.empty.value'/>" class="translatedValue form-control" name="tmap['${k}']" value="${tmap.get(k)!}"/>
+                                    </div>
                                 </#if>
-                            </td>
+                            </div>
                         </#if>
-                        <td>
-                            <input type="text" class="form-control" name="tmap['${k}']" value="${tmap.get(k)!}"/>
-                        </td>
-                    </tr>
-                </#list>
-            </table>
+                    </#list>
+                </div>
+            </form>
+
+            <div class="row g-2 mt-0 text-smaller">
+                <div class="col-12">
+                    <div class="d-flex">
+                        <a id="plus" href="">
+                            <span>
+                                <svg viewBox="0 0 24 24" class="link-icon">
+                                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
+                                </svg>
+                            </span>
+                            <span><@s.text name="manage.translation.addNew"/></span>
+                        </a>
+                    </div>
+                </div>
             </div>
-
-            <!-- buttons loaded from macro -->
-            <@buttons />
         </div>
-    </form>
+    </main>
 
-</main>
+<div id="baseItem" class="item row g-2 border-bottom pb-2" style="display:none">
+    <div class="d-flex justify-content-end mt-3">
+        <a id="removeLink" class="removeLink text-smaller" href="">
+            <span>
+                <svg viewBox="0 0 24 24" class="link-icon">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5-1-1h-5l-1 1H5v2h14V4h-3.5z"></path>
+                </svg>
+            </span>
+            <span><@s.text name="manage.translation.remove"/></span>
+        </a>
+    </div>
+    <div class="col-6">
+        <input type="text" class="value form-control" value="" disabled/>
+    </div>
 
-    <#include "/WEB-INF/pages/inc/footer.ftl">
-</#escape>
+    <#if (vocabTermsSize>0)>
+        <div class="col-6">
+            <select name="tmap" class="translated-value form-select">
+                <option value="" disabled selected><@s.text name="manage.translation.vocabulary"/></option>
+                <#list vocabTermsKeys as code>
+                    <option value="${code?replace('"','\"')}">
+                        ${vocabTerms[code]}
+                    </option>
+                </#list>
+            </select>
+        </div>
+    <#else>
+        <div class="col-6" >
+            <input type="text" placeholder="<@s.text name='manage.translation.empty.value'/>" class="translated-value form-control" name="tmap" value=""/>
+        </div>
+    </#if>
+</div>
+
+<div id="dialog" class="modal fade" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-confirm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header flex-column">
+                <img src="${baseURL}/images/logo-modal-success.png" alt="Success" class="modal-image" />
+            </div>
+            <div class="modal-body">
+                <h5 class="modal-title w-100" id="staticBackdropLabel"><@s.text name="manage.translation.title"/></h5>
+                <div>
+                    <select name="addNewTranslation" id="addNewTranslation" class="form-select">
+                        <option value="" disabled selected><@s.text name="manage.translation.select"/></option>
+                        <#list sourceValuesMap as key, val>
+                            <#if tmap?? && tmap['${key}']??>
+                            <#else>
+                                <option id="option-${key}" value="${val}">
+                                    ${val}
+                                </option>
+                            </#if>
+                        </#list>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button id="add-button" type="button" class="btn btn-sm btn-outline-gbif-primary"><@s.text name="button.add"/></button>
+                <button id="cancel-button" type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal"><@s.text name="button.cancel"/></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<#include "/WEB-INF/pages/inc/footer.ftl">

@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +13,7 @@
  */
 package org.gbif.ipt.struts2;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.gbif.ipt.action.BaseAction;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.model.Resource;
@@ -25,11 +24,11 @@ import org.gbif.ipt.service.manage.ResourceManager;
 
 import java.math.BigDecimal;
 import java.util.Map;
+import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.struts2.dispatcher.Parameter;
 
-import com.google.inject.Inject;
 import com.opensymphony.xwork2.ActionInvocation;
 import com.opensymphony.xwork2.interceptor.AbstractInterceptor;
 
@@ -41,7 +40,6 @@ public class PrivateDeletedResourceInterceptor extends AbstractInterceptor {
 
   private static final long serialVersionUID = 2340800191217429210L;
 
-  @Inject
   private ResourceManager resourceManager;
 
   @Override
@@ -73,7 +71,7 @@ public class PrivateDeletedResourceInterceptor extends AbstractInterceptor {
             } else if (history.getPublicationStatus() == PublicationStatus.DELETED) {
               // user authorised?
               if (user == null || !isAuthorized(user, resource)) {
-                return BaseAction.NOT_AVAILABLE;
+                return BaseAction.GONE;
               }
             }
           }
@@ -83,18 +81,24 @@ public class PrivateDeletedResourceInterceptor extends AbstractInterceptor {
         }
       }
 
-      // is the resource currently private, or has it been deleted?
-      if (PublicationStatus.PRIVATE == resource.getStatus()) {
+      if (PublicationStatus.DELETED == resource.getStatus()) {
+        // user authorised?
+        if (user == null || !isAuthorized(user, resource)) {
+          return BaseAction.GONE;
+        }
+      }
+
+      PublicationStatus resourceStatus = CollectionUtils.isNotEmpty(resource.getVersionHistory())
+          ? resource.getVersionHistory().get(0).getPublicationStatus()
+          : resource.getStatus();
+
+      if (PublicationStatus.PRIVATE == resourceStatus) {
         // user authorised?
         if (user == null || !isAuthorized(user, resource)) {
           return BaseAction.NOT_ALLOWED;
         }
-      } else if (PublicationStatus.DELETED == resource.getStatus()) {
-        // user authorised?
-        if (user == null || !isAuthorized(user, resource)) {
-          return BaseAction.NOT_AVAILABLE;
-        }
       }
+
     }
     return invocation.invoke();
   }
@@ -127,5 +131,10 @@ public class PrivateDeletedResourceInterceptor extends AbstractInterceptor {
     }
 
     return version;
+  }
+
+  @Inject
+  public void setResourceManager(ResourceManager resourceManager) {
+    this.resourceManager = resourceManager;
   }
 }

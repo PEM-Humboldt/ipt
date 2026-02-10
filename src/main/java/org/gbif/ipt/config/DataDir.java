@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,6 +25,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
+import java.util.stream.Stream;
 
 import javax.validation.constraints.NotNull;
 
@@ -35,20 +34,27 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.inject.Singleton;
+import static org.gbif.ipt.config.Constants.COL_DP;
+import static org.gbif.ipt.config.Constants.DATA_PACKAGE_EXTENSION;
+import static org.gbif.ipt.config.Constants.DATA_PACKAGE_NAME;
+import static org.gbif.ipt.config.Constants.DWC_ARCHIVE_EXTENSION;
+import static org.gbif.ipt.config.Constants.DWC_ARCHIVE_NAME;
 
 /**
  * A very simple utility class to encapsulate the basic layout of the data directory and to configure & persist the
  * path for that directory and make it available to the entire application.
  */
-@Singleton
 public class DataDir {
 
   public static final String LOGGING_DIR = "logs";
   public static final String CONFIG_DIR = "config";
   public static final String RESOURCES_DIR = "resources";
   public static final String TMP_DIR = "tmp";
+  public static final String PERSISTENCE_FILENAME = "resource.xml";
+  public static final String INFERRED_METADATA_FILENAME = "inferredMetadata.xml";
   public static final String EML_XML_FILENAME = "eml.xml";
+  public static final String FRICTIONLESS_METADATA_FILENAME = "datapackage.json";
+  public static final String COL_DP_METADATA_FILENAME = "metadata.yaml";
   public static final String DWCA_FILENAME = "dwca.zip";
   public static final String PUBLICATION_LOG_FILENAME = "publication.log";
   private static final Random RANDOM = new Random();
@@ -154,13 +160,6 @@ public class DataDir {
     }
     org.gbif.ipt.utils.FileUtils.copyStreamToFile(input, configFile(AppConfig.DATADIR_PROPFILE));
 
-    input = streamUtils.classpathStream("configDefault/about.ftl");
-    if (input == null) {
-      throw new InvalidConfigException(TYPE.CONFIG_WRITE,
-        "Cannot read required classpath resources to create new data dir!");
-    }
-    org.gbif.ipt.utils.FileUtils.copyStreamToFile(input, configFile("about.ftl"));
-
     LOG.info("Creating new default data dir");
   }
 
@@ -244,7 +243,31 @@ public class DataDir {
    * @return DwC-A file having specific version
    */
   public File resourceDwcaFile(@NotNull String resourceName, @NotNull BigDecimal version) {
-    String fn = "dwca-" + version.toPlainString() + ".zip";
+    String fn = DWC_ARCHIVE_NAME + "-" + version.toPlainString() + DWC_ARCHIVE_EXTENSION;
+    return dataFile(RESOURCES_DIR + "/" + resourceName + "/" + fn);
+  }
+
+  /**
+   * Retrieves published DwC-A file or data package for a specific version of a resource.
+   */
+  public File resourceArchiveFile(@NotNull Resource resource, @NotNull BigDecimal version) {
+    if (resource.isDataPackage()) {
+      return resourceDataPackageFile(resource.getShortname(), version);
+    } else {
+      return resourceDwcaFile(resource.getShortname(), version);
+    }
+  }
+
+  /**
+   * Retrieves published data package file for a specific version of a resource.
+   *
+   * @param resourceName resource short name
+   * @param version      version
+   *
+   * @return data package file having specific version
+   */
+  public File resourceDataPackageFile(@NotNull String resourceName, @NotNull BigDecimal version) {
+    String fn = DATA_PACKAGE_NAME + "-" + version.toPlainString() + DATA_PACKAGE_EXTENSION;
     return dataFile(RESOURCES_DIR + "/" + resourceName + "/" + fn);
   }
 
@@ -272,6 +295,15 @@ public class DataDir {
     return dataFile(RESOURCES_DIR + "/" + resourceName + "/" + fn);
   }
 
+  public File resourceDatapackageMetadataFile(@NotNull String resourceName, String type, @NotNull BigDecimal version) {
+    if (COL_DP.equals(type)) {
+      String fn = "metadata-" + version.toPlainString() + ".yaml";
+      return dataFile(RESOURCES_DIR + "/" + resourceName + "/" + fn);
+    }
+    String fn = "datapackage-" + version.toPlainString() + ".json";
+    return dataFile(RESOURCES_DIR + "/" + resourceName + "/" + fn);
+  }
+
   /**
    * Retrieves EML file for a resource.
    *
@@ -281,6 +313,13 @@ public class DataDir {
    */
   public File resourceEmlFile(@NotNull String resourceName) {
     return dataFile(RESOURCES_DIR + "/" + resourceName + "/" + EML_XML_FILENAME);
+  }
+
+  public File resourceDatapackageMetadataFile(@NotNull String resourceName, String type) {
+    if (COL_DP.equals(type)) {
+      return dataFile(RESOURCES_DIR + "/" + resourceName + "/" + COL_DP_METADATA_FILENAME);
+    }
+    return dataFile(RESOURCES_DIR + "/" + resourceName + "/" + FRICTIONLESS_METADATA_FILENAME);
   }
 
   public File resourceFile(Resource resource, String path) {
@@ -300,6 +339,36 @@ public class DataDir {
   }
 
   /**
+   * Constructs an absolute path to a resource.xml file inside the data dir.
+   *
+   * @param resourceName resource name
+   * @return absolute path to the resource.xml
+   */
+  public File resourceFile(String resourceName) {
+    return dataFile(RESOURCES_DIR + "/" + resourceName + "/" + PERSISTENCE_FILENAME);
+  }
+
+  /**
+   * Constructs an absolute path to a resource.xml file inside the data dir.
+   *
+   * @param resource resource
+   * @return absolute path to the resource.xml
+   */
+  public File resourceFile(Resource resource) {
+    return resource == null ? null : dataFile(RESOURCES_DIR + "/" + resource.getShortname() + "/" + PERSISTENCE_FILENAME);
+  }
+
+  /**
+   * Constructs an absolute path to a inferredMetadata.xml file inside the data dir.
+   *
+   * @param resourceName resource name
+   * @return absolute path to the inferredMetadata.xml
+   */
+  public File resourceInferredMetadataFile(String resourceName) {
+    return dataFile(RESOURCES_DIR + "/" + resourceName + "/" + INFERRED_METADATA_FILENAME);
+  }
+
+  /**
    * @param suffix the logo file suffix, indicating the format. E.g. jpeg or gif
    */
   public File resourceLogoFile(String resourceName, String suffix) {
@@ -308,6 +377,29 @@ public class DataDir {
     }
     suffix = suffix.toLowerCase();
     return dataFile(RESOURCES_DIR + "/" + resourceName + "/logo." + suffix);
+  }
+
+  /**
+   * @param suffix the logo file suffix, indicating the format. E.g. jpeg or gif
+   */
+  public File appLogoFile(String suffix) {
+    if (suffix == null) {
+      suffix = "jpeg";
+    }
+    suffix = suffix.toLowerCase();
+    return dataFile(CONFIG_DIR + "/.uiSettings/logos/logo." + suffix);
+  }
+
+  @SuppressWarnings("ResultOfMethodCallIgnored")
+  public void removeLogoFile() {
+    File logosDirectory = new File(dataDir, CONFIG_DIR + "/.uiSettings/logos");
+    File[] logoFiles = logosDirectory.listFiles();
+    if (logoFiles != null) {
+      Stream.of(logoFiles)
+          .filter(file -> !file.isDirectory())
+          .filter(file -> file.getName().startsWith("logo"))
+          .forEach(File::delete);
+    }
   }
 
   public File resourcePublicationLogFile(String resourceName) {
@@ -320,7 +412,7 @@ public class DataDir {
    * @param resourceName resource short name
    * @param version      version
    *
-   * @return RTF file having specific version, defaulting to latest published version if no version specified
+   * @return RTF file having specific version, defaulting to the latest published version if no version specified
    */
   public File resourceRtfFile(@NotNull String resourceName, @NotNull BigDecimal version) {
     String fn = resourceName + "-" + version.toPlainString() + ".rtf";
@@ -399,6 +491,13 @@ public class DataDir {
       return null;
     }
     return resourceFile(resource.getShortname(), "sources/" + source.getName() + source.getPreferredFileSuffix());
+  }
+
+  public File sourceFile(Resource resource, String filename) {
+    if (resource == null) {
+      return null;
+    }
+    return resourceFile(resource.getShortname(), "sources/" + filename);
   }
 
   public File sourceLogFile(String resourceName, String sourceName) {

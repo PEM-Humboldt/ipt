@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +14,7 @@
 package org.gbif.ipt.action.portal;
 
 import org.gbif.api.model.common.DOI;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.action.BaseAction;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
@@ -28,11 +27,12 @@ import org.gbif.ipt.model.voc.PublicationStatus;
 import org.gbif.ipt.service.admin.ExtensionManager;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.VocabulariesManager;
+import org.gbif.ipt.service.manage.MetadataReader;
 import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
-import org.gbif.metadata.eml.EmlWriter;
-import org.gbif.metadata.eml.TaxonKeyword;
-import org.gbif.metadata.eml.TaxonomicCoverage;
+import org.gbif.metadata.eml.ipt.IptEmlWriter;
+import org.gbif.metadata.eml.ipt.model.TaxonKeyword;
+import org.gbif.metadata.eml.ipt.model.TaxonomicCoverage;
 
 import java.io.File;
 import java.io.IOException;
@@ -66,7 +66,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ResourceActionTest {
+public class ResourceActionTest extends IptBaseTest {
 
   private ResourceAction action;
   private Resource resource;
@@ -97,7 +97,7 @@ public class ResourceActionTest {
     // setup Resource with TaxonomicCoverage with 3 TaxonKeyword
     resource = new Resource();
     resource.setShortname(RESOURCE_SHORT_NAME);
-    resource.setEmlVersion(LATEST_RESOURCE_VERSION);
+    resource.setMetadataVersion(LATEST_RESOURCE_VERSION);
 
     // setup manager as resource creator
     MANAGER = new User();
@@ -143,7 +143,7 @@ public class ResourceActionTest {
 
     // mock returning EML file, with actual resource metadata
     File emlFile = File.createTempFile("eml-3.0.xml", ".xml");
-    EmlWriter.writeEmlFile(emlFile, resource.getEml());
+    IptEmlWriter.writeEmlFile(emlFile, resource.getEml());
     when(mockDataDir.resourceEmlFile(anyString(), any(BigDecimal.class))).thenReturn(emlFile);
 
     // mock returning RTF file, with empty content
@@ -159,7 +159,7 @@ public class ResourceActionTest {
     when(container.getInstance(LocaleProviderFactory.class)).thenReturn(localeProviderFactory);
 
     action = new ResourceAction(textProvider, mockCfg, mockRegistrationManager, mockResourceManager, mockVocabManager,
-      mockDataDir, mock(ExtensionManager.class));
+      mockDataDir, mock(ExtensionManager.class), mock(MetadataReader.class));
     action.setResource(resource);
     action.setContainer(container);
   }

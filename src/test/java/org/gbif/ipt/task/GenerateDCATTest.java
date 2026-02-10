@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,87 +13,97 @@
  */
 package org.gbif.ipt.task;
 
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.action.BaseAction;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.DataDir;
-import org.gbif.ipt.config.IPTModule;
 import org.gbif.ipt.config.JdbcSupport;
+import org.gbif.ipt.config.TestBeanProvider;
 import org.gbif.ipt.mock.MockAppConfig;
 import org.gbif.ipt.mock.MockDataDir;
 import org.gbif.ipt.mock.MockRegistryManager;
 import org.gbif.ipt.model.Extension;
 import org.gbif.ipt.model.Ipt;
+import org.gbif.ipt.model.Organisation;
 import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.User;
 import org.gbif.ipt.model.converter.ConceptTermConverter;
+import org.gbif.ipt.model.converter.DataPackageFieldConverter;
+import org.gbif.ipt.model.converter.DataPackageIdentifierConverter;
+import org.gbif.ipt.model.converter.ExtensionMappingConverter;
+import org.gbif.ipt.model.converter.TableSchemaNameConverter;
 import org.gbif.ipt.model.converter.ExtensionRowTypeConverter;
 import org.gbif.ipt.model.converter.JdbcInfoConverter;
 import org.gbif.ipt.model.converter.OrganisationKeyConverter;
-import org.gbif.ipt.model.converter.PasswordConverter;
+import org.gbif.ipt.model.converter.PasswordEncrypter;
 import org.gbif.ipt.model.converter.UserEmailConverter;
 import org.gbif.ipt.model.factory.ExtensionFactory;
 import org.gbif.ipt.model.factory.ThesaurusHandlingRule;
-import org.gbif.ipt.service.AlreadyExistingException;
-import org.gbif.ipt.service.ImportException;
-import org.gbif.ipt.service.InvalidFilenameException;
+import org.gbif.ipt.service.admin.DataPackageSchemaManager;
 import org.gbif.ipt.service.admin.ExtensionManager;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.UserAccountManager;
 import org.gbif.ipt.service.admin.VocabulariesManager;
+import org.gbif.ipt.service.admin.impl.ExtensionsHolder;
 import org.gbif.ipt.service.admin.impl.VocabulariesManagerImpl;
+import org.gbif.ipt.service.file.FileStoreManager;
+import org.gbif.ipt.service.manage.MetadataReader;
 import org.gbif.ipt.service.manage.ResourceManager;
+import org.gbif.ipt.service.manage.ResourceMetadataInferringService;
 import org.gbif.ipt.service.manage.SourceManager;
+import org.gbif.ipt.service.manage.impl.ResourceConvertersManager;
 import org.gbif.ipt.service.manage.impl.ResourceManagerImpl;
 import org.gbif.ipt.service.manage.impl.SourceManagerImpl;
 import org.gbif.ipt.service.registry.RegistryManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
-import org.gbif.metadata.eml.Agent;
-import org.gbif.metadata.eml.KeywordSet;
+import org.gbif.metadata.eml.ipt.model.Agent;
+import org.gbif.metadata.eml.ipt.model.KeywordSet;
 import org.gbif.utils.HttpClient;
 import org.gbif.utils.file.FileUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.validation.constraints.NotNull;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
-
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.servlet.ServletModule;
-import com.google.inject.struts2.Struts2GuicePluginModule;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * Test class for the DCAT generation.
  */
-public class GenerateDCATTest {
-  private static final String RESOURCE_SHORTNAME = "res1";
-  private static AppConfig mockAppConfig = MockAppConfig.buildMock();
-  private static GenerateDCAT mockGenerateDCAT;
-  private DataDir mockDataDir = MockDataDir.buildMock();
-  private static RegistrationManager mockRegistrationManager = mock(RegistrationManager.class);
+public class GenerateDCATTest extends IptBaseTest {
 
-  @BeforeAll
-  public static void init() {
+  private static final String RESOURCE_SHORTNAME = "res1";
+  private AppConfig mockAppConfig = MockAppConfig.buildMock();
+  private GenerateDCAT mockGenerateDCAT;
+  private DataDir mockDataDir = MockDataDir.buildMock();
+  private RegistrationManager mockRegistrationManager = mock(RegistrationManager.class);
+
+  @TempDir
+  File resourceDir;
+
+  @BeforeEach
+  public void init() {
+    when(mockDataDir.dataFile(DataDir.RESOURCES_DIR)).thenReturn(resourceDir);
     when(mockAppConfig.getResourceArchiveUrl(RESOURCE_SHORTNAME)).thenReturn("distributionURL");
     when(mockAppConfig.getResourceUrl(RESOURCE_SHORTNAME)).thenReturn("resourceURL");
     when(mockAppConfig.getBaseUrl()).thenReturn("baseURL");
 
-    //create IPT
+    // create IPT
     Ipt ipt = new Ipt();
     ipt.setDescription("Test IPT for testing");
     ipt.setName("Test IPT");
@@ -107,7 +115,22 @@ public class GenerateDCATTest {
   }
 
   @Test
-  public void testCreateCatalog() throws ParserConfigurationException, SAXException {
+  public void testFeed() {
+    Organisation orgStub = new Organisation();
+    orgStub.setKey("d7dddbf4-2cf0-4f39-9b2a-bb099caae36c");
+    orgStub.setName("test organisation");
+    orgStub.setHomepageURL("[www.gbif.org]");
+    when(mockRegistrationManager.getHostingOrganisation()).thenReturn(orgStub);
+    String expectedFeed = "<https://www.gbif.org/publisher/d7dddbf4-2cf0-4f39-9b2a-bb099caae36c#Organization> a foaf:Agent ; foaf:name \"test organisation\" ; foaf:homepage <www.gbif.org> .";
+
+    String actualFeed = mockGenerateDCAT.getFeed();
+
+    assertTrue(actualFeed.contains(expectedFeed));
+    verify(mockRegistrationManager, atLeastOnce()).getHostingOrganisation();
+  }
+
+  @Test
+  public void testCreateCatalog() {
     String dcat = mockGenerateDCAT.createDCATCatalogInformation();
     assertTrue(dcat.contains("a dcat:Catalog"));
     assertTrue(dcat.contains("dct:title \"Test IPT\""));
@@ -135,9 +158,7 @@ public class GenerateDCATTest {
   }
 
   @Test
-  public void testCreateDCATDataset()
-    throws ImportException, ParserConfigurationException, InvalidFilenameException, IOException,
-    AlreadyExistingException, SAXException {
+  public void testCreateDCATDataset() throws Exception {
     // create resource from single source file
     File resourceXML = FileUtils.getClasspathFile("resources/res1/resource.xml");
     Resource res = getResource(resourceXML);
@@ -161,21 +182,15 @@ public class GenerateDCATTest {
    * Test that turtle format requiring line breaks to be escaped is honored.
    */
   @Test
-  public void testCreateDCATDatasetNewline()
-    throws ImportException, ParserConfigurationException, InvalidFilenameException, IOException,
-    AlreadyExistingException, SAXException {
+  public void testCreateDCATDatasetNewline() throws Exception {
     // create resource from single source file
     File resourceXML = FileUtils.getClasspathFile("resources/res1/resource.xml");
     Resource res = getResource(resourceXML);
 
-    // add another paragraph to description
-    res.getEml().getDescription().add("Second paragraph");
-    assertEquals(2, res.getEml().getDescription().size());
-
     String dcat = mockGenerateDCAT.createDCATDatasetInformation(res);
     assertTrue(dcat.contains("a dcat:Dataset"));
     // ensure line break is properly escaped
-    assertTrue(dcat.contains("dct:description \"" + "Test \\\"description\\\"" + "\\n" + "Second paragraph" + "\""));
+    assertTrue(dcat.contains("dct:description \"" + "Test \\\"description\\\""));
     assertTrue(dcat.contains("dcat:distribution <distributionURL>"));
   }
 
@@ -183,29 +198,20 @@ public class GenerateDCATTest {
    * Test that turtle format requiring three double quotes for string literals with CR or LF.
    */
   @Test
-  public void testCreateDCATDatasetNewlineInsideParagraph()
-      throws ImportException, ParserConfigurationException, InvalidFilenameException, IOException,
-      AlreadyExistingException, SAXException {
+  public void testCreateDCATDatasetNewlineInsideParagraph() throws Exception {
     // create resource from single source file
     File resourceXML = FileUtils.getClasspathFile("resources/res1/resource.xml");
     Resource res = getResource(resourceXML);
 
-    // add another paragraph with '\n' character to description
-    res.getEml().getDescription().add("Second paragraph\nwith line break");
-    assertEquals(2, res.getEml().getDescription().size());
-
     String dcat = mockGenerateDCAT.createDCATDatasetInformation(res);
     assertTrue(dcat.contains("a dcat:Dataset"));
     // ensure line break is properly escaped
-    assertTrue(dcat.contains("dct:description \"\"\"Test \\\"description\\\"\\nSecond paragraph\n" +
-        "with line break\"\"\""));
+    assertTrue(dcat.contains("dct:description \"" + "Test \\\"description\\\""));
     assertTrue(dcat.contains("dcat:distribution <distributionURL>"));
   }
 
   @Test
-  public void testCreateDCATDistribution()
-    throws ImportException, ParserConfigurationException, InvalidFilenameException, IOException,
-    AlreadyExistingException, SAXException {
+  public void testCreateDCATDistribution() throws Exception {
     // create resource from single source file
     File resourceXML = FileUtils.getClasspathFile("resources/res1/resource.xml");
     Resource res = getResource(resourceXML);
@@ -219,7 +225,6 @@ public class GenerateDCATTest {
     assertTrue(dcat.contains("dcat:downloadURL <distributionURL>"));
   }
 
-
   /**
    * Generates a test Resource from zipped resource folder, and populates resource with license, contacts, etc.
    *
@@ -227,9 +232,7 @@ public class GenerateDCATTest {
    *
    * @return test Resource
    */
-  private Resource getResource(@NotNull File resourceXML)
-    throws IOException, SAXException, ParserConfigurationException, AlreadyExistingException, ImportException,
-    InvalidFilenameException {
+  private Resource getResource(@NotNull File resourceXML) throws Exception {
     UserAccountManager mockUserAccountManager = mock(UserAccountManager.class);
     UserEmailConverter mockEmailConverter = new UserEmailConverter(mockUserAccountManager);
     OrganisationKeyConverter mockOrganisationKeyConverter = new OrganisationKeyConverter(mockRegistrationManager);
@@ -240,31 +243,39 @@ public class GenerateDCATTest {
     SimpleTextProvider mockSimpleTextProvider = mock(SimpleTextProvider.class);
     BaseAction baseAction = new BaseAction(mockSimpleTextProvider, mockAppConfig, mockRegistrationManager);
 
-
     // construct ExtensionFactory using injected parameters
-    Injector injector = Guice.createInjector(new ServletModule(), new Struts2GuicePluginModule(), new IPTModule());
-    HttpClient httpClient = injector.getInstance(HttpClient.class);
+    HttpClient httpClient = TestBeanProvider.provideHttpClient();
     ThesaurusHandlingRule thesaurusRule = new ThesaurusHandlingRule(mock(VocabulariesManagerImpl.class));
-    SAXParserFactory saxf = injector.getInstance(SAXParserFactory.class);
+    SAXParserFactory saxf = TestBeanProvider.provideNsAwareSaxParserFactory();
     ExtensionFactory extensionFactory = new ExtensionFactory(thesaurusRule, saxf, httpClient);
-    JdbcSupport support = injector.getInstance(JdbcSupport.class);
-    PasswordConverter passwordConverter = injector.getInstance(PasswordConverter.class);
+    JdbcSupport support = TestBeanProvider.provideJdbcSupport();
+    PasswordEncrypter passwordEncrypter = new PasswordEncrypter(TestBeanProvider.providePasswordEncryption());
     JdbcInfoConverter jdbcConverter = new JdbcInfoConverter(support);
+
+    DataPackageSchemaManager mockSchemaManager = mock(DataPackageSchemaManager.class);
 
     // construct occurrence core Extension
     InputStream occurrenceCoreIs =
       GenerateDwcaTest.class.getResourceAsStream("/extensions/dwc_occurrence_2015-04-24.xml");
     Extension occurrenceCore = extensionFactory.build(occurrenceCoreIs);
     ExtensionManager extensionManager = mock(ExtensionManager.class);
+    ExtensionsHolder extensionsHolder = mock(ExtensionsHolder.class);
 
     // mock ExtensionManager returning occurrence core Extension
     when(extensionManager.get("http://rs.tdwg.org/dwc/terms/Occurrence")).thenReturn(occurrenceCore);
 
-    ExtensionRowTypeConverter extensionRowTypeConverter = new ExtensionRowTypeConverter(extensionManager);
+    // mock ExtensionHolder returning occurrence core Extension
+    when(extensionsHolder.getExtensionsByRowtype())
+        .thenReturn(Map.of("http://rs.tdwg.org/dwc/terms/Occurrence", occurrenceCore));
+
+    ExtensionRowTypeConverter extensionRowTypeConverter = new ExtensionRowTypeConverter(extensionsHolder);
     ConceptTermConverter conceptTermConverter = new ConceptTermConverter(extensionRowTypeConverter);
 
     // mock finding resource.xml file
-    when(mockDataDir.resourceFile(anyString(), anyString())).thenReturn(resourceXML);
+    when(mockDataDir.resourceFile(anyString())).thenReturn(resourceXML);
+
+    // mock finding inferredMetadata.xml file
+    when(mockDataDir.resourceInferredMetadataFile(anyString())).thenReturn(new File(DataDir.INFERRED_METADATA_FILENAME));
 
     // retrieve sample zipped resource folder
     File zippedResourceFolder = FileUtils.getClasspathFile("resources/res1.zip");
@@ -279,18 +290,36 @@ public class GenerateDCATTest {
     when(mockDataDir.resourceDwcaFile(anyString())).thenReturn(new File("dwca.zip"));
 
     // create SourceManagerImpl
-    SourceManager mockSourceManager = new SourceManagerImpl(mock(AppConfig.class), mockDataDir);
+    SourceManager mockSourceManager = new SourceManagerImpl(mock(AppConfig.class), mockDataDir, mock(FileStoreManager.class));
 
     // create temp directory
     File tmpDataDir = FileUtils.createTempDir();
     when(mockDataDir.tmpDir()).thenReturn(tmpDataDir);
 
+    ResourceConvertersManager mockResourceConvertersManager = new ResourceConvertersManager(
+        mockEmailConverter, mockOrganisationKeyConverter, mock(ExtensionMappingConverter.class), extensionRowTypeConverter,
+        conceptTermConverter, mock(DataPackageIdentifierConverter.class),
+        mock(TableSchemaNameConverter.class), mock(DataPackageFieldConverter.class), jdbcConverter);
+
     // create ResourceManagerImpl
     ResourceManagerImpl resourceManager =
-      new ResourceManagerImpl(mockAppConfig, mockDataDir, mockEmailConverter, mockOrganisationKeyConverter,
-        extensionRowTypeConverter, jdbcConverter, mockSourceManager, extensionManager, mockRegistryManager,
-        conceptTermConverter, mockDwcaFactory, passwordConverter, mockEml2Rtf, mockVocabulariesManager,
-        mockSimpleTextProvider, mockRegistrationManager);
+      new ResourceManagerImpl(
+          mockAppConfig,
+          mockDataDir,
+          mockResourceConvertersManager,
+          mockSourceManager,
+          extensionManager,
+          mockSchemaManager,
+          mockRegistryManager,
+          mockDwcaFactory,
+          mock(GenerateDataPackageFactory.class),
+          passwordEncrypter,
+          mockEml2Rtf,
+          mockVocabulariesManager,
+          mockSimpleTextProvider,
+          mockRegistrationManager,
+          mock(MetadataReader.class),
+          mock(ResourceMetadataInferringService.class));
 
     // creator
     User creator = new User();
@@ -302,7 +331,7 @@ public class GenerateDCATTest {
 
     // update resource title and description, to have double quotation marks which need to be escaped
     resource.setTitle("TEST \"RESOURCE\"");
-    resource.getEml().getDescription().set(0, "Test \"description\"");
+    resource.getEml().setDescription("Test \"description\"");
 
     // update keyword sets: should be three, with "Occurrence" and "Observation" repeating more than once which breaks the feed
     resource.getEml().getKeywords().clear();
@@ -334,7 +363,7 @@ public class GenerateDCATTest {
     Agent agent = new Agent();
     agent.setFirstName("Eric");
     agent.setLastName("Stienen");
-    agent.setEmail("eric.stienen@inbo.be");
+    agent.addEmail("eric.stienen@inbo.be");
     resource.getEml().addCreator(agent);
     resource.getEml().addContact(agent);
     resource.getEml().addMetadataProvider(agent);

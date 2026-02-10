@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,9 +21,8 @@ import java.text.ParseException;
 import java.util.Map;
 
 import org.apache.commons.lang3.Range;
+import org.apache.struts2.conversion.TypeConversionException;
 import org.apache.struts2.util.StrutsTypeConverter;
-
-import com.opensymphony.xwork2.conversion.TypeConversionException;
 
 /**
  * This class provides the method to validate the latitude and longitude coordinates as decimal numbers.
@@ -40,7 +37,7 @@ public abstract class CoordinateFormatConverter extends StrutsTypeConverter {
   @Override
   public Object convertFromString(Map context, String[] values, Class toClass) {
     // The null value is needed to validate in EmlValidator.java class
-    if (values[0].length() == 0) {
+    if (values[0].isEmpty()) {
       return null;
     }
     // The full name of the property which call the method contained in the Map context

@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,17 +16,21 @@ package org.gbif.ipt.service.manage;
 import org.gbif.ipt.action.BaseAction;
 import org.gbif.ipt.model.Ipt;
 import org.gbif.ipt.model.Organisation;
+import org.gbif.ipt.model.PublicationOptions;
 import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.User;
+import org.gbif.ipt.model.datatable.DatatableRequest;
+import org.gbif.ipt.model.datatable.DatatableResult;
 import org.gbif.ipt.model.voc.PublicationStatus;
 import org.gbif.ipt.service.AlreadyExistingException;
 import org.gbif.ipt.service.DeletionNotAllowedException;
 import org.gbif.ipt.service.ImportException;
 import org.gbif.ipt.service.InvalidConfigException;
 import org.gbif.ipt.service.InvalidFilenameException;
+import org.gbif.ipt.service.InvalidMetadataException;
 import org.gbif.ipt.service.PublicationException;
-import org.gbif.ipt.service.manage.impl.ResourceManagerImpl;
 import org.gbif.ipt.task.StatusReport;
+import org.gbif.metadata.eml.InvalidEmlException;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,21 +38,21 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import javax.annotation.Nullable;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.collections4.ListValuedMap;
-
-import com.google.inject.ImplementedBy;
+import org.xml.sax.SAXException;
 
 /**
  * This interface details ALL methods associated with the main resource entity.
  * The manager keeps a map of the basic metadata and authorisation information in memory, but further details like the
  * full EML or mapping configuration is stored in files and loaded into manager sessions when needed.
  */
-@ImplementedBy(ResourceManagerImpl.class)
 public interface ResourceManager {
 
   /**
@@ -169,6 +171,13 @@ public interface ResourceManager {
   List<Resource> list();
 
   /**
+   * list all resources in the IPT by the type.
+   *
+   * @return list of resources, or an empty list if none were found
+   */
+  List<Resource> list(String type);
+
+  /**
    * list all resources in the IPT by intellectualRightsList.
    * @param intellectualRightsList
    *
@@ -186,8 +195,7 @@ public interface ResourceManager {
   List<Resource> list(PublicationStatus status);
 
   /**
-   * List all resources in the IPT whose last published version was public (at the time of publication). This
-   * is used to populate the list of resources publicly shown on the IPT home page.
+   * List all resources in the IPT whose last published version was public (at the time of publication).
    * </br>
    * If a resource is registered with GBIF, it is assumed the resource is public and therefore is included in the list.
    * Please note only resource published using IPT v2.2 or later store a VersionHistory.
@@ -197,6 +205,18 @@ public interface ResourceManager {
   List<Resource> listPublishedPublicVersions();
 
   /**
+   * List all resources in the IPT whose last published version was public (at the time of publication). This
+   * is used to populate the list of resources publicly shown on the IPT home page.
+   * Simplified - contain only fields required for the resources table.
+   * </br>
+   * If a resource is registered with GBIF, it is assumed the resource is public and therefore is included in the list.
+   * Please note only resource published using IPT v2.2 or later store a VersionHistory.
+   *
+   * @return list of resources wrapped by DatatableResult class
+   */
+  DatatableResult listPublishedPublicVersionsSimplified(DatatableRequest request);
+
+  /**
    * list all resource that can be managed by a given user.
    *
    * @param user User
@@ -204,6 +224,16 @@ public interface ResourceManager {
    * @return list of resources, or an empty list if none were found
    */
   List<Resource> list(User user);
+
+  /**
+   * list all resource that can be managed by a given user.
+   *
+   * @param user User
+   * @param request request parameters
+   *
+   * @return list of resources wrapped by DatatableResult class
+   */
+  DatatableResult list(User user, DatatableRequest request);
 
   /**
    * Load all configured resources from the data directory into memory.
@@ -217,18 +247,51 @@ public interface ResourceManager {
   int load(File resourcesDir, @Nullable User creator);
 
   /**
-   * Publishes a new version of a resource including generating a darwin core archive and issuing a new EML version.
+   * Publishes a new version of a resource including generating a darwin core archive and issuing a new EML version for
+   * DwC resources or a data package archive and a metadata file for data package resources.
    *
    * @param resource Resource
    * @param version version number of eml/rft/archive to be published
    * @param action   the action to use for logging messages to
    *
-   * @return true if a new asynchronous DwC-A generation job has been issued which requires some mapped data
+   * @return true if a new asynchronous archive generation job has been issued which requires some mapped data
    *
    * @throws PublicationException if resource was already registered
    * @throws InvalidConfigException if resource or metadata could not be saved
    */
   boolean publish(Resource resource, BigDecimal version, @Nullable BaseAction action) throws PublicationException;
+
+  /**
+   * Publishes a new version of a resource including generating a darwin core archive and issuing a new EML version for
+   * DwC resources or a data package acrhive and a metadata file for data package resources.
+   *
+   * @param resource Resource
+   * @param version version number of eml/rft/archive to be published
+   * @param action   the action to use for logging messages to
+   * @param skipIfNotChanged do not publish a new version if it hasn't changed since last publication
+   *
+   * @return true if a new asynchronous archive generation job has been issued which requires some mapped data
+   *
+   * @throws PublicationException if resource was already registered
+   * @throws InvalidConfigException if resource or metadata could not be saved
+   */
+  boolean publish(Resource resource, BigDecimal version, @Nullable BaseAction action, boolean skipIfNotChanged) throws PublicationException;
+
+  /**
+   * Publishes a new version of a resource including generating a darwin core archive and issuing a new EML version for
+   * DwC resources or a data package acrhive and a metadata file for data package resources.
+   *
+   * @param resource Resource
+   * @param version version number of eml/rft/archive to be published
+   * @param action   the action to use for logging messages to
+   * @param options advanced publication options
+   *
+   * @return true if a new asynchronous archive generation job has been issued which requires some mapped data
+   *
+   * @throws PublicationException if resource was already registered
+   * @throws InvalidConfigException if resource or metadata could not be saved
+   */
+  boolean publish(Resource resource, BigDecimal version, BaseAction action, PublicationOptions options) throws PublicationException;
 
   /**
    * Registers the resource with the GBIF Registry. Instead of registering a new resource, the resource can instead
@@ -250,11 +313,25 @@ public interface ResourceManager {
   void save(Resource resource) throws InvalidConfigException;
 
   /**
-   * Save the eml file of a resource only. Complementary method to @See save(Resource).
+   * Save the eml file of a resource only. Complementary method to {@link #save(Resource)}.
    *
    * @param resource Resource
    */
   void saveEml(Resource resource) throws InvalidConfigException;
+
+  /**
+   * Save the metadata file of a resource only. Complementary method to {@link #save(Resource)}.
+   *
+   * @param resource Resource
+   */
+  void saveDatapackageMetadata(Resource resource) throws InvalidConfigException;
+
+  /**
+   * Save the inferred metadata file of a resource. Complementary method to {@link #save(Resource)}
+   *
+   * @param resource Resource
+   */
+  void saveInferredMetadata(Resource resource) throws InvalidConfigException;
 
   /**
    * Return status report of current task either running or on queue for the requested resource or null if none exists.
@@ -360,6 +437,18 @@ public interface ResourceManager {
   ListValuedMap<String, Date> getProcessFailures();
 
   /**
+   * Return the report map.
+   *
+   * @return map of publication reports
+   */
+  Map<String, StatusReport> getProcessReports();
+
+  /**
+   * Clear the report map.
+   */
+  void clearProcessReports();
+
+  /**
    * Check if the maximum number of publish event failures has occurred for a resource.
    *
    * @param resource resource
@@ -381,6 +470,22 @@ public interface ResourceManager {
    *
    * @param resource
    * @param emlFile
+   * @param validate
    */
-  void replaceEml(Resource resource, File emlFile) throws ImportException;
+  void replaceEml(Resource resource, File emlFile, boolean validate) throws SAXException, ParserConfigurationException, IOException, InvalidEmlException, ImportException;
+
+  /**
+   * Replace the datapackage metadata file in a resource by the provided file
+   */
+  void replaceDatapackageMetadata(BaseAction action, Resource resource, File metadataFile, boolean validate) throws IOException, ImportException, InvalidMetadataException;
+
+  /**
+   * Update organisation name and alias for published resources.
+   */
+  void updateOrganisationNameForResources(UUID organisationKey, String organisationName, String organisationAlias);
+
+  /**
+   * Update organisation name and alias for published resources.
+   */
+  void updateOrganisationNameForResources(Organisation organisation);
 }

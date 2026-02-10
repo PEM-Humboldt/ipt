@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +13,7 @@
  */
 package org.gbif.ipt.service.manage.impl;
 
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.DataDir;
 import org.gbif.ipt.model.FileSource;
@@ -25,6 +24,7 @@ import org.gbif.ipt.model.TextFileSource;
 import org.gbif.ipt.service.AlreadyExistingException;
 import org.gbif.ipt.service.ImportException;
 import org.gbif.ipt.service.InvalidFilenameException;
+import org.gbif.ipt.service.file.FileStoreManager;
 import org.gbif.utils.file.FileUtils;
 
 import java.io.File;
@@ -44,7 +44,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SourceManagerImplTest {
+public class SourceManagerImplTest extends IptBaseTest {
 
   private SourceManagerImpl manager;
   private Resource resource;
@@ -59,7 +59,7 @@ public class SourceManagerImplTest {
     when(mockDataDir.sourceFile(any(Resource.class), any(FileSource.class))).thenReturn(ddFile);
     when(mockDataDir.sourceLogFile(anyString(), anyString())).thenReturn(logFile);
     // create instance of SourceManager, using mocked AppConfig and DataDir
-    manager = new SourceManagerImpl(mock(AppConfig.class), mockDataDir);
+    manager = new SourceManagerImpl(mock(AppConfig.class), mockDataDir, mock(FileStoreManager.class));
     // create test Resource
     resource = new Resource();
     resource.setShortname("testResource");
@@ -135,7 +135,7 @@ public class SourceManagerImplTest {
     assertEquals(76, fileSource.getRows());
     assertEquals(2018, fileSource.getFileSize());
     assertTrue(fileSource.isReadable());
-    assertNull(fileSource.getFieldsEnclosedBy());
+    assertEquals("\"", fileSource.getFieldsEnclosedBy());
     assertEquals("\t", fileSource.getFieldsTerminatedBy());
   }
 

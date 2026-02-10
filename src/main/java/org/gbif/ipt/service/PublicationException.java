@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,6 +12,9 @@
  * limitations under the License.
  */
 package org.gbif.ipt.service;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The base class used to indicate types of resource publication errors. All configuration must provide a message and a
@@ -52,6 +53,7 @@ public class PublicationException extends RuntimeException {
     LOCKED
   }
 
+  private final Map<String, Object> additionalData = new HashMap<>();
   protected TYPE type;
 
   /**
@@ -69,6 +71,14 @@ public class PublicationException extends RuntimeException {
   public PublicationException(TYPE type, String message, Exception e) {
     super(message, e);
     this.type = type;
+  }
+
+  public Object getAdditionalParameter(String key) {
+    return additionalData.get(key);
+  }
+
+  public void addAdditionalParameter(String key, Object value) {
+    additionalData.put(key, value);
   }
 
   /**

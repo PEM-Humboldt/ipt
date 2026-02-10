@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,11 +25,11 @@ import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.utils.InputStreamUtils;
 import org.gbif.ipt.utils.ResourceUtils;
-import org.gbif.metadata.eml.Agent;
-import org.gbif.metadata.eml.BBox;
-import org.gbif.metadata.eml.Eml;
-import org.gbif.metadata.eml.GeospatialCoverage;
-import org.gbif.metadata.eml.KeywordSet;
+import org.gbif.metadata.eml.ipt.model.Agent;
+import org.gbif.metadata.eml.ipt.model.BBox;
+import org.gbif.metadata.eml.ipt.model.Eml;
+import org.gbif.metadata.eml.ipt.model.GeospatialCoverage;
+import org.gbif.metadata.eml.ipt.model.KeywordSet;
 
 import java.io.File;
 import java.io.InputStream;
@@ -39,25 +37,24 @@ import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * Class to generate a DCAT feed, including all resources that are published, public and have a license.
@@ -65,7 +62,6 @@ import com.google.inject.Singleton;
  * @see <a href="https://github.com/oSoc15/ipt-dcat">DCAT project homepage</a>
  * @see <a href="https://github.com/oSoc15/ipt">DCAT IPT Fork</a>
  */
-@Singleton
 public class GenerateDCAT {
 
   // logging
@@ -101,7 +97,10 @@ public class GenerateDCAT {
   private final ResourceManager resourceManager;
 
   @Inject
-  public GenerateDCAT(AppConfig cfg, RegistrationManager registrationManager, ResourceManager resourceManager) {
+  public GenerateDCAT(
+      AppConfig cfg,
+      RegistrationManager registrationManager,
+      ResourceManager resourceManager) {
     this.cfg = cfg;
     this.registrationManager = registrationManager;
     this.resourceManager = resourceManager;
@@ -162,7 +161,18 @@ public class GenerateDCAT {
       String organisation =
         encapsulateObject(publisher, ObjectTypes.RESOURCE) + " a foaf:Agent ; foaf:name \"" + org.getName() + "\"";
       if (org.getHomepageURL() != null) {
-        organisation += " ; foaf:homepage " + encapsulateObject(org.getHomepageURL(), ObjectTypes.RESOURCE);
+        String homepagesStrWithoutBrackets = StringUtils.substringBetween(org.getHomepageURL(), "[", "]");
+
+        if (StringUtils.isNotBlank(homepagesStrWithoutBrackets)) {
+          String[] homepages = homepagesStrWithoutBrackets.split(",");
+
+          String homepagesStr = Arrays.stream(homepages)
+              .map(String::trim)
+              .map(h -> encapsulateObject(h, ObjectTypes.RESOURCE))
+              .collect(Collectors.joining(" , "));
+
+          organisation += " ; foaf:homepage " + homepagesStr;
+        }
       }
       organisation += " .";
       organisations.add(organisation);
@@ -183,13 +193,12 @@ public class GenerateDCAT {
         BigDecimal v = resource.getLastPublishedVersionsVersion();
         String shortname = resource.getShortname();
         File versionEmlFile = cfg.getDataDir().resourceEmlFile(shortname, v);
-        Resource publishedPublicVersion = ResourceUtils.reconstructVersion(v, resource.getShortname(), resource.getCoreType(),
+        Resource publishedPublicVersion = ResourceUtils.reconstructVersion(v, resource.getShortname(), resource.getCoreType(), resource.getDataPackageIdentifier(),
           resource.getAssignedDoi(), resource.getOrganisation(), resource.findVersionHistory(v), versionEmlFile,
           resource.getKey());
 
-        // make sure it has a license and records published
-        if (publishedPublicVersion.getRecordsPublished() > 0 && publishedPublicVersion.getEml() != null
-            && publishedPublicVersion.getEml().parseLicenseUrl() != null) {
+        // make sure it has a license
+        if (publishedPublicVersion.getEml() != null && publishedPublicVersion.getEml().parseLicenseUrl() != null) {
 
           feed.append(createDCATDatasetInformation(publishedPublicVersion));
           feed.append("\n");
@@ -204,10 +213,21 @@ public class GenerateDCAT {
               encapsulateObject(publisher, ObjectTypes.RESOURCE) + " a foaf:Agent ; foaf:name \"" + publishedPublicVersion
                 .getOrganisation().getName() + "\"";
             if (publishedPublicVersion.getOrganisation().getHomepageURL() != null) {
-              organisation +=
-                " ; foaf:homepage " + encapsulateObject(publishedPublicVersion.getOrganisation().getHomepageURL(),
-                  ObjectTypes.RESOURCE);
+              String homepagesStrWithoutBrackets = StringUtils.substringBetween(
+                  publishedPublicVersion.getOrganisation().getHomepageURL(), "[", "]");
+
+              if (StringUtils.isNotBlank(homepagesStrWithoutBrackets)) {
+                String[] homepages = homepagesStrWithoutBrackets.split(",");
+
+                String homepagesStr = Arrays.stream(homepages)
+                    .map(String::trim)
+                    .map(h -> encapsulateObject(h, ObjectTypes.RESOURCE))
+                    .collect(Collectors.joining(" , "));
+
+                organisation += " ; foaf:homepage " + homepagesStr;
+              }
             }
+
             organisation += " .";
             organisations.add(organisation);
           }
@@ -512,21 +532,9 @@ public class GenerateDCAT {
     }
 
     //dct:description
-    if (!eml.getDescription().isEmpty()) {
+    if (eml.getDescription() != null) {
       addPredicateToBuilder(datasetBuilder, "dct:description");
-      StringBuilder description = new StringBuilder();
-      Iterator<String> iter = eml.getDescription().iterator();
-      while (iter.hasNext()) {
-        String des = StringUtils.trimToNull(iter.next());
-        if (des != null) {
-          description.append(des);
-        }
-        // turtle format requires line breaks to be escaped
-        if (iter.hasNext()) {
-          description.append("\\n");
-        }
-      }
-      addObjectToBuilder(datasetBuilder, description.toString(), ObjectTypes.LITERAL);
+      addObjectToBuilder(datasetBuilder, eml.getDescription(), ObjectTypes.LITERAL);
     }
 
     //dcat:keyword
@@ -555,8 +563,8 @@ public class GenerateDCAT {
     for (Agent contact : eml.getContacts()) {
       addPredicateToBuilder(datasetBuilder, "dcat:contactPoint");
       String agent = " a vcard:Individual ; vcard:fn \"" + contact.getFullName() + "\"";
-      if (contact.getEmail() != null) {
-        agent += "; vcard:hasEmail <mailto:" + contact.getEmail() + "> ";
+      if (contact.getEmail() != null && !contact.getEmail().isEmpty()) {
+        agent += "; vcard:hasEmail <mailto:" + contact.getEmail().get(0) + "> ";
       }
       addObjectToBuilder(datasetBuilder, agent, ObjectTypes.OBJECT);
     }

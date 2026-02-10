@@ -9,25 +9,52 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" type="text/css" href="${baseURL}/styles/bootstrap/bootstrap.min.css">
 
+    <!-- Bootstrap icons -->
+    <link rel="stylesheet" type="text/css" href="${baseURL}/styles/bootstrap-icons/font/bootstrap-icons.css" />
+
     <!-- IPT CSS -->
+    <style>
+        :root {
+            --color-gbif-primary: ${primaryColor!"97, 168, 97"};
+            --color-gbif-danger: ${"227, 99, 112"};
+            --color-gbif-secondary: ${"78, 86, 95"};
+            --color-gbif-warning: ${"255, 193, 8"};
+            --navbar-color: ${navbarColor!"120, 181, 120"};
+            --navbar-link-color: ${navbarLinkColor!"255, 255, 255"};
+            --navbar-gbif-logo-color: ${navbarGbifLogoColor!"255, 255, 255"};
+            --navbar-active-tab-color: ${navbarActiveTabColor!"255, 255, 255"};
+            --link-color: ${linkColor!"75, 162, 206"};
+        }
+
+        #navbarNavDropdown {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+    </style>
     <link rel="stylesheet" type="text/css" href="${baseURL}/styles/main.css" />
+
+    <!-- Custom CSS for customizations -->
+    <link rel="stylesheet" type="text/css" href="${baseURL}/styles/custom.css" />
 
     <link rel="shortcut icon" href="${baseURL}/images/icons/favicon-16x16.png" type="image/x-icon" />
 
     <!-- for support of old browsers, like IE8. See http://modernizr.com/docs/#html5inie -->
     <script src="${baseURL}/js/modernizr.js"></script>
-    <script src="${baseURL}/js/jquery/jquery-3.5.1.min.js"></script>
+    <script src="${baseURL}/js/jquery/jquery-3.7.0.min.js"></script>
     <script src="${baseURL}/js/global.js"></script>
 
 </head>
-<body class="bg-light d-flex flex-column h-100">
+<body class="bg-body d-flex flex-column h-100">
 
 <header>
 
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top bg-gbif-main-navbar py-1 shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top bg-gbif-main-navbar py-1 shadow-sm border-bottom">
         <div class="container">
             <a href="${baseURL}/" rel="home" title="Logo" class="navbar-brand" >
-                <img src="${baseURL}/images/gbif-logo-L.svg" alt="IPT" class="gbif-logo"/>
+                <svg id="gbif-logo-setup" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 539.7 523.9" style="enable-background:new 0 0 539.7 523.9;" xml:space="preserve">
+                    <path class="ipt-icon-piece" d="M230.7,255.5c0-102.2,49.9-190.7,198.4-190.7C429.1,167.2,361.7,255.5,230.7,255.5"/>
+                    <path class="ipt-icon-piece" d="M468.6,523.9c27.8,0,49.2-4,71.1-12c0-80.9-48.3-138.7-133.5-180.4c-65.2-32.7-145.5-49.7-218.8-49.7C219.5,185.4,196.1,65.7,165,0c-34.5,68.8-56,186.8-22.9,282.8C77,287.6,25.4,315.9,3.6,353.3c-1.6,2.8-5,8.9-3,10c1.6,0.8,4.1-1.7,5.6-3.1c23.5-21.8,54.6-32.4,84.5-32.4c69.1,0,117.8,57.3,152.3,91.7C317.1,493.5,389.4,524.1,468.6,523.9"/>
+                </svg>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>

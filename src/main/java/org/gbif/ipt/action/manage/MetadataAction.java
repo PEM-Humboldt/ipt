@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,7 +20,9 @@ import org.gbif.common.parsers.core.ParseResult;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.ConfigWarnings;
 import org.gbif.ipt.config.Constants;
-import org.gbif.ipt.model.Organisation;
+import org.gbif.ipt.config.DataDir;
+import org.gbif.ipt.model.InferredEmlMetadata;
+import org.gbif.ipt.model.InferredMetadata;
 import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.Resource.CoreRowType;
 import org.gbif.ipt.model.voc.IdentifierStatus;
@@ -31,33 +31,44 @@ import org.gbif.ipt.service.InvalidConfigException;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.VocabulariesManager;
 import org.gbif.ipt.service.manage.ResourceManager;
+import org.gbif.ipt.service.manage.ResourceMetadataInferringService;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 import org.gbif.ipt.utils.LangUtils;
 import org.gbif.ipt.utils.MapUtils;
+import org.gbif.ipt.validation.ActionErrorCollector;
 import org.gbif.ipt.validation.EmlValidator;
 import org.gbif.ipt.validation.ResourceValidator;
-import org.gbif.metadata.eml.Agent;
-import org.gbif.metadata.eml.Eml;
-import org.gbif.metadata.eml.JGTICuratorialUnitType;
-import org.gbif.metadata.eml.TemporalCoverageType;
-import org.gbif.metadata.eml.UserId;
+import org.gbif.ipt.i18n.StrutsI18n;
+import org.gbif.metadata.eml.ipt.model.Address;
+import org.gbif.metadata.eml.ipt.model.Agent;
+import org.gbif.metadata.eml.ipt.model.Eml;
+import org.gbif.metadata.eml.ipt.model.JGTICuratorialUnitType;
+import org.gbif.metadata.eml.ipt.model.TemporalCoverageType;
+import org.gbif.metadata.eml.ipt.model.UserId;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.TreeMap;
+import javax.inject.Inject;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.struts2.dispatcher.Parameter;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import com.opensymphony.xwork2.ActionContext;
+
+import static org.gbif.ipt.config.Constants.DATASET_TYPE_METADATA_IDENTIFIER;
 
 public class MetadataAction extends ManagerBaseAction {
 
@@ -66,9 +77,11 @@ public class MetadataAction extends ManagerBaseAction {
   private final ResourceValidator validatorRes = new ResourceValidator();
   private final EmlValidator emlValidator;
   private final VocabulariesManager vocabManager;
+  private final ResourceMetadataInferringService resourceMetadataInferringService;
   private static final String LICENSES_PROPFILE_PATH = "/org/gbif/metadata/eml/licenses.properties";
   private static final String LICENSE_NAME_PROPERTY_PREFIX = "license.name.";
   private static final String LICENSE_TEXT_PROPERTY_PREFIX = "license.text.";
+  private static final String LICENSE_URL_PROPERTY_PREFIX = "license.url.";
   private static final String DIRECTORIES_PROPFILE_PATH = "/org/gbif/metadata/eml/UserDirectories.properties";
 
   private MetadataSection section = MetadataSection.BASIC_SECTION;
@@ -81,30 +94,44 @@ public class MetadataAction extends ManagerBaseAction {
   private Map<String, String> types;
   private Map<String, String> datasetSubtypes;
   private Map<String, String> frequencies;
-  private Map<String, String> organisations;
 
   // to group dataset subtype vocabulary keys
   private List<String> checklistSubtypeKeys;
   private List<String> occurrenceSubtypeKeys;
+  private List<String> samplingEventSubtypeKeys;
 
   private static final CountryParser COUNTRY_PARSER = CountryParser.getInstance();
 
   private Agent primaryContact;
   private boolean doiReservedOrAssigned = false;
+  private InferredEmlMetadata inferredMetadata;
   private final ConfigWarnings configWarnings;
   private static Properties licenseProperties;
   private static Properties directoriesProperties;
   private static Map<String, String> licenses;
   private static Map<String, String> licenseTexts;
+  private static Map<String, String> licenseUrls;
   private static Map<String, String> userIdDirectories;
 
+  private DataDir dataDir;
+  private File file;
+
   @Inject
-  public MetadataAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
-    ResourceManager resourceManager, VocabulariesManager vocabManager, ConfigWarnings configWarnings) {
+  public MetadataAction(
+      SimpleTextProvider textProvider,
+      AppConfig cfg,
+      RegistrationManager registrationManager,
+      ResourceManager resourceManager,
+      VocabulariesManager vocabManager,
+      ResourceMetadataInferringService resourceMetadataInferringService,
+      ConfigWarnings configWarnings,
+      DataDir dataDir) {
     super(textProvider, cfg, registrationManager, resourceManager);
     this.vocabManager = vocabManager;
+    this.resourceMetadataInferringService = resourceMetadataInferringService;
     this.emlValidator = new EmlValidator(cfg, registrationManager, textProvider);
     this.configWarnings = configWarnings;
+    this.dataDir = dataDir;
   }
 
   /**
@@ -120,6 +147,30 @@ public class MetadataAction extends ManagerBaseAction {
 
   public Eml getEml() {
     return resource.getEml();
+  }
+
+  public boolean isInferGeocoverageAutomatically() {
+    return resource.isInferGeocoverageAutomatically();
+  }
+
+  public void setInferGeocoverageAutomatically(boolean inferGeocoverageAutomatically) {
+    resource.setInferGeocoverageAutomatically(inferGeocoverageAutomatically);
+  }
+
+  public boolean isInferTaxonomicCoverageAutomatically() {
+    return resource.isInferTaxonomicCoverageAutomatically();
+  }
+
+  public void setInferTaxonomicCoverageAutomatically(boolean inferTaxonomicCoverageAutomatically) {
+    resource.setInferTaxonomicCoverageAutomatically(inferTaxonomicCoverageAutomatically);
+  }
+
+  public boolean isInferTemporalCoverageAutomatically() {
+    return resource.isInferTemporalCoverageAutomatically();
+  }
+
+  public void setInferTemporalCoverageAutomatically(boolean inferTemporalCoverageAutomatically) {
+    resource.setInferTemporalCoverageAutomatically(inferTemporalCoverageAutomatically);
   }
 
   public Map<String, String> getJGTICuratorialUnitTypeOptions() {
@@ -148,13 +199,24 @@ public class MetadataAction extends ManagerBaseAction {
   public String getLicenseKeySelected() {
     String licenseText = resource.getEml().getIntellectualRights();
     if (StringUtils.isNotBlank(licenseText)) {
+      // can be old-fashioned license, with version outside parenthesis
+      String licenseTextUpdated = licenseText.replace(") 4.0", " 4.0)");
       for (Map.Entry<String, String> entry: licenses.entrySet()) {
         String licenseName = entry.getValue();
-        if (StringUtils.isNotBlank(licenseName) && licenseText.contains(licenseName)) {
+        if (StringUtils.isNotBlank(licenseName) && licenseTextUpdated.contains(licenseName)) {
+          return entry.getKey();
+        }
+      }
+
+      // Try URL instead (MDT style)
+      for (Map.Entry<String, String> entry: licenseUrls.entrySet()) {
+        String licenseUrl = entry.getValue();
+        if (StringUtils.isNotBlank(licenseUrl) && licenseTextUpdated.contains(licenseUrl)) {
           return entry.getKey();
         }
       }
     }
+
     return null;
   }
 
@@ -164,6 +226,10 @@ public class MetadataAction extends ManagerBaseAction {
 
   public Map<String, String> getLicenseTexts() {
     return licenseTexts;
+  }
+
+  public Map<String, String> getLicenseUrls() {
+    return licenseUrls;
   }
 
   /**
@@ -191,7 +257,7 @@ public class MetadataAction extends ManagerBaseAction {
       } else if (resource.getCoreType().equalsIgnoreCase(CoreRowType.OCCURRENCE.toString())) {
         return getOccurrenceSubtypesMap();
       } else if (resource.getCoreType().equalsIgnoreCase(CoreRowType.SAMPLINGEVENT.toString())) {
-        return getEmptySubtypeMap(); // because there are currently no dataset subtypes for sampling event datasets
+        return getSamplingEventSubtypesMap();
       } else if (CoreRowType.OTHER.toString().equalsIgnoreCase(resource.getCoreType())) {
         return getEmptySubtypeMap();
       }
@@ -254,7 +320,48 @@ public class MetadataAction extends ManagerBaseAction {
     }
 
     // take the section parameter from the requested url
+    String requestURI = req.getRequestURI();
     section = MetadataSection.fromName(StringUtils.substringBetween(req.getRequestURI(), "metadata-", "."));
+
+    // uploadlogo - redirect to additional metadata section
+    if (requestURI.contains("uploadlogo")) {
+      section = MetadataSection.ADDITIONAL_SECTION;
+    }
+
+    boolean reinferMetadata = Boolean.parseBoolean(StringUtils.trimToNull(req.getParameter(Constants.REQ_PARAM_REINFER_METADATA)));
+
+    boolean mappingsChangedAfterLastTry =
+        !DATASET_TYPE_METADATA_IDENTIFIER.equals(resource.getCoreType())
+            && resource.getInferredMetadata() != null
+            && resource.getInferredMetadata().getLastModified() != null
+            && resource.getMappingsModified() != null
+            && resource.getMappingsModified().after(resource.getInferredMetadata().getLastModified());
+
+    // infer metadata if:
+    // 1) It was requested
+    // 2) It is absent
+    // 3) Mappings were changed
+    if (reinferMetadata || resource.getInferredMetadata() == null || mappingsChangedAfterLastTry) {
+      InferredMetadata inferredMetadataRaw = resourceMetadataInferringService.inferMetadata(resource);
+
+      if (inferredMetadataRaw instanceof InferredEmlMetadata) {
+        inferredMetadata = (InferredEmlMetadata) inferredMetadataRaw;
+      } else {
+        LOG.error("Wrong type of the inferred metadata class, expected {} got {}",
+                InferredEmlMetadata.class.getSimpleName(), inferredMetadataRaw.getClass().getSimpleName());
+        inferredMetadata = new InferredEmlMetadata();
+      }
+      resource.setInferredMetadata(inferredMetadata);
+      resourceManager.saveInferredMetadata(resource);
+    } else {
+      if (resource.getInferredMetadata() instanceof InferredEmlMetadata) {
+        inferredMetadata = (InferredEmlMetadata) resource.getInferredMetadata();
+      } else {
+        LOG.error("Wrong type of the stored inferred metadata class, expected {} got {}",
+                InferredEmlMetadata.class.getSimpleName(), resource.getInferredMetadata().getClass().getSimpleName());
+        inferredMetadata = new InferredEmlMetadata();
+      }
+    }
 
     switch (section) {
       case BASIC_SECTION:
@@ -276,12 +383,23 @@ public class MetadataAction extends ManagerBaseAction {
 
         // update frequencies list, derived from XML vocabulary, and displayed in drop-down on basic metadata page
         frequencies = new LinkedHashMap<>();
-        frequencies.putAll(vocabManager.getI18nVocab(Constants.VOCAB_URI_UPDATE_FREQUENCIES, getLocaleLanguage(), false));
-
+        // temporary fix: remove "unkown" from vocabulary
+        vocabManager.getI18nVocab(Constants.VOCAB_URI_UPDATE_FREQUENCIES, getLocaleLanguage(), false)
+          .entrySet()
+          .stream()
+          .filter(p -> !"unkown".equals(p.getKey()))
+          .forEach(p -> frequencies.put(p.getKey(), p.getValue()));
 
         // sanitize intellectualRights - pre-v2.2 text was manually entered and may have characters that break js
         if (getEml().getIntellectualRights() != null) {
           getEml().setIntellectualRights(removeNewlineCharacters(getEml().getIntellectualRights()));
+        }
+
+        // Public, published occurrence resources have a distribution download URL
+        if (CoreRowType.OCCURRENCE.toString().equalsIgnoreCase(resource.getCoreType())
+            && resource.isPublished()
+            && resource.isPubliclyAvailable()) {
+          resource.getEml().setDistributionDownloadUrl(cfg.getBaseUrl() + "/archive.do?r=" + resource.getShortname());
         }
 
         // populate agent vocabularies
@@ -301,30 +419,24 @@ public class MetadataAction extends ManagerBaseAction {
           configWarnings.addStartupError(e.getMessage(), e);
         }
 
-        // load organisations map
-        loadOrganisations();
-
         // if IPT isn't registered there are no publishing organisations to choose from, so set to "No organisation"
         if (getRegisteredIpt() == null && getDefaultOrganisation() != null) {
           resource.setOrganisation(getDefaultOrganisation());
         }
 
         if (isHttpPost()) {
-          resource.getEml().getDescription().clear();
+          resource.getEml().setIntellectualRights(null);
+        }
+        break;
+
+      case CONTACTS_SECTION:
+        // populate agent vocabularies
+        loadAgentVocabularies();
+        if (isHttpPost()) {
           resource.getEml().getContacts().clear();
           resource.getEml().getCreators().clear();
           resource.getEml().getMetadataProviders().clear();
-          resource.getEml().setIntellectualRights(null);
-
-          // publishing organisation, if provided must match organisation
-          String id = getId();
-          Organisation organisation = (id == null) ? null : registrationManager.get(id);
-          if (organisation != null) {
-            // set organisation: note organisation is locked after 1) DOI assigned, or 2) after registration with GBIF
-            if (!resource.isAlreadyAssignedDoi() && !resource.isRegistered()) {
-              resource.setOrganisation(organisation);
-            }
-          }
+          resource.getEml().getAssociatedParties().clear();
         }
         break;
 
@@ -356,19 +468,13 @@ public class MetadataAction extends ManagerBaseAction {
         }
         break;
 
-      case PARTIES_SECTION:
-        // populate agent vocabularies
-        loadAgentVocabularies();
-        if (isHttpPost()) {
-          resource.getEml().getAssociatedParties().clear();
-        }
-        break;
-
       case PROJECT_SECTION:
         // populate agent vocabularies
         loadAgentVocabularies();
         if (isHttpPost()) {
           resource.getEml().getProject().getPersonnel().clear();
+          resource.getEml().getProject().getAwards().clear();
+          resource.getEml().getProject().getRelatedProjects().clear();
         }
         break;
 
@@ -419,9 +525,9 @@ public class MetadataAction extends ManagerBaseAction {
 
   @Override
   public String save() throws Exception {
-    // before saving, the minimum amount of mandatory metadata must have been provided, and ALL metadata sections must
-    // be valid, otherwise an error is displayed
-    if (emlValidator.areAllSectionsValid(this, resource)) {
+    // before saving, the minimum amount of mandatory metadata must have been provided, and the current metadata section
+    // must be valid, otherwise an error is displayed
+    if (emlValidator.isSectionValid(resource, section, new ActionErrorCollector(this), new StrutsI18n(this))) {
       // Save metadata information (eml.xml)
       resourceManager.saveEml(resource);
       // save date metadata was last modified
@@ -433,6 +539,12 @@ public class MetadataAction extends ManagerBaseAction {
       // progress to next section, since save succeeded
       switch (section) {
         case BASIC_SECTION:
+          next = MetadataSection.CONTACTS_SECTION;
+          break;
+        case CONTACTS_SECTION:
+          next = MetadataSection.ACKNOWLEDGEMENTS_SECTION;
+          break;
+        case ACKNOWLEDGEMENTS_SECTION:
           next = MetadataSection.GEOGRAPHIC_COVERAGE_SECTION;
           break;
         case GEOGRAPHIC_COVERAGE_SECTION:
@@ -442,12 +554,12 @@ public class MetadataAction extends ManagerBaseAction {
           next = MetadataSection.TEMPORAL_COVERAGE_SECTION;
           break;
         case TEMPORAL_COVERAGE_SECTION:
+          next = MetadataSection.ADDITIONAL_DESCRIPTION_SECTION;
+          break;
+        case ADDITIONAL_DESCRIPTION_SECTION:
           next = MetadataSection.KEYWORDS_SECTION;
           break;
         case KEYWORDS_SECTION:
-          next = MetadataSection.PARTIES_SECTION;
-          break;
-        case PARTIES_SECTION:
           next = MetadataSection.PROJECT_SECTION;
           break;
         case PROJECT_SECTION:
@@ -481,7 +593,7 @@ public class MetadataAction extends ManagerBaseAction {
   @Override
   public void validateHttpPostOnly() {
     validatorRes.validate(this, resource);
-    emlValidator.validate(this, resource, section);
+    emlValidator.validate(resource, section, new ActionErrorCollector(this), new StrutsI18n(this));
   }
 
   /**
@@ -500,6 +612,15 @@ public class MetadataAction extends ManagerBaseAction {
    * @return Occurrence subtypes Map
    */
   public Map<String, String> getOccurrenceSubtypesMap() {
+    // exclude subtypes known to relate to Checklist type
+    Map<String, String> datasetSubtypesCopy = new LinkedHashMap<>(datasetSubtypes);
+    for (String key : checklistSubtypeKeys) {
+      datasetSubtypesCopy.remove(key);
+    }
+    return datasetSubtypesCopy;
+  }
+
+  public Map<String, String> getSamplingEventSubtypesMap() {
     // exclude subtypes known to relate to Checklist type
     Map<String, String> datasetSubtypesCopy = new LinkedHashMap<>(datasetSubtypes);
     for (String key : checklistSubtypeKeys) {
@@ -557,6 +678,12 @@ public class MetadataAction extends ManagerBaseAction {
       checklistKeys.add(type.name().replaceAll("_", "").toLowerCase());
     }
     checklistSubtypeKeys = Collections.unmodifiableList(checklistKeys);
+
+    List<String> samplingEventKeys = new ArrayList<>();
+    for (DatasetSubtype type : DatasetSubtype.SAMPLING_EVENT_DATASET_SUBTYPES) {
+      samplingEventKeys.add(type.name().replaceAll("_", "").toLowerCase());
+    }
+    samplingEventSubtypeKeys = Collections.unmodifiableList(samplingEventKeys);
   }
 
   void setDatasetSubtypes(Map<String, String> datasetSubtypes) {
@@ -571,6 +698,10 @@ public class MetadataAction extends ManagerBaseAction {
     return occurrenceSubtypeKeys;
   }
 
+  List<String> getSamplingEventSubtypeKeys() {
+    return samplingEventSubtypeKeys;
+  }
+
   /**
    * On the basic metadata page, this variable determines whether the core type dropdown is
    * disabled or not.
@@ -583,7 +714,7 @@ public class MetadataAction extends ManagerBaseAction {
 
   /**
    * On the basic metadata page, this map populates the update frequencies dropdown. The map is derived from the
-   * vocabulary {@link -linkoffline http://rs.gbif.org/vocabulary/eml/update_frequency.xml}.
+   * vocabulary <a href="http://rs.gbif.org/vocabulary/eml/update_frequency.xml">http://rs.gbif.org/vocabulary/eml/update_frequency.xml</a>.
    *
    * @return update frequencies map
    */
@@ -604,6 +735,9 @@ public class MetadataAction extends ManagerBaseAction {
   }
 
   public Map<String, String> getUserIdDirectories() {
+    if (userIdDirectories == null) {
+      loadDirectories(getText("eml.contact.noDirectory"));
+    }
     return userIdDirectories;
   }
 
@@ -612,7 +746,6 @@ public class MetadataAction extends ManagerBaseAction {
    *
    * @throws InvalidConfigException if licenses properties file could not be loaded
    */
-  @Singleton
   public static synchronized Properties licenseProperties() throws InvalidConfigException {
     if (licenseProperties == null) {
       Properties p = new Properties();
@@ -634,7 +767,6 @@ public class MetadataAction extends ManagerBaseAction {
    *
    * @throws InvalidConfigException if directories properties file could not be loaded
    */
-  @Singleton
   public static synchronized Properties directoriesProperties() throws InvalidConfigException {
     if (directoriesProperties == null) {
       Properties p = new Properties();
@@ -654,30 +786,37 @@ public class MetadataAction extends ManagerBaseAction {
   /**
    * Load license maps: #1) license names - used to populate select on Basic Metadata Page
    *                    #2) license texts - used to populate text area on Basic Metadata Page
+   *                    #3) license URLs
    *
    * @param firstOption the default select option for the license names (e.g. no license selected)
    *
    * @throws InvalidConfigException if the licenses properties file was badly configured
    */
-  @Singleton
   public static synchronized void loadLicenseMaps(String firstOption) throws InvalidConfigException {
-    if (licenses == null || licenseTexts == null) {
-      licenses = new TreeMap<>();
+    if (licenses == null || licenseTexts == null || licenseUrls == null) {
+      licenses = new TreeMap<>(new LicenceComparator());
       licenses.put("", (firstOption == null) ? "-" : firstOption);
       licenseTexts = new TreeMap<>();
+      licenseUrls = new TreeMap<>();
 
       Properties properties = licenseProperties();
       for (Map.Entry<Object, Object> entry : properties.entrySet()) {
         String key = StringUtils.trim((String) entry.getKey());
         String value = StringUtils.trim((String) entry.getValue());
+
         if (key != null && key.startsWith(LICENSE_NAME_PROPERTY_PREFIX) && value != null) {
           String keyMinusPrefix = StringUtils.trimToNull(key.replace(LICENSE_NAME_PROPERTY_PREFIX, ""));
+
           if (keyMinusPrefix != null) {
             String licenseText =
               StringUtils.trimToNull(properties.getProperty(LICENSE_TEXT_PROPERTY_PREFIX + keyMinusPrefix));
+            String licenseUrl =
+                StringUtils.trimToNull(properties.getProperty(LICENSE_URL_PROPERTY_PREFIX + keyMinusPrefix));
+
             if (licenseText != null) {
               licenses.put(keyMinusPrefix, value);
               licenseTexts.put(keyMinusPrefix, licenseText);
+              licenseUrls.put(keyMinusPrefix, licenseUrl);
             }
           } else {
             String error = LICENSES_PROPFILE_PATH + " has been been configured wrong.";
@@ -701,7 +840,6 @@ public class MetadataAction extends ManagerBaseAction {
    *
    * @throws InvalidConfigException if the directories properties file was badly configured
    */
-  @Singleton
   public static synchronized void loadDirectories(String firstOption) throws InvalidConfigException {
     if (userIdDirectories == null) {
       userIdDirectories = new TreeMap<>();
@@ -745,13 +883,6 @@ public class MetadataAction extends ManagerBaseAction {
     roles.putAll(vocabManager.getI18nVocab(Constants.VOCAB_URI_ROLES, getLocaleLanguage(), false));
 
     if (resource != null && resource.getEml() != null) {
-
-      // create Agent equal to current user
-      Agent current = new Agent();
-      current.setFirstName(getCurrentUser().getFirstname());
-      current.setLastName(getCurrentUser().getLastname());
-      current.setEmail(getCurrentUser().getEmail());
-
       // contacts list
       Agent firstContact = null;
       if (!resource.getEml().getContacts().isEmpty()) {
@@ -776,7 +907,6 @@ public class MetadataAction extends ManagerBaseAction {
       }
       if (firstContact.getUserIds().isEmpty()) {
         List<UserId> userIds = new ArrayList<>();
-        userIds.add(new UserId());
         firstContact.setUserIds(userIds);
       }
       setPrimaryContact(firstContact);
@@ -800,20 +930,15 @@ public class MetadataAction extends ManagerBaseAction {
             metadataProvider.getAddress().setCountry(result.getPayload().getIso2LetterCode());
           }
         }
-      } else {
-        // add current user to metadataProviders list
-        resource.getEml().addMetadataProvider(current);
       }
 
-      // auto populate user with current user if associated parties list is empty, and eml.xml hasn't been written yet
-      if (!resourceManager.isEmlExisting(resource.getShortname()) && resource.getEml().getAssociatedParties().isEmpty()) {
-        current.setRole("user");
-        resource.getEml().getAssociatedParties().add(current);
-      }
-      // otherwise, ensure associated parties' country value get converted into 2 letter iso code for proper display
+      // otherwise, ensure associated parties' country value get converted into 2-letter iso code for proper display
       else if (!resource.getEml().getAssociatedParties().isEmpty()) {
         for (Agent party : resource.getEml().getAssociatedParties()) {
-          String countryValue = party.getAddress().getCountry();
+          String countryValue = Optional.ofNullable(party)
+              .map(Agent::getAddress)
+              .map(Address::getCountry)
+              .orElse(null);
           if (countryValue != null) {
             ParseResult<Country> result = COUNTRY_PARSER.parse(countryValue);
             if (result.isSuccessful()) {
@@ -823,13 +948,6 @@ public class MetadataAction extends ManagerBaseAction {
         }
       }
     }
-  }
-
-  /**
-   * @return list of organisations associated to IPT that can publish resources
-   */
-  public Map<String, String> getOrganisations() {
-    return organisations;
   }
 
   /**
@@ -851,36 +969,6 @@ public class MetadataAction extends ManagerBaseAction {
   }
 
   /**
-   * Populate organisations dropdown options/list, with placeholder option, followed by list of organisations able to
-   * host resources. There must be more than the default organisation "No organisation" in order to include the
-   * placeholder option.
-   */
-  private void loadOrganisations() {
-    List<Organisation> associatedOrganisations = registrationManager.list();
-    organisations = new LinkedHashMap<>();
-    if (!associatedOrganisations.isEmpty()) {
-
-      // add placeholder if there is more than the default organisation "No organisation"
-      if (associatedOrganisations.size() > 1) {
-        organisations.put("", getText("admin.organisation.name.select"));
-      }
-
-      // add default organisation "No organisation" as first option
-      Organisation noOrganisation = getDefaultOrganisation();
-      if (noOrganisation != null) {
-        organisations.put(noOrganisation.getKey().toString(), getText("eml.publishingOrganisation.none"));
-      }
-
-      // then add remaining organisations in the order they have been sorted, excluding the default organisation
-      for (Organisation o : associatedOrganisations) {
-        if (!Constants.DEFAULT_ORG_KEY.equals(o.getKey())) {
-          organisations.put(o.getKey().toString(), o.getName());
-        }
-      }
-    }
-  }
-
-  /**
    * Remove all newline characters from string. Used to sanitize string for javascript, otherwise an
    * "Unexpected Token ILLEGAL" error may occur.
    */
@@ -889,5 +977,71 @@ public class MetadataAction extends ManagerBaseAction {
       s = s.replaceAll("\\r\\n|\\r|\\n", " ");
     }
     return s;
+  }
+
+  public InferredEmlMetadata getInferredMetadata() {
+    return inferredMetadata;
+  }
+
+  public void setFile(File file) {
+    this.file = file;
+  }
+
+  public String uploadLogo() {
+    if (file != null) {
+      // remove any previous logo file
+      for (String suffix : Constants.IMAGE_TYPES) {
+        FileUtils.deleteQuietly(dataDir.resourceLogoFile(resource.getShortname(), suffix));
+      }
+      // inspect file type
+      String type = "jpeg";
+      String fileContentType = Optional.ofNullable(ActionContext.getContext())
+        .map(ActionContext::getParameters)
+        .map(p -> p.get("fileContentType"))
+        .map(Parameter::getValue)
+        .orElse(null);
+
+      if (fileContentType != null) {
+        type = StringUtils.substringAfterLast(fileContentType, "/");
+      }
+      File logoFile = dataDir.resourceLogoFile(resource.getShortname(), type);
+      try {
+        FileUtils.copyFile(file, logoFile);
+      } catch (IOException e) {
+        LOG.warn(e.getMessage());
+      }
+      // resource.getEml().setLogoUrl(cfg.getResourceLogoUrl(resource.getShortname()));
+    }
+    return INPUT;
+  }
+
+  /**
+   * Custom license comparator. This is needed because java Properties class is based on Hashtable and does not
+   * respect the order in the licences.properties file. This comparator will sort license from less to more restricted.
+   * Result: "" (empty), cczero, ccby, ccbync
+   */
+  private static class LicenceComparator implements Comparator<String> {
+
+    @Override
+    public int compare(String o1, String o2) {
+      if (StringUtils.equals(o1, o2)) {
+        return 0;
+      } else if (!StringUtils.equalsAny("cczero", o1, o2)) {
+        // if not cczero - just compare them
+        return o1.compareTo(o2);
+      } else if ("cczero".equals(o1) && !o2.isEmpty()) {
+        // cczero should be right after empty license
+        return -1;
+      } else if ("cczero".equals(o2) && !o1.isEmpty()) {
+        // cczero should be right after empty license
+        return 1;
+      } else if (o1.isEmpty()) {
+        return -1;
+      } else if (o2.isEmpty()) {
+        return 1;
+      }
+
+      return o1.compareTo(o2);
+    }
   }
 }

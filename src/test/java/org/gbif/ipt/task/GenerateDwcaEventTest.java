@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,12 +18,13 @@ import org.gbif.dwc.ArchiveFile;
 import org.gbif.dwc.DwcFiles;
 import org.gbif.dwc.record.Record;
 import org.gbif.dwc.terms.DwcTerm;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.action.BaseAction;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.config.DataDir;
-import org.gbif.ipt.config.IPTModule;
 import org.gbif.ipt.config.JdbcSupport;
+import org.gbif.ipt.config.TestBeanProvider;
 import org.gbif.ipt.mock.MockAppConfig;
 import org.gbif.ipt.mock.MockDataDir;
 import org.gbif.ipt.mock.MockRegistryManager;
@@ -34,22 +33,29 @@ import org.gbif.ipt.model.FileSource;
 import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.User;
 import org.gbif.ipt.model.converter.ConceptTermConverter;
+import org.gbif.ipt.model.converter.DataPackageFieldConverter;
+import org.gbif.ipt.model.converter.DataPackageIdentifierConverter;
+import org.gbif.ipt.model.converter.ExtensionMappingConverter;
+import org.gbif.ipt.model.converter.TableSchemaNameConverter;
 import org.gbif.ipt.model.converter.ExtensionRowTypeConverter;
 import org.gbif.ipt.model.converter.JdbcInfoConverter;
 import org.gbif.ipt.model.converter.OrganisationKeyConverter;
-import org.gbif.ipt.model.converter.PasswordConverter;
+import org.gbif.ipt.model.converter.PasswordEncrypter;
 import org.gbif.ipt.model.converter.UserEmailConverter;
 import org.gbif.ipt.model.factory.ExtensionFactory;
 import org.gbif.ipt.model.factory.ThesaurusHandlingRule;
-import org.gbif.ipt.service.AlreadyExistingException;
-import org.gbif.ipt.service.ImportException;
-import org.gbif.ipt.service.InvalidFilenameException;
+import org.gbif.ipt.service.admin.DataPackageSchemaManager;
 import org.gbif.ipt.service.admin.ExtensionManager;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.UserAccountManager;
 import org.gbif.ipt.service.admin.VocabulariesManager;
+import org.gbif.ipt.service.admin.impl.ExtensionsHolder;
 import org.gbif.ipt.service.admin.impl.VocabulariesManagerImpl;
+import org.gbif.ipt.service.file.FileStoreManager;
+import org.gbif.ipt.service.manage.MetadataReader;
+import org.gbif.ipt.service.manage.ResourceMetadataInferringService;
 import org.gbif.ipt.service.manage.SourceManager;
+import org.gbif.ipt.service.manage.impl.ResourceConvertersManager;
 import org.gbif.ipt.service.manage.impl.ResourceManagerImpl;
 import org.gbif.ipt.service.manage.impl.SourceManagerImpl;
 import org.gbif.ipt.service.registry.RegistryManager;
@@ -60,7 +66,6 @@ import org.gbif.utils.file.CompressionUtil;
 import org.gbif.utils.file.FileUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -69,17 +74,11 @@ import java.util.Locale;
 import java.util.Map;
 
 import javax.validation.constraints.NotNull;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
-
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.servlet.ServletModule;
-import com.google.inject.struts2.Struts2GuicePluginModule;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -92,7 +91,8 @@ import static org.mockito.Mockito.when;
 /**
  * Tests generating sampling event DwC-A: having an event core with occurrence extension.
  */
-public class GenerateDwcaEventTest {
+public class GenerateDwcaEventTest extends IptBaseTest {
+
   private static final String RESOURCE_SHORTNAME = "event";
   private static final String VERSIONED_ARCHIVE_FILENAME = "dwca-2.0.zip";
 
@@ -101,12 +101,15 @@ public class GenerateDwcaEventTest {
   private DataDir mockDataDir = MockDataDir.buildMock();
   private SourceManager mockSourceManager;
   private Resource resource;
+  @TempDir
   private File resourceDir;
   private ReportHandler mockHandler;
-  private static VocabulariesManager mockVocabulariesManager = mock(VocabulariesManager.class);
+  private VocabulariesManager mockVocabulariesManager = mock(VocabulariesManager.class);
 
-  @BeforeAll
-  public static void init() {
+  @BeforeEach
+  public void init() {
+    when(mockDataDir.dataFile(DataDir.RESOURCES_DIR)).thenReturn(resourceDir);
+
     // populate HashMap from basisOfRecord vocabulary, with lowercase keys (used in basisOfRecord validation)
     Map<String, String> basisOfRecords = new HashMap<>();
     basisOfRecords.put("preservedspecimen", "Preserved Specimen");
@@ -340,9 +343,7 @@ public class GenerateDwcaEventTest {
    * Generates a test sampling event resource having an event core with occurrence extension.
    */
   private Resource getResource(@NotNull File resourceXML, @NotNull File eventSourceFile,
-    @NotNull File occurrenceSourceFile)
-    throws IOException, SAXException, ParserConfigurationException, AlreadyExistingException, ImportException,
-    InvalidFilenameException {
+    @NotNull File occurrenceSourceFile) throws Exception {
     UserAccountManager mockUserAccountManager = mock(UserAccountManager.class);
     UserEmailConverter mockEmailConverter = new UserEmailConverter(mockUserAccountManager);
     RegistrationManager mockRegistrationManager = mock(RegistrationManager.class);
@@ -353,20 +354,20 @@ public class GenerateDwcaEventTest {
     VocabulariesManager mockVocabulariesManager = mock(VocabulariesManager.class);
     SimpleTextProvider mockSimpleTextProvider = mock(SimpleTextProvider.class);
     mockHandler = mock(ResourceManagerImpl.class);
-    resourceDir = FileUtils.createTempDir();
     BaseAction baseAction = new BaseAction(mockSimpleTextProvider, mockAppConfig, mockRegistrationManager);
 
     // construct ExtensionFactory using injected parameters
-    Injector injector = Guice.createInjector(new ServletModule(), new Struts2GuicePluginModule(), new IPTModule());
-    HttpClient httpClient = injector.getInstance(HttpClient.class);
+    HttpClient httpClient = TestBeanProvider.provideHttpClient();
     ThesaurusHandlingRule thesaurusRule = new ThesaurusHandlingRule(mock(VocabulariesManagerImpl.class));
-    SAXParserFactory saxf = injector.getInstance(SAXParserFactory.class);
+    SAXParserFactory saxf = TestBeanProvider.provideNsAwareSaxParserFactory();
     ExtensionFactory extensionFactory = new ExtensionFactory(thesaurusRule, saxf, httpClient);
-    JdbcSupport support = injector.getInstance(JdbcSupport.class);
-    PasswordConverter passwordConverter = injector.getInstance(PasswordConverter.class);
+    JdbcSupport support = TestBeanProvider.provideJdbcSupport();
+    PasswordEncrypter passwordEncrypter = new PasswordEncrypter(TestBeanProvider.providePasswordEncryption());
     JdbcInfoConverter jdbcConverter = new JdbcInfoConverter(support);
 
+    DataPackageSchemaManager mockSchemaManager = mock(DataPackageSchemaManager.class);
     ExtensionManager extensionManager = mock(ExtensionManager.class);
+    ExtensionsHolder extensionsHolder = mock(ExtensionsHolder.class);
 
     // construct event core Extension
     InputStream eventCoreIs = GenerateDwcaTest.class.getResourceAsStream("/extensions/dwc_event_2015-04-24.xml");
@@ -381,11 +382,20 @@ public class GenerateDwcaEventTest {
     when(extensionManager.get("http://rs.tdwg.org/dwc/terms/Occurrence")).thenReturn(occurrenceCore);
     when(extensionManager.get("http://rs.tdwg.org/dwc/terms/Event")).thenReturn(eventCore);
 
-    ExtensionRowTypeConverter extensionRowTypeConverter = new ExtensionRowTypeConverter(extensionManager);
+    // mock ExtensionHolder returning Occurrence and Event
+    when(extensionsHolder.getExtensionsByRowtype()).thenReturn(
+        Map.ofEntries(
+            Map.entry("http://rs.tdwg.org/dwc/terms/Occurrence", occurrenceCore),
+            Map.entry("http://rs.tdwg.org/dwc/terms/Event", eventCore)));
+
+    ExtensionRowTypeConverter extensionRowTypeConverter = new ExtensionRowTypeConverter(extensionsHolder);
     ConceptTermConverter conceptTermConverter = new ConceptTermConverter(extensionRowTypeConverter);
 
     // mock finding resource.xml file
-    when(mockDataDir.resourceFile(anyString(), anyString())).thenReturn(resourceXML);
+    when(mockDataDir.resourceFile(anyString())).thenReturn(resourceXML);
+
+    // mock finding inferredMetadata.xml file
+    when(mockDataDir.resourceInferredMetadataFile(anyString())).thenReturn(new File(DataDir.INFERRED_METADATA_FILENAME));
 
     // retrieve sample zipped resource folder
     File zippedResourceFolder = FileUtils.getClasspathFile("resources/event/event.zip");
@@ -399,7 +409,7 @@ public class GenerateDwcaEventTest {
     when(mockDataDir.resourceDwcaFile(anyString())).thenReturn(new File("dwca.zip"));
 
     // create SourceManagerImpl
-    mockSourceManager = new SourceManagerImpl(mock(AppConfig.class), mockDataDir);
+    mockSourceManager = new SourceManagerImpl(mock(AppConfig.class), mockDataDir, mock(FileStoreManager.class));
 
     // create temp directory
     File tmpDataDir = FileUtils.createTempDir();
@@ -409,12 +419,30 @@ public class GenerateDwcaEventTest {
     File publicationLogFile = new File(resourceDir, DataDir.PUBLICATION_LOG_FILENAME);
     when(mockDataDir.resourcePublicationLogFile(RESOURCE_SHORTNAME)).thenReturn(publicationLogFile);
 
+    ResourceConvertersManager mockResourceConvertersManager = new ResourceConvertersManager(
+        mockEmailConverter, mockOrganisationKeyConverter, mock(ExtensionMappingConverter.class), extensionRowTypeConverter,
+        conceptTermConverter, mock(DataPackageIdentifierConverter.class),
+        mock(TableSchemaNameConverter.class), mock(DataPackageFieldConverter.class), jdbcConverter);
+
     // create ResourceManagerImpl
     ResourceManagerImpl resourceManager =
-      new ResourceManagerImpl(mockAppConfig, mockDataDir, mockEmailConverter, mockOrganisationKeyConverter,
-        extensionRowTypeConverter, jdbcConverter, mockSourceManager, extensionManager, mockRegistryManager,
-        conceptTermConverter, mockDwcaFactory, passwordConverter, mockEml2Rtf, mockVocabulariesManager,
-        mockSimpleTextProvider, mockRegistrationManager);
+      new ResourceManagerImpl(
+          mockAppConfig,
+          mockDataDir,
+          mockResourceConvertersManager,
+          mockSourceManager,
+          extensionManager,
+          mockSchemaManager,
+          mockRegistryManager,
+          mockDwcaFactory,
+          mock(GenerateDataPackageFactory.class),
+          passwordEncrypter,
+          mockEml2Rtf,
+          mockVocabulariesManager,
+          mockSimpleTextProvider,
+          mockRegistrationManager,
+          mock(MetadataReader.class),
+          mock(ResourceMetadataInferringService.class));
 
     // create user
     User creator = new User();

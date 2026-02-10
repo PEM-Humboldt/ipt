@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,7 +13,7 @@
  */
 package org.gbif.ipt.struts2.converter;
 
-import org.gbif.metadata.DateUtils;
+import org.gbif.metadata.eml.ipt.util.DateUtils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

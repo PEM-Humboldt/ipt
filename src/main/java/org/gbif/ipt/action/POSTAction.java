@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,19 +17,23 @@ import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 
-import org.apache.commons.lang3.StringUtils;
+import javax.inject.Inject;
 
-import com.google.inject.Inject;
+import org.apache.commons.lang3.StringUtils;
 
 public class POSTAction extends BaseAction {
 
+  private static final long serialVersionUID = 2236168478005348993L;
   protected boolean delete = false;
   protected boolean notFound = false;
   protected boolean validate = true;
   protected String defaultResult = INPUT;
 
   @Inject
-  public POSTAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager) {
+  public POSTAction(
+      SimpleTextProvider textProvider,
+      AppConfig cfg,
+      RegistrationManager registrationManager) {
     super(textProvider, cfg, registrationManager);
   }
 
@@ -48,6 +50,12 @@ public class POSTAction extends BaseAction {
     if (notFound) {
       return NOT_FOUND;
     }
+
+    // if cancel was set to true - call cancel method
+    if (cancel) {
+      return cancel();
+    }
+
     // if this is a GET request we request the INPUT form
     if (isHttpPost()) {
       // if its a POST we either save or delete
@@ -74,6 +82,14 @@ public class POSTAction extends BaseAction {
   public void setDelete(String delete) {
     this.delete = StringUtils.trimToNull(delete) != null;
     if (this.delete) {
+      validate = false;
+    }
+  }
+
+  @Override
+  public void setCancel(String cancel) {
+    this.cancel = StringUtils.trimToNull(cancel) != null;
+    if (this.cancel) {
       validate = false;
     }
   }

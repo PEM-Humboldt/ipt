@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,6 +12,8 @@
  * limitations under the License.
  */
 package org.gbif.ipt.model;
+
+import java.util.Date;
 
 /**
  * A data source for mappings, exposing a record/row iterator through the SourceManager implementation.
@@ -45,6 +45,8 @@ public interface Source {
 
   boolean isReadable();
 
+  boolean isProcessing();
+
   SourceType getSourceType();
 
   void setColumns(int columns);
@@ -59,5 +61,9 @@ public interface Source {
 
   void setReadable(boolean readable);
 
+  void setProcessing(boolean processing);
+
   void setResource(Resource resource);
+
+  void setLastModified(Date date);
 }

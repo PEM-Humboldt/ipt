@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +16,7 @@ package org.gbif.ipt.model.factory;
 import org.gbif.dwc.ArchiveField.DataType;
 import org.gbif.dwc.terms.DcTerm;
 import org.gbif.dwc.terms.DwcTerm;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.IPTModule;
 import org.gbif.ipt.model.Extension;
 import org.gbif.ipt.model.ExtensionProperty;
@@ -41,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ExtensionFactoryTest {
+public class ExtensionFactoryTest extends IptBaseTest {
 
   public static ExtensionFactory getFactory() throws Exception {
     IPTModule mod = new IPTModule();

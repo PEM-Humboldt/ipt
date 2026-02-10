@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,16 +28,15 @@ import org.gbif.ipt.model.voc.DOIRegistrationAgency;
 import org.gbif.ipt.service.registry.RegistryManager;
 import org.gbif.ipt.utils.DOIUtils;
 import org.gbif.ipt.utils.DataCiteMetadataBuilder;
-import org.gbif.metadata.eml.Agent;
+import org.gbif.metadata.eml.ipt.model.Agent;
 
 import java.util.Date;
 import java.util.UUID;
+import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.inject.Inject;
 
 public class OrganisationSupport {
 
@@ -50,7 +47,9 @@ public class OrganisationSupport {
   private AppConfig cfg;
 
   @Inject
-  public OrganisationSupport(RegistryManager registryManager, AppConfig cfg) {
+  public OrganisationSupport(
+      RegistryManager registryManager,
+      AppConfig cfg) {
     this.registryManager = registryManager;
     this.cfg = cfg;
   }
@@ -168,6 +167,17 @@ public class OrganisationSupport {
       }
     }
     return valid;
+  }
+
+  public void validateOrganisationToken(BaseAction action, UUID organisationKey, String organisationToken) {
+    // validate if the key+password combination validates to true
+    if (organisationKey != null && organisationToken != null) {
+      if (organisationKey.toString().length() > 0 && organisationToken.length() > 0) {
+        if (!registryManager.validateOrganisation(organisationKey.toString(), organisationToken)) {
+          action.addFieldError("hostingOrganisationToken", action.getText("validation.organisation.password.invalid"));
+        }
+      }
+    }
   }
 
   /**

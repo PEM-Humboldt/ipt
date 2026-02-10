@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,12 +17,13 @@ import org.gbif.api.model.common.DOI;
 import org.gbif.dwc.Archive;
 import org.gbif.dwc.DwcFiles;
 import org.gbif.dwc.UnsupportedArchiveException;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.action.BaseAction;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.config.DataDir;
-import org.gbif.ipt.config.IPTModule;
 import org.gbif.ipt.config.JdbcSupport;
+import org.gbif.ipt.config.TestBeanProvider;
 import org.gbif.ipt.mock.MockAppConfig;
 import org.gbif.ipt.mock.MockDataDir;
 import org.gbif.ipt.mock.MockRegistryManager;
@@ -34,16 +33,21 @@ import org.gbif.ipt.model.Ipt;
 import org.gbif.ipt.model.Organisation;
 import org.gbif.ipt.model.PropertyMapping;
 import org.gbif.ipt.model.Resource;
+import org.gbif.ipt.model.SimplifiedResource;
 import org.gbif.ipt.model.SqlSource;
 import org.gbif.ipt.model.TextFileSource;
 import org.gbif.ipt.model.User;
 import org.gbif.ipt.model.User.Role;
 import org.gbif.ipt.model.VersionHistory;
 import org.gbif.ipt.model.converter.ConceptTermConverter;
+import org.gbif.ipt.model.converter.DataPackageFieldConverter;
+import org.gbif.ipt.model.converter.DataPackageIdentifierConverter;
+import org.gbif.ipt.model.converter.ExtensionMappingConverter;
+import org.gbif.ipt.model.converter.TableSchemaNameConverter;
 import org.gbif.ipt.model.converter.ExtensionRowTypeConverter;
 import org.gbif.ipt.model.converter.JdbcInfoConverter;
 import org.gbif.ipt.model.converter.OrganisationKeyConverter;
-import org.gbif.ipt.model.converter.PasswordConverter;
+import org.gbif.ipt.model.converter.PasswordEncrypter;
 import org.gbif.ipt.model.converter.UserEmailConverter;
 import org.gbif.ipt.model.factory.ExtensionFactory;
 import org.gbif.ipt.model.factory.ThesaurusHandlingRule;
@@ -51,34 +55,37 @@ import org.gbif.ipt.model.voc.DOIRegistrationAgency;
 import org.gbif.ipt.model.voc.IdentifierStatus;
 import org.gbif.ipt.model.voc.PublicationMode;
 import org.gbif.ipt.model.voc.PublicationStatus;
-import org.gbif.ipt.service.AlreadyExistingException;
 import org.gbif.ipt.service.ImportException;
 import org.gbif.ipt.service.InvalidConfigException;
 import org.gbif.ipt.service.InvalidFilenameException;
 import org.gbif.ipt.service.PublicationException;
+import org.gbif.ipt.service.admin.DataPackageSchemaManager;
 import org.gbif.ipt.service.admin.ExtensionManager;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.UserAccountManager;
 import org.gbif.ipt.service.admin.VocabulariesManager;
+import org.gbif.ipt.service.admin.impl.ExtensionsHolder;
 import org.gbif.ipt.service.admin.impl.VocabulariesManagerImpl;
+import org.gbif.ipt.service.manage.MetadataReader;
 import org.gbif.ipt.service.manage.ResourceManager;
+import org.gbif.ipt.service.manage.ResourceMetadataInferringService;
 import org.gbif.ipt.service.manage.SourceManager;
 import org.gbif.ipt.service.registry.RegistryManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 import org.gbif.ipt.task.Eml2Rtf;
+import org.gbif.ipt.task.GenerateDataPackageFactory;
 import org.gbif.ipt.task.GenerateDwcaFactory;
 import org.gbif.ipt.utils.DOIUtils;
 import org.gbif.ipt.utils.ResourceUtils;
-import org.gbif.metadata.eml.Eml;
+import org.gbif.metadata.eml.ipt.model.Eml;
+import org.gbif.metadata.eml.ipt.model.KeywordSet;
 import org.gbif.utils.HttpClient;
 import org.gbif.utils.file.CompressionUtil;
 import org.gbif.utils.file.FileUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -89,22 +96,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.jupiter.api.AssertionFailureBuilder;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
-
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.servlet.ServletModule;
-import com.google.inject.struts2.Struts2GuicePluginModule;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -117,10 +119,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-public class ResourceManagerImplTest {
+public class ResourceManagerImplTest extends IptBaseTest {
 
   // Mock classes
   private final AppConfig mockAppConfig = MockAppConfig.buildMock();
@@ -132,7 +136,7 @@ public class ResourceManagerImplTest {
   private final SourceManager mockSourceManager = mock(SourceManager.class);
   private final RegistryManager mockRegistryManager = MockRegistryManager.buildMock();
   private final GenerateDwcaFactory mockDwcaFactory = mock(GenerateDwcaFactory.class);
-  private final PasswordConverter mockPasswordConverter = mock(PasswordConverter.class);
+  private final PasswordEncrypter mockPasswordEncrypter = mock(PasswordEncrypter.class);
   private final Eml2Rtf mockEml2Rtf = mock(Eml2Rtf.class);
   private final VocabulariesManager mockVocabulariesManager = mock(VocabulariesManager.class);
   private final SimpleTextProvider mockSimpleTextProvider = mock(SimpleTextProvider.class);
@@ -146,14 +150,17 @@ public class ResourceManagerImplTest {
   private Organisation organisation;
   private JdbcSupport support;
 
-  private File resourceDir;
+  @TempDir
+  File resourceDir;
+  @TempDir
+  File tmpDataDir;
 
   private static final String DATASET_TYPE_OCCURRENCE_IDENTIFIER = "occurrence";
   private static final String DATASET_SUBTYPE_SPECIMEN_IDENTIFIER = "specimen";
   private static final String RESOURCE_SHORTNAME = "res2";
 
   @BeforeEach
-  public void setup() throws IOException {
+  public void setup() throws Exception {
     // create user.
     creator = new User();
     creator.setFirstname("Leonardo");
@@ -166,11 +173,7 @@ public class ResourceManagerImplTest {
     resource = new Resource();
     resource.setShortname(RESOURCE_SHORTNAME);
 
-    // resource directory
-    resourceDir = FileUtils.createTempDir();
-
     // tmp directory
-    File tmpDataDir = FileUtils.createTempDir();
     when(mockedDataDir.tmpDir()).thenReturn(tmpDataDir);
 
     organisation = new Organisation();
@@ -182,7 +185,7 @@ public class ResourceManagerImplTest {
     ipt.setName("Test IPT");
   }
 
-  public ResourceManagerImpl getResourceManagerImpl() throws IOException, SAXException, ParserConfigurationException {
+  public ResourceManagerImpl getResourceManagerImpl() throws Exception {
     // mock creation of datasetSubtypes Map, with 2 occurrence subtypes, and 6 checklist subtypes
     Map<String, String> datasetSubtypes = new LinkedHashMap<>();
     datasetSubtypes.put("", "Select a subtype");
@@ -202,15 +205,17 @@ public class ResourceManagerImplTest {
     // mock resource link used as EML GUID
     when(mockAppConfig.getResourceGuid("bees")).thenReturn("http://localhost:7001/ipt/resource?id=bees");
     when(mockAppConfig.getResourceGuid("res2")).thenReturn("http://localhost:7001/ipt/resource?id=res2");
+//    // mock
+//    when(mockAppConfig.getDataDir().resourceEmlFile("res2", any(BigDecimal.class)))
+//        .thenReturn(FileUtils.getClasspathFile("resources/res2/eml.xml"));
 
     // construct ExtensionFactory using injected parameters
-    Injector injector = Guice.createInjector(new ServletModule(), new Struts2GuicePluginModule(), new IPTModule());
-    HttpClient httpClient = injector.getInstance(HttpClient.class);
+    HttpClient httpClient = TestBeanProvider.provideHttpClient();
     ThesaurusHandlingRule thesaurusRule = new ThesaurusHandlingRule(mock(VocabulariesManagerImpl.class));
-    SAXParserFactory saxf = injector.getInstance(SAXParserFactory.class);
+    SAXParserFactory saxf = TestBeanProvider.provideNsAwareSaxParserFactory();
     ExtensionFactory extensionFactory = new ExtensionFactory(thesaurusRule, saxf, httpClient);
-    support = injector.getInstance(JdbcSupport.class);
-    PasswordConverter passwordConverter = injector.getInstance(PasswordConverter.class);
+    support = TestBeanProvider.provideJdbcSupport();
+    PasswordEncrypter passwordEncrypter = new PasswordEncrypter(TestBeanProvider.providePasswordEncryption());
     JdbcInfoConverter jdbcConverter = new JdbcInfoConverter(support);
 
     // construct occurrence core Extension
@@ -226,42 +231,77 @@ public class ResourceManagerImplTest {
     Extension simpleImage = extensionFactory.build(simpleImageIs);
 
     ExtensionManager extensionManager = mock(ExtensionManager.class);
+    ExtensionsHolder extensionsHolder = mock(ExtensionsHolder.class);
+    DataPackageSchemaManager mockSchemaManager = mock(DataPackageSchemaManager.class);
 
     // mock ExtensionManager returning different Extensions
-    when(extensionManager.get("http://rs.tdwg.org/dwc/terms/Occurrence")).thenReturn(occurrenceCore);
-    when(extensionManager.get("http://rs.tdwg.org/dwc/terms/Event")).thenReturn(eventCore);
+    when(extensionManager.get("http://rs.tdwg.org/dwc/terms/Occurrence"))
+        .thenReturn(occurrenceCore);
+    when(extensionManager.get("http://rs.tdwg.org/dwc/terms/Event"))
+        .thenReturn(eventCore);
     when(extensionManager.get("http://rs.tdwg.org/dwc/xsd/simpledarwincore/SimpleDarwinRecord"))
-      .thenReturn(occurrenceCore);
-    when(extensionManager.get("http://rs.gbif.org/terms/1.0/Image")).thenReturn(simpleImage);
+        .thenReturn(occurrenceCore);
+    when(extensionManager.get("http://rs.gbif.org/terms/1.0/Image"))
+        .thenReturn(simpleImage);
+    when(extensionManager.list())
+        .thenReturn(List.of(occurrenceCore, eventCore, simpleImage));
 
-    ExtensionRowTypeConverter extensionRowTypeConverter = new ExtensionRowTypeConverter(extensionManager);
+    when(extensionsHolder.getExtensionsByRowtype()).thenReturn(
+        Map.ofEntries(
+            Map.entry("http://rs.tdwg.org/dwc/terms/Occurrence", occurrenceCore),
+            Map.entry("http://rs.tdwg.org/dwc/terms/Event", eventCore),
+            Map.entry("http://rs.tdwg.org/dwc/xsd/simpledarwincore/SimpleDarwinRecord", occurrenceCore),
+            Map.entry("http://rs.gbif.org/terms/1.0/Image", simpleImage)));
+
+    ExtensionRowTypeConverter extensionRowTypeConverter = new ExtensionRowTypeConverter(extensionsHolder);
     ConceptTermConverter conceptTermConverter = new ConceptTermConverter(extensionRowTypeConverter);
+
+    ResourceConvertersManager mockResourceConvertersManager = new ResourceConvertersManager(
+        mockEmailConverter, mockOrganisationKeyConverter, mock(ExtensionMappingConverter.class), extensionRowTypeConverter,
+        conceptTermConverter, mock(DataPackageIdentifierConverter.class),
+        mock(TableSchemaNameConverter.class), mock(DataPackageFieldConverter.class), jdbcConverter);
 
     // mock finding dwca.zip file that does not exist
     when(mockedDataDir.resourceDwcaFile(anyString())).thenReturn(new File("dwca.zip"));
 
-    return new ResourceManagerImpl(mockAppConfig, mockedDataDir, mockEmailConverter, mockOrganisationKeyConverter,
-      extensionRowTypeConverter, jdbcConverter, mockSourceManager, extensionManager, mockRegistryManager,
-      conceptTermConverter, mockDwcaFactory, passwordConverter, mockEml2Rtf, mockVocabulariesManager,
-      mockSimpleTextProvider, mockRegistrationManager);
+    return new ResourceManagerImpl(
+        mockAppConfig,
+        mockedDataDir,
+        mockResourceConvertersManager,
+        mockSourceManager,
+        extensionManager,
+        mockSchemaManager,
+        mockRegistryManager,
+        mockDwcaFactory,
+        mock(GenerateDataPackageFactory.class),
+        passwordEncrypter,
+        mockEml2Rtf,
+        mockVocabulariesManager,
+        mockSimpleTextProvider,
+        mockRegistrationManager,
+        mock(MetadataReader.class),
+        mock(ResourceMetadataInferringService.class));
   }
 
   /**
    * test resource creation from zipped resource folder.
    */
   @Test
-  public void testCreateFromZippedFile()
-    throws AlreadyExistingException, ImportException, SAXException, ParserConfigurationException, IOException,
-    InvalidFilenameException {
+  public void testCreateFromZippedFile() throws Exception {
     // retrieve sample zipped resource folder
     File resourceXML = FileUtils.getClasspathFile("resources/res1/resource.xml");
     // mock finding resource.xml file
-    when(mockedDataDir.resourceFile(anyString(), anyString())).thenReturn(resourceXML);
+    when(mockedDataDir.resourceFile(anyString())).thenReturn(resourceXML);
 
     // retrieve sample zipped resource folder
     File emlXML = FileUtils.getClasspathFile("resources/res1/eml.xml");
     // mock finding eml.xml file
-    when(mockedDataDir.resourceEmlFile(anyString(), any(BigDecimal.class))).thenReturn(emlXML);
+    when(mockedDataDir.resourceEmlFile(anyString())).thenReturn(emlXML);
+
+    // mock finding inferredMetadata.xml file
+    when(mockedDataDir.resourceInferredMetadataFile(anyString())).thenReturn(new File(DataDir.INFERRED_METADATA_FILENAME));
+
+    when(mockedDataDir.dataFile(DataDir.RESOURCES_DIR)).thenReturn(resourceDir);
 
     // create instance of manager
     ResourceManager resourceManager = getResourceManagerImpl();
@@ -284,7 +324,7 @@ public class ResourceManagerImplTest {
     assertEquals(creator, res.getModifier());
 
     // test if resource.xml was created.
-    assertTrue(mockedDataDir.resourceFile("res1", ResourceManagerImpl.PERSISTENCE_FILE).exists());
+    assertTrue(mockedDataDir.resourceFile("res1").exists());
 
     // properties that get preserved
     // there is 1 source file
@@ -331,13 +371,13 @@ public class ResourceManagerImplTest {
     assertNull(res.getUpdateFrequency());
     assertNull(res.getNextPublished());
     // the other last modified dates were also reset
-    assertNull(res.getMetadataModified());
-    assertNull(res.getMappingsModified());
-    assertNull(res.getSourcesModified());
+    assertNotNull(res.getMetadataModified());
+    assertNotNull(res.getMappingsModified());
+    assertNotNull(res.getSourcesModified());
 
     // eml properties loaded from eml.xml
     assertEquals("TEST RESOURCE", res.getEml().getTitle());
-    assertEquals("Test description", res.getEml().getDescription().get(0));
+    assertEquals("<para>Test description</para>", res.getEml().getDescription());
     assertEquals(Constants.INITIAL_RESOURCE_VERSION, res.getEml().getEmlVersion());
   }
 
@@ -345,9 +385,7 @@ public class ResourceManagerImplTest {
    * test resource creation from single DwC-A zipped file.
    */
   @Test
-  public void testCreateFromSingleZippedFile()
-    throws AlreadyExistingException, ImportException, SAXException, ParserConfigurationException, IOException,
-    InvalidFilenameException {
+  public void testCreateFromSingleZippedFile() throws Exception {
 
     // create instance of manager
     ResourceManager resourceManager = getResourceManagerImpl();
@@ -385,7 +423,7 @@ public class ResourceManagerImplTest {
     assertEquals(creator, res.getModifier());
 
     // test if resource.xml was created.
-    assertTrue(mockedDataDir.resourceFile(RESOURCE_SHORTNAME, ResourceManagerImpl.PERSISTENCE_FILE).exists());
+    assertTrue(mockedDataDir.resourceFile(RESOURCE_SHORTNAME).exists());
 
     assertEquals(BigDecimal.valueOf(1.0), res.getEml().getEmlVersion());
     assertEquals(BigDecimal.valueOf(1.0), res.getEmlVersion());
@@ -399,9 +437,9 @@ public class ResourceManagerImplTest {
     assertEquals(23, res.getMappings().get(0).getFields().size());
     assertEquals(0, res.getMappings().get(0).getIdColumn().intValue());
 
-    // there are no eml properties except default shortname as title since there was no eml.xml file included
-    assertEquals(RESOURCE_SHORTNAME, res.getEml().getTitle());
-    assertTrue(res.getEml().getDescription().isEmpty());
+    // there are no eml properties
+    assertNull(res.getEml().getTitle());
+    assertNull(res.getEml().getDescription());
 
     // properties that never get set on new resource creation
 
@@ -441,9 +479,7 @@ public class ResourceManagerImplTest {
    * test resource creation from single DwC-A gzipped file.
    */
   @Test
-  public void testCreateFromSingleGzipFile()
-    throws AlreadyExistingException, ImportException, SAXException, ParserConfigurationException, IOException,
-    InvalidFilenameException {
+  public void testCreateFromSingleGzipFile() throws Exception {
 
     // create instance of manager
     ResourceManager resourceManager = getResourceManagerImpl();
@@ -464,7 +500,8 @@ public class ResourceManagerImplTest {
     fileSource.setFieldsTerminatedByEscaped("/t");
     fileSource.setName("singleTxt");
 
-    when(mockSourceManager.add(any(Resource.class), any(File.class), anyString())).thenReturn(fileSource);
+    when(mockSourceManager.add(any(Resource.class), any(File.class), anyString()))
+        .thenReturn(fileSource);
 
     // create a new resource.
     resourceManager.create("res-single-gz", null, dwca, creator, baseAction);
@@ -481,7 +518,7 @@ public class ResourceManagerImplTest {
     assertEquals(creator, res.getModifier());
 
     // test if resource.xml was created.
-    assertTrue(mockedDataDir.resourceFile("res-single-gz", ResourceManagerImpl.PERSISTENCE_FILE).exists());
+    assertTrue(mockedDataDir.resourceFile("res-single-gz").exists());
 
     // note: source gets added to resource in sourceManager.add, and since we're mocking this call we can't set source
 
@@ -492,27 +529,30 @@ public class ResourceManagerImplTest {
     assertEquals(23, res.getMappings().get(0).getFields().size());
     assertEquals(0, res.getMappings().get(0).getIdColumn().intValue());
 
-    // there are no eml properties except default shortname as title since there was no eml.xml file included
-    assertEquals("res-single-gz", res.getEml().getTitle());
-    assertTrue(res.getEml().getDescription().isEmpty());
+    // there are no eml properties
+    assertNull(res.getEml().getTitle());
+    assertNull(res.getEml().getDescription());
   }
 
   /**
    * test resource (with extension) creation from zipped resource folder.
    */
   @Test
-  public void testCreateWithExtensionFromZippedFile()
-    throws AlreadyExistingException, ImportException, SAXException, ParserConfigurationException, IOException,
-    InvalidFilenameException {
+  public void testCreateWithExtensionFromZippedFile() throws Exception {
     // retrieve sample zipped resource folder
     File resourceXML = FileUtils.getClasspathFile("resources/amphibians/resource.xml");
     // mock finding resource.xml file
-    when(mockedDataDir.resourceFile(anyString(), anyString())).thenReturn(resourceXML);
+    when(mockedDataDir.resourceFile(anyString())).thenReturn(resourceXML);
 
     // retrieve sample zipped resource folder
     File emlXML = FileUtils.getClasspathFile("resources/amphibians/eml.xml");
     // mock finding eml.xml file
     when(mockedDataDir.resourceEmlFile(anyString(), any(BigDecimal.class))).thenReturn(emlXML);
+
+    // mock inferredMetadata.xml file
+    when(mockedDataDir.resourceInferredMetadataFile(anyString())).thenReturn(new File(DataDir.INFERRED_METADATA_FILENAME));
+
+    when(mockedDataDir.dataFile(DataDir.RESOURCES_DIR)).thenReturn(resourceDir);
 
     // create instance of manager
     ResourceManager resourceManager = getResourceManagerImpl();
@@ -535,7 +575,7 @@ public class ResourceManagerImplTest {
     assertEquals(creator, res.getModifier());
 
     // test if resource.xml was created.
-    assertTrue(mockedDataDir.resourceFile("amphibians", ResourceManagerImpl.PERSISTENCE_FILE).exists());
+    assertTrue(mockedDataDir.resourceFile("amphibians").exists());
 
     // properties that get preserved
     // there are 2 source files
@@ -579,9 +619,9 @@ public class ResourceManagerImplTest {
     assertNull(res.getUpdateFrequency());
     assertNull(res.getNextPublished());
     // the other last modified dates were also reset
-    assertNull(res.getMetadataModified());
-    assertNull(res.getMappingsModified());
-    assertNull(res.getSourcesModified());
+    assertNotNull(res.getMetadataModified());
+    assertNotNull(res.getMappingsModified());
+    assertNotNull(res.getSourcesModified());
   }
 
   /**
@@ -592,7 +632,9 @@ public class ResourceManagerImplTest {
     // retrieve sample zipped resource folder
     File resourceXML = FileUtils.getClasspathFile("resources/res1/resource_nonexistent_ext.xml");
     // mock finding resource.xml file
-    when(mockedDataDir.resourceFile(anyString(), anyString())).thenReturn(resourceXML);
+    when(mockedDataDir.resourceFile(anyString())).thenReturn(resourceXML);
+
+    when(mockedDataDir.dataFile(DataDir.RESOURCES_DIR)).thenReturn(resourceDir);
 
     // create instance of manager
     ResourceManager resourceManager = getResourceManagerImpl();
@@ -683,9 +725,7 @@ public class ResourceManagerImplTest {
    * mapping. The test ensures that the coreId term mapping is added.
    */
   @Test
-  public void testMissingCoreIdTermMappingInExtension()
-    throws ParserConfigurationException, SAXException, IOException, InvalidFilenameException, ImportException,
-    AlreadyExistingException {
+  public void testMissingCoreIdTermMappingInExtension() throws Exception {
 
     // create instance of manager
     ResourceManager resourceManager = getResourceManagerImpl();
@@ -728,9 +768,7 @@ public class ResourceManagerImplTest {
    * term mapping index are different. The test ensures that the coreId element index is set to that of the core term mapping index.
    */
   @Test
-  public void testDifferentCoreIdTermIndexInExtension()
-    throws ParserConfigurationException, SAXException, IOException, InvalidFilenameException, ImportException,
-    AlreadyExistingException {
+  public void testDifferentCoreIdTermIndexInExtension() throws Exception {
 
     // create instance of manager
     ResourceManager resourceManager = getResourceManagerImpl();
@@ -754,8 +792,9 @@ public class ResourceManagerImplTest {
     fileSourceOccurrence.setFile(uncompressedOccurrence);
     fileSourceOccurrence.setName("occurrence.txt");
 
-    when(mockSourceManager.add(any(Resource.class), any(File.class), anyString())).thenReturn(fileSourceEvent)
-      .thenReturn(fileSourceOccurrence);
+    when(mockSourceManager.add(any(Resource.class), any(File.class), anyString()))
+        .thenReturn(fileSourceEvent)
+        .thenReturn(fileSourceOccurrence);
 
     // create a new resource.
     Resource resource = resourceManager.create("res-differentcoreidtermindex", null, dwca, creator, baseAction);
@@ -791,13 +830,12 @@ public class ResourceManagerImplTest {
    * test that the occurrence core coreIdColumn mapping is reset to NO ID instead.
    */
   @Test
-  public void testLoadFromDirResetAutoGeneratedIds()
-    throws ParserConfigurationException, SAXException, IOException, AlreadyExistingException, ImportException,
-    InvalidFilenameException {
+  public void testLoadFromDirResetAutoGeneratedIds() throws Exception {
     // retrieve resource.xml configuration file with occurrence core coreIdColumn mapping using auto-generated IDs
     File resourceXML = FileUtils.getClasspathFile("resources/res1/resource_auto_ids.xml");
     // mock finding resource.xml file
-    when(mockedDataDir.resourceFile(anyString(), anyString())).thenReturn(resourceXML);
+    when(mockedDataDir.resourceFile(anyString())).thenReturn(resourceXML);
+    when(mockedDataDir.dataFile(DataDir.RESOURCES_DIR)).thenReturn(resourceDir);
 
     // create a new resource from zipped resource folder, but using the mocked resource.xml above
     ResourceManagerImpl resourceManager = getResourceManagerImpl();
@@ -813,8 +851,7 @@ public class ResourceManagerImplTest {
    * Test simple resource creation.
    */
   @Test
-  public void testSimpleCreate()
-    throws AlreadyExistingException, SAXException, ParserConfigurationException, IOException {
+  public void testSimpleCreate() throws Exception {
     ResourceManager resourceManager = getResourceManagerImpl();
 
     // create a new resource.
@@ -832,16 +869,14 @@ public class ResourceManagerImplTest {
     assertEquals(Constants.DATASET_TYPE_METADATA_IDENTIFIER, addedResource.getCoreType());
 
     // test if resource.xml was created.
-    assertTrue(mockedDataDir.resourceFile("math", ResourceManagerImpl.PERSISTENCE_FILE).exists());
+    assertTrue(mockedDataDir.resourceFile("math").exists());
   }
 
   /**
    * Test resource retrieval from resource.xml file. The loadFromDir method is responsible for this retrieval.
    */
-  @Disabled("floating behaviour, only fails when all the test launched")
   @Test
-  public void testLoadFromDir()
-    throws IOException, SAXException, ParserConfigurationException, AlreadyExistingException {
+  public void testLoadFromDir() throws Exception {
     ResourceManagerImpl resourceManager = getResourceManagerImpl();
 
     String shortName = "ants";
@@ -850,7 +885,7 @@ public class ResourceManagerImplTest {
     resourceManager.create(shortName, DATASET_TYPE_OCCURRENCE_IDENTIFIER, creator);
     // get added resource.
     Resource addedResource = resourceManager.get(shortName);
-    addedResource.setEmlVersion(Constants.INITIAL_RESOURCE_VERSION);
+    addedResource.setMetadataVersion(Constants.INITIAL_RESOURCE_VERSION);
     // indicate it is a dataset subtype Specimen
     addedResource.setSubtype(DATASET_SUBTYPE_SPECIMEN_IDENTIFIER);
 
@@ -886,7 +921,7 @@ public class ResourceManagerImplTest {
     resourceManager.save(addedResource);
 
     // retrieve resource file
-    File resourceFile = mockedDataDir.resourceFile(shortName, "resource.xml");
+    File resourceFile = mockedDataDir.resourceFile(shortName);
     assertTrue(resourceFile.exists());
 
     // retrieve resource directory
@@ -904,12 +939,30 @@ public class ResourceManagerImplTest {
     assertEquals(BigDecimal.valueOf(1.0), persistedResource.getEmlVersion());
     assertEquals(BigDecimal.valueOf(1.0), persistedResource.getEml().getEmlVersion());
     assertEquals(0, persistedResource.getRecordsPublished());
-    // should be 1 KeywordSet corresponding to Dataset Type vocabulary
-    assertEquals(2, persistedResource.getEml().getKeywords().size());
-    assertEquals(StringUtils.capitalize(DATASET_TYPE_OCCURRENCE_IDENTIFIER),
-      persistedResource.getEml().getKeywords().get(0).getKeywordsString());
-    assertEquals(StringUtils.capitalize(DATASET_SUBTYPE_SPECIMEN_IDENTIFIER),
-      persistedResource.getEml().getKeywords().get(1).getKeywordsString());
+
+    assertKeywordsContain(
+        "GBIF Dataset Type Vocabulary: http://rs.gbif.org/vocabulary/gbif/dataset_type_2015-07-10.xml",
+        StringUtils.capitalize(DATASET_TYPE_OCCURRENCE_IDENTIFIER),
+        persistedResource.getEml().getKeywords()
+    );
+    assertKeywordsContain(
+        "GBIF Dataset Subtype Vocabulary: http://rs.gbif.org/vocabulary/gbif/dataset_subtype.xml",
+        StringUtils.capitalize(DATASET_SUBTYPE_SPECIMEN_IDENTIFIER),
+        persistedResource.getEml().getKeywords()
+    );
+    int expectedAmountOfKeywords = 2;
+
+    String actualKeywords = persistedResource.getEml().getKeywords()
+        .stream()
+        .map(k -> k.getKeywordsString() + ": " + k.getKeywords() + ", " + k.getKeywordThesaurus())
+        .collect(Collectors.joining("\n"));
+
+    // sometimes contains Samplingevent: [Samplingevent], GBIF Dataset Type Vocabulary: http://rs.gbif.org/vocabulary/gbif/dataset_type.xml
+    // check contains two required ones
+    assertTrue(persistedResource.getEml().getKeywords().size() >= expectedAmountOfKeywords,
+        () -> "Amount of keywords do not match expected.\n"
+            + "Values: \n"
+            + actualKeywords);
 
     // make some assertions about SQL source
     SqlSource persistedSource = (SqlSource) persistedResource.getSources().get(0);
@@ -920,15 +973,37 @@ public class ResourceManagerImplTest {
     assertEquals("DanBIFUser", persistedSource.getUsername());
     assertEquals(44, persistedSource.getColumns());
     assertEquals("SELECT * FROM occurrence_record where datasetID=1", persistedSource.getSql());
-    assertEquals("com.mysql.jdbc.Driver", persistedSource.getJdbcDriver());
+    assertEquals("com.mysql.cj.jdbc.Driver", persistedSource.getJdbcDriver());
     assertEquals("UTF-8", persistedSource.getEncoding());
     assertEquals("YYYY-MM-DD", persistedSource.getDateFormat());
     assertTrue(persistedSource.isReadable());
 
   }
 
+  public static void assertKeywordsContain(String expectedKeywordThesaurus, String expectedKeyword, List<KeywordSet> actual) {
+    boolean contain = false;
+
+    for (KeywordSet item : actual) {
+      if (expectedKeywordThesaurus.equals(item.getKeywordThesaurus()) && List.of(expectedKeyword).equals(item.getKeywords())) {
+        contain = true;
+      }
+    }
+
+    if (!contain) {
+      AssertionFailureBuilder.assertionFailure()
+          .message("Keywords do not contain provided values")
+          .expected("thesaurus \"" +  expectedKeywordThesaurus + "\", keywords [\"" + expectedKeyword + "\"].")
+          .actual(
+              actual.stream()
+                  .map(k -> "thesaurus \"" +  k.getKeywordThesaurus() + "\", keywords " + k.getKeywords())
+                  .collect(Collectors.joining("; "))
+          )
+          .buildAndThrow();
+    }
+  }
+
   @Test
-  public void testInferCoreType() throws IOException, SAXException, ParserConfigurationException {
+  public void testInferCoreType() throws Exception {
     ResourceManagerImpl manager = getResourceManagerImpl();
     // create test resource
     Resource resource = new Resource();
@@ -946,7 +1021,7 @@ public class ResourceManagerImplTest {
   }
 
   @Test
-  public void testInferSubtype() throws IOException, SAXException, ParserConfigurationException {
+  public void testInferSubtype() throws Exception {
     ResourceManagerImpl manager = getResourceManagerImpl();
     // create test resource
     Resource resource = new Resource();
@@ -962,13 +1037,12 @@ public class ResourceManagerImplTest {
   }
 
   @Test
-  public void testUpdateAlternateIdentifierForIPTURLToResource()
-    throws IOException, SAXException, ParserConfigurationException {
+  public void testUpdateAlternateIdentifierForIPTURLToResource() throws Exception {
     ResourceManagerImpl manager = getResourceManagerImpl();
 
     // mock finding eml.xml file
-    when(mockedDataDir.resourceEmlFile(anyString(), any(BigDecimal.class)))
-      .thenReturn(File.createTempFile("eml", "xml"));
+    when(mockedDataDir.resourceEmlFile(anyString()))
+        .thenReturn(File.createTempFile("eml", "xml"));
 
     // create PRIVATE test resource
     Resource resource = new Resource();
@@ -1000,10 +1074,28 @@ public class ResourceManagerImplTest {
     // mock changing the the baseURL now (returning a different public resource URL)
     when(mockAppConfig.getResourceUrl("bees")).thenReturn("http://192.38.28.24:7001/ipt/resource?r=bees");
 
-    manager = new ResourceManagerImpl(mockAppConfig, mockedDataDir, mockEmailConverter, mockOrganisationKeyConverter,
-      mock(ExtensionRowTypeConverter.class), mockJdbcConverter, mockSourceManager, mock(ExtensionManager.class),
-      mockRegistryManager, mock(ConceptTermConverter.class), mockDwcaFactory, mockPasswordConverter, mockEml2Rtf,
-      mockVocabulariesManager, mockSimpleTextProvider, mockRegistrationManager);
+    ResourceConvertersManager mockResourceConvertersManager = new ResourceConvertersManager(
+        mockEmailConverter, mockOrganisationKeyConverter, mock(ExtensionMappingConverter.class), mock(ExtensionRowTypeConverter.class),
+        mock(ConceptTermConverter.class), mock(DataPackageIdentifierConverter.class),
+        mock(TableSchemaNameConverter.class), mock(DataPackageFieldConverter.class), mockJdbcConverter);
+
+    manager = new ResourceManagerImpl(
+        mockAppConfig,
+        mockedDataDir,
+        mockResourceConvertersManager,
+        mockSourceManager,
+        mock(ExtensionManager.class),
+        mock(DataPackageSchemaManager.class),
+        mockRegistryManager,
+        mockDwcaFactory,
+        mock(GenerateDataPackageFactory.class),
+        mockPasswordEncrypter,
+        mockEml2Rtf,
+        mockVocabulariesManager,
+        mockSimpleTextProvider,
+        mockRegistrationManager,
+        mock(MetadataReader.class),
+        mock(ResourceMetadataInferringService.class));
 
     // update alt. id
     manager.updateAlternateIdentifierForIPTURLToResource(resource);
@@ -1021,12 +1113,11 @@ public class ResourceManagerImplTest {
   }
 
   @Test
-  public void testUpdateAlternateIdentifierForRegistry()
-    throws IOException, SAXException, ParserConfigurationException {
+  public void testUpdateAlternateIdentifierForRegistry() throws Exception {
     ResourceManagerImpl manager = getResourceManagerImpl();
 
     // mock finding eml.xml file
-    when(mockedDataDir.resourceEmlFile(anyString(), any(BigDecimal.class)))
+    when(mockedDataDir.resourceEmlFile(anyString()))
       .thenReturn(File.createTempFile("eml", "xml"));
 
     // create PRIVATE test resource
@@ -1067,7 +1158,7 @@ public class ResourceManagerImplTest {
   }
 
   @Test
-  public void testRegisterMigratedResource() throws IOException, SAXException, ParserConfigurationException {
+  public void testRegisterMigratedResource() throws Exception {
     ResourceManager manager = getResourceManagerImpl();
 
     String registeredDigirResourceUUID = "f9b67ad0-9c9b-11d9-b9db-b8a03c50a862";
@@ -1078,14 +1169,7 @@ public class ResourceManagerImplTest {
     // indicate resource is ready to be published, by setting its status to Public
     resource.setStatus(PublicationStatus.PUBLIC);
 
-    // mock returning list of resources that are associated to the Academy of Natural Sciences organization
-    List<Resource> organisationsResources = new ArrayList<>();
-    Resource r1 = new Resource();
-    r1.setKey(UUID.fromString(registeredDigirResourceUUID));
-    r1.setTitle("Herpetology");
-    organisationsResources.add(r1);
-
-    when(mockRegistryManager.getOrganisationsResources(anyString())).thenReturn(organisationsResources);
+    when(mockRegistryManager.isResourceBelongsToOrganisation(anyString(), anyString())).thenReturn(true);
 
     manager.register(resource, organisation, ipt, baseAction);
 
@@ -1098,7 +1182,7 @@ public class ResourceManagerImplTest {
   }
 
   @Test
-  public void testRegisterMigratedResourceTooManyUUID() throws IOException, SAXException, ParserConfigurationException {
+  public void testRegisterMigratedResourceTooManyUUID() throws Exception {
     ResourceManager manager = getResourceManagerImpl();
 
     String registeredDigirResourceUUID = "f9b67ad0-9c9b-11d9-b9db-b8a03c50a862";
@@ -1118,7 +1202,7 @@ public class ResourceManagerImplTest {
   }
 
   @Test
-  public void testRegisterMigratedResourceWithBadUUID() throws IOException, SAXException, ParserConfigurationException {
+  public void testRegisterMigratedResourceWithBadUUID() throws Exception {
     ResourceManager manager = getResourceManagerImpl();
 
     // supply random UUID in the resource's eml.alternateIdentifiers that won't match one of organisation's resources
@@ -1128,21 +1212,13 @@ public class ResourceManagerImplTest {
     resource.setStatus(PublicationStatus.PUBLIC);
 
     // mock returning list of resources that are associated to the Academy of Natural Sciences organization
-    List<Resource> organisationsResources = new ArrayList<>();
-    Resource r1 = new Resource();
-    // resource has different UUID than the one in the alternate identifiers list - interpreted as failed migration
-    r1.setKey(UUID.fromString(UUID.randomUUID().toString()));
-    r1.setTitle("Herpetology");
-    organisationsResources.add(r1);
-
-    when(mockRegistryManager.getOrganisationsResources(anyString())).thenReturn(organisationsResources);
+    when(mockRegistryManager.isResourceBelongsToOrganisation(anyString(), anyString())).thenReturn(false);
 
     assertThrows(InvalidConfigException.class, () -> manager.register(resource, organisation, ipt, baseAction));
   }
 
   @Test
-  public void testRegisterMigratedResourceWithDuplicateUUIDCase1()
-    throws IOException, SAXException, ParserConfigurationException, AlreadyExistingException {
+  public void testRegisterMigratedResourceWithDuplicateUUIDCase1() throws Exception {
     ResourceManagerImpl manager = getResourceManagerImpl();
 
     String registeredDigirResourceUUID = "f9b67ad0-9c9b-11d9-b9db-b8a03c50a862";
@@ -1163,8 +1239,7 @@ public class ResourceManagerImplTest {
   }
 
   @Test
-  public void testRegisterMigratedResourceWithDuplicateUUIDCase2()
-    throws IOException, SAXException, ParserConfigurationException, AlreadyExistingException {
+  public void testRegisterMigratedResourceWithDuplicateUUIDCase2() throws Exception {
     ResourceManagerImpl manager = getResourceManagerImpl();
 
     String registeredDigirResourceUUID = "f9b67ad0-9c9b-11d9-b9db-b8a03c50a862";
@@ -1185,8 +1260,7 @@ public class ResourceManagerImplTest {
   }
 
   @Test
-  public void testDetectDuplicateUsesOfUUID()
-    throws AlreadyExistingException, ParserConfigurationException, SAXException, IOException {
+  public void testDetectDuplicateUsesOfUUID() throws Exception {
     ResourceManagerImpl manager = getResourceManagerImpl();
 
     UUID candidate = UUID.fromString("f9b67ad0-9c9b-11d9-b9db-b8a03c50a862");
@@ -1216,7 +1290,7 @@ public class ResourceManagerImplTest {
    * test open archive of zipped file, with DwC-A located inside parent folder.
    */
   @Test
-  public void testOpenArchiveInsideParentFolder() throws IOException {
+  public void testOpenArchiveInsideParentFolder() throws Exception {
     // decompress archive
     File dwcaDir = FileUtils.createTempDir();
     // DwC-A located inside parent folder
@@ -1233,7 +1307,7 @@ public class ResourceManagerImplTest {
    * test failure, opening archive of zipped file, with invalid DwC-A located inside parent folder.
    */
   @Test
-  public void testOpenArchiveInsideParentFolderFails() throws IOException {
+  public void testOpenArchiveInsideParentFolderFails() throws Exception {
     // decompress archive
     File dwcaDir = FileUtils.createTempDir();
     // DwC-A located inside parent folder, with invalid meta.xml
@@ -1245,9 +1319,7 @@ public class ResourceManagerImplTest {
   }
 
   @Test
-  public void testPublishNonRegisteredMetadataOnlyResource()
-    throws ParserConfigurationException, SAXException, IOException, AlreadyExistingException, ImportException,
-    InvalidFilenameException {
+  public void testPublishNonRegisteredMetadataOnlyResource() throws Exception {
     // create instance of manager
     ResourceManagerImpl resourceManager = getResourceManagerImpl();
     // prepare resource
@@ -1289,9 +1361,7 @@ public class ResourceManagerImplTest {
    * minor version an exception is thrown because the DataCite metadata is invalid (missing publisher).
    */
   @Test
-  public void testPublishResourceWithDOIAssignedButInvalidDOIMetadata()
-    throws ParserConfigurationException, SAXException, IOException, AlreadyExistingException, ImportException,
-    InvalidFilenameException {
+  public void testPublishResourceWithDOIAssignedButInvalidDOIMetadata() throws Exception {
     // create instance of manager
     ResourceManagerImpl resourceManager = getResourceManagerImpl();
     // prepare resource
@@ -1338,9 +1408,7 @@ public class ResourceManagerImplTest {
    * (missing publisher).
    */
   @Test
-  public void testPublishPublicResourceWithDOIReservedButInvalidDOIMetadata()
-    throws ParserConfigurationException, SAXException, IOException, AlreadyExistingException, ImportException,
-    InvalidFilenameException {
+  public void testPublishPublicResourceWithDOIReservedButInvalidDOIMetadata() throws Exception {
     // create instance of manager
     ResourceManagerImpl resourceManager = getResourceManagerImpl();
     // prepare resource
@@ -1380,9 +1448,7 @@ public class ResourceManagerImplTest {
    * (missing publisher).
    */
   @Test
-  public void testPublishPublicResourceWithDOIAssignedAndReservedButInvalidDOIMetadata()
-    throws ParserConfigurationException, SAXException, IOException, AlreadyExistingException, ImportException,
-    InvalidFilenameException {
+  public void testPublishPublicResourceWithDOIAssignedAndReservedButInvalidDOIMetadata() throws Exception {
     // create instance of manager
     ResourceManagerImpl resourceManager = getResourceManagerImpl();
     // prepare resource
@@ -1418,7 +1484,7 @@ public class ResourceManagerImplTest {
   }
 
   @Test
-  public void testHasMaxProcessFailures() throws ParserConfigurationException, SAXException, IOException {
+  public void testHasMaxProcessFailures() throws Exception {
     ResourceManagerImpl resourceManager = getResourceManagerImpl();
 
     ListValuedMap<String, Date> processFailures = new ArrayListValuedHashMap<>();
@@ -1438,9 +1504,7 @@ public class ResourceManagerImplTest {
   }
 
   @Test
-  public void testPublishNonRegisteredMetadataOnlyResourceFailure()
-    throws ParserConfigurationException, SAXException, IOException, AlreadyExistingException, ImportException,
-    InvalidFilenameException {
+  public void testPublishNonRegisteredMetadataOnlyResourceFailure() throws Exception {
     // create instance of manager
     ResourceManagerImpl resourceManager = getResourceManagerImpl();
     // prepare resource
@@ -1464,14 +1528,14 @@ public class ResourceManagerImplTest {
    * Ensure resource whose last published version is public gets returned in list of published public versions.
    */
   @Test
-  public void testListPublishedPublicVersions()
-    throws ParserConfigurationException, SAXException, IOException, InvalidFilenameException, ImportException,
-    AlreadyExistingException {
+  public void testListPublishedPublicVersions() throws Exception {
     // create a new resource using configuration file (resource.xml) that has version history
     File resourceXML = FileUtils.getClasspathFile("resources/res1/resource_version_history.xml");
-    when(mockedDataDir.resourceFile(anyString(), anyString())).thenReturn(resourceXML);
+    when(mockedDataDir.resourceFile(anyString())).thenReturn(resourceXML);
     File emlXML = FileUtils.getClasspathFile("resources/res1/eml.xml");
     when(mockedDataDir.resourceEmlFile(anyString(), any(BigDecimal.class))).thenReturn(emlXML);
+    when(mockedDataDir.resourceInferredMetadataFile(anyString())).thenReturn(new File(DataDir.INFERRED_METADATA_FILENAME));
+    when(mockedDataDir.dataFile(DataDir.RESOURCES_DIR)).thenReturn(resourceDir);
     ResourceManager resourceManager = getResourceManagerImpl();
     File zippedResourceFolder = FileUtils.getClasspathFile("resources/res1.zip");
     resourceManager.create("res1", null, zippedResourceFolder, creator, baseAction);
@@ -1494,14 +1558,14 @@ public class ResourceManagerImplTest {
    * despite not having a VersionHistory. Simulates pre IPT v2.2 resource, since VersionHistory was added from v2.2 on.
    */
   @Test
-  public void testListPublishedRegisteredVersions()
-    throws ParserConfigurationException, SAXException, IOException, InvalidFilenameException, ImportException,
-    AlreadyExistingException {
+  public void testListPublishedRegisteredVersions() throws Exception {
     // create new resource from configuration file (resource.xml) that does not have version history
     File resourceXML = FileUtils.getClasspathFile("resources/res1/resource.xml");
-    when(mockedDataDir.resourceFile(anyString(), anyString())).thenReturn(resourceXML);
+    when(mockedDataDir.resourceFile(anyString())).thenReturn(resourceXML);
     File emlXML = FileUtils.getClasspathFile("resources/res1/eml.xml");
     when(mockedDataDir.resourceEmlFile(anyString(), any(BigDecimal.class))).thenReturn(emlXML);
+    when(mockedDataDir.resourceInferredMetadataFile(anyString())).thenReturn(new File(DataDir.INFERRED_METADATA_FILENAME));
+    when(mockedDataDir.dataFile(DataDir.RESOURCES_DIR)).thenReturn(resourceDir);
     ResourceManager resourceManager = getResourceManagerImpl();
     File zippedResourceFolder = FileUtils.getClasspathFile("resources/res1.zip");
     resourceManager.create("res1", null, zippedResourceFolder, creator, baseAction);
@@ -1523,16 +1587,14 @@ public class ResourceManagerImplTest {
    *
    * @return a Non Registered Metadata Only Resource used for testing
    */
-  public Resource getNonRegisteredMetadataOnlyResource()
-    throws IOException, SAXException, ParserConfigurationException, AlreadyExistingException, ImportException,
-    InvalidFilenameException {
+  public Resource getNonRegisteredMetadataOnlyResource() throws Exception {
     // retrieve resource configuration file
     File resourceXML = FileUtils.getClasspathFile("resources/res1/resource.xml");
     // copy to resource folder
-    File copiedResourceXML = new File(resourceDir, ResourceManagerImpl.PERSISTENCE_FILE);
+    File copiedResourceXML = new File(resourceDir, DataDir.PERSISTENCE_FILENAME);
     org.apache.commons.io.FileUtils.copyFile(resourceXML, copiedResourceXML);
     // mock finding resource.xml file from resource directory
-    when(mockedDataDir.resourceFile(anyString(), anyString())).thenReturn(copiedResourceXML);
+    when(mockedDataDir.resourceFile(anyString())).thenReturn(copiedResourceXML);
 
     // retrieve sample eml.xml
     File emlXML = FileUtils.getClasspathFile("resources/res1/eml.xml");
@@ -1584,7 +1646,7 @@ public class ResourceManagerImplTest {
 
     // create a new resource.
     Resource resource = resourceManager.create(RESOURCE_SHORTNAME, null, copiedEmlXML, creator, baseAction);
-    resource.setEmlVersion(BigDecimal.valueOf(3.0));
+    resource.setMetadataVersion(BigDecimal.valueOf(3.0));
     return resource;
   }
 
@@ -1603,7 +1665,7 @@ public class ResourceManagerImplTest {
     // create a new resource using configuration file (resource.xml) that has version history
     // and manually set organisation and a few Eml properties to mock new metadata entered for pending version
     File cfgFile = org.gbif.utils.file.FileUtils.getClasspathFile("resources/res1/resource_version_history.xml");
-    when(mockedDataDir.resourceFile(anyString(), anyString())).thenReturn(cfgFile);
+    when(mockedDataDir.resourceFile(anyString())).thenReturn(cfgFile);
     File resourceDirectory = cfgFile.getParentFile();
     assertTrue(resourceDirectory.isDirectory());
     Resource resource = getResourceManagerImpl().loadFromDir(resourceDirectory, creator);
@@ -1634,15 +1696,14 @@ public class ResourceManagerImplTest {
     resource.setOrganisation(organisation);
     assertEquals(organisation.getKey(), resource.getOrganisation().getKey());
     resource.getEml().setTitle("Title for pending version 1.2");
-    List<String> description = new ArrayList<>();
-    description.add("Title description for pending version 1.2");
+    String description = "Title description for pending version 1.2";
     resource.getEml().setDescription(description);
 
     // retrieve previous persisted Eml file for version 1.1
     File emlXMLVersionOnePointOne = org.gbif.utils.file.FileUtils.getClasspathFile("resources/res1/eml-1.1.xml");
     // reconstruct resource version 1.1
     Resource reconstructed = ResourceUtils
-      .reconstructVersion(version, shortname, resource.getCoreType(), doi, organisation, historyForVersionOnePointOne,
+      .reconstructVersion(version, shortname, resource.getCoreType(), resource.getDataPackageIdentifier(), doi, organisation, historyForVersionOnePointOne,
         emlXMLVersionOnePointOne, null);
 
     assertEquals(shortname, reconstructed.getShortname());
@@ -1655,7 +1716,7 @@ public class ResourceManagerImplTest {
     assertEquals(1, reconstructed.getRecordsPublished()); // changed
     // ensure reconstructed resource uses eml-1.1.xml
     assertEquals("Title for version 1.1", reconstructed.getEml().getTitle()); // changed
-    assertEquals("Test description for version 1.1", reconstructed.getEml().getDescription().get(0)); // changed
+    assertEquals("<para>Test description for version 1.1</para>", reconstructed.getEml().getDescription()); // changed
   }
 
   /**
@@ -1666,7 +1727,7 @@ public class ResourceManagerImplTest {
     // create a new resource using configuration file (resource.xml) that has version history
     // and manually set organisation and a few Eml properties to mock new metadata entered for pending version
     File cfgFile = org.gbif.utils.file.FileUtils.getClasspathFile("resources/res1/resource_reg_version_history.xml");
-    when(mockedDataDir.resourceFile(anyString(), anyString())).thenReturn(cfgFile);
+    when(mockedDataDir.resourceFile(anyString())).thenReturn(cfgFile);
     File resourceDirectory = cfgFile.getParentFile();
     assertTrue(resourceDirectory.isDirectory());
     Resource resource = getResourceManagerImpl().loadFromDir(resourceDirectory, creator);
@@ -1695,15 +1756,14 @@ public class ResourceManagerImplTest {
     resource.setKey(key);
 
     resource.getEml().setTitle("Title for pending version 5.1");
-    List<String> description = new ArrayList<>();
-    description.add("Description for pending version 5.1");
+    String description = "Description for pending version 5.1";
     resource.getEml().setDescription(description);
 
     // retrieve previous persisted Eml file for version 5.0
     File emlXMLVersionOnePointOne = org.gbif.utils.file.FileUtils.getClasspathFile("resources/res1/eml-5.0.xml");
     // reconstruct resource version 5.0
     Resource reconstructed = ResourceUtils
-      .reconstructVersion(version, shortname, resource.getCoreType(), doi, organisation, historyForVersionFivePointZero,
+      .reconstructVersion(version, shortname, resource.getCoreType(), resource.getDataPackageIdentifier(), doi, organisation, historyForVersionFivePointZero,
         emlXMLVersionOnePointOne, key);
 
     assertEquals(shortname, reconstructed.getShortname());
@@ -1717,44 +1777,44 @@ public class ResourceManagerImplTest {
     assertEquals(0, reconstructed.getRecordsPublished()); // unchanged
     // ensure reconstructed resource uses eml-5.0.xml
     assertEquals("Test Dataset Please Ignore", reconstructed.getEml().getTitle()); // changed
-    assertEquals("This dataset covers mosses and lichens from Russia.", reconstructed.getEml().getDescription().get(0)); // changed
+    assertEquals("<para>This dataset covers mosses and lichens from Russia.</para>", reconstructed.getEml().getDescription()); // changed
     // creator populated
     assertNotNull(resource.getCreator());
     assertEquals(creator, resource.getCreator());
   }
 
   @Test
-  public void testConvertVersion() throws ParserConfigurationException, SAXException, IOException {
+  public void testConvertVersion() throws Exception {
     Resource r = new Resource();
-    r.setEmlVersion(BigDecimal.valueOf(4));
+    r.setMetadataVersion(BigDecimal.valueOf(4));
     assertEquals(0, r.getEmlVersion().scale());
     assertEquals(4, r.getEmlVersion().intValueExact());
     // do conversion 4 -> 4.0
     BigDecimal converted = getResourceManagerImpl().convertVersion(r);
     assertEquals(new BigDecimal("4.0"), converted);
     // ensure conversions aren't repeated
-    r.setEmlVersion(converted);
+    r.setMetadataVersion(converted);
     assertNull(getResourceManagerImpl().convertVersion(r));
   }
 
   @Test
-  public void testConvertVersionZero() throws ParserConfigurationException, SAXException, IOException {
+  public void testConvertVersionZero() throws Exception {
     Resource r = new Resource();
-    r.setEmlVersion(BigDecimal.valueOf(0));
+    r.setMetadataVersion(BigDecimal.valueOf(0));
     assertEquals(0, r.getEmlVersion().scale());
     assertEquals(0, r.getEmlVersion().intValueExact());
     // do conversion 0 -> 1.0
     BigDecimal converted = getResourceManagerImpl().convertVersion(r);
     assertEquals(new BigDecimal("1.0"), converted);
     // ensure conversions aren't repeated
-    r.setEmlVersion(converted);
+    r.setMetadataVersion(converted);
     assertNull(getResourceManagerImpl().convertVersion(r));
   }
 
   @Test
-  public void testConstructVersionHistoryForLastPublishedVersion() throws ParserConfigurationException, SAXException, IOException {
+  public void testConstructVersionHistoryForLastPublishedVersion() throws Exception {
     Resource r = new Resource();
-    r.setEmlVersion(new BigDecimal("4.0"));
+    r.setMetadataVersion(new BigDecimal("4.0"));
     r.setStatus(PublicationStatus.PUBLIC);
     r.setRecordsPublished(100);
     Date lastPublished = new Date();
@@ -1785,11 +1845,10 @@ public class ResourceManagerImplTest {
    * VersionHistory gets populated with the last published version.
    */
   @Test
-  public void testLoadPre2Point2Resource()
-    throws ParserConfigurationException, SAXException, IOException {
+  public void testLoadPre2Point2Resource() throws Exception {
     // create new resource from configuration file (resource.xml) that does not have version history
     File resourceXML = FileUtils.getClasspathFile("resources/res1/resource_v1_1.xml");
-    when(mockedDataDir.resourceFile(anyString(), anyString())).thenReturn(resourceXML);
+    when(mockedDataDir.resourceFile(anyString())).thenReturn(resourceXML);
 
     // mock returning eml-19.xml in temp directory
     File eml = File.createTempFile("eml-19", ".xml", mockedDataDir.tmpDir());
@@ -1838,7 +1897,7 @@ public class ResourceManagerImplTest {
   }
 
   @Test
-  public void testRemoveArchiveVersion() throws IOException, ParserConfigurationException, SAXException {
+  public void testRemoveArchiveVersion() throws Exception {
     File dwca60 = new File(resourceDir, resource.getShortname() + "/" + "dwca-60.0.zip");
     assertFalse(dwca60.exists());
 
@@ -1858,13 +1917,13 @@ public class ResourceManagerImplTest {
    * TODO: test resource with persisted dwca files
    */
   @Test
-  public void testRestoreVersion()
-    throws ParserConfigurationException, SAXException, IOException, AlreadyExistingException, ImportException,
-    InvalidFilenameException {
+  public void testRestoreVersion() throws Exception {
     // create instance of manager
-    ResourceManagerImpl resourceManager = getResourceManagerImpl();
+    ResourceManagerImpl resourceManager = spy(getResourceManagerImpl());
     // prepare resource
     Resource resource = getNonRegisteredMetadataOnlyResource();
+
+    doReturn(new SimplifiedResource()).when(resourceManager).toSimplifiedResourceReconstructedVersion(any());
 
     // add versionHistory for version 2.0
     Date released20 = new Date();
@@ -1902,7 +1961,7 @@ public class ResourceManagerImplTest {
     resource.setIdentifierStatus(IdentifierStatus.PUBLIC_PENDING_PUBLICATION);
     resource.setDoi(doi);
     resource.setStatus(PublicationStatus.PUBLIC);
-    resource.setEmlVersion(new BigDecimal("3.1"));
+    resource.setMetadataVersion(new BigDecimal("3.1"));
     resource.setLastPublished(released30);
     resource.setRecordsPublished(400);
 
@@ -1926,11 +1985,11 @@ public class ResourceManagerImplTest {
     assertEquals(200, resource.getRecordsPublished());
     assertEquals(new BigDecimal("3.0"), resource.getEmlVersion());
     assertEquals(released30, resource.getLastPublished());
-    assertEquals(new BigDecimal("2.0"), resource.getReplacedEmlVersion());
+    assertEquals(new BigDecimal("2.0"), resource.getReplacedMetadataVersion());
   }
 
   @Test
-  public void testDeleteDirectoryContainingSingleFile() throws IOException, ParserConfigurationException, SAXException {
+  public void testDeleteDirectoryContainingSingleFile() throws Exception {
     // mock resource directory with single file
     File resourceDir = FileUtils.createTempDir();
     assertTrue(resourceDir.isDirectory());
@@ -1955,12 +2014,11 @@ public class ResourceManagerImplTest {
     assertTrue(metaFile.exists());
   }
 
-
   /**
    * Ensure that the RSS feed does not return public but unpublished resources.
    */
   @Test
-  public void testLatest() throws IOException, SAXException, ParserConfigurationException, AlreadyExistingException {
+  public void testLatest() throws Exception {
 
     ResourceManagerImpl manager = getResourceManagerImpl();
 
@@ -1988,11 +2046,13 @@ public class ResourceManagerImplTest {
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Test
-  public void testLoad() throws ParserConfigurationException, SAXException, IOException {
-    ResourceManagerImpl manager = getResourceManagerImpl();
+  public void testLoad() throws Exception {
+    ResourceManagerImpl manager = spy(getResourceManagerImpl());
     // mock finding resource.xml file
     File resourceXML = FileUtils.getClasspathFile("resources/res1/resource.xml");
-    when(mockedDataDir.resourceFile(anyString(), anyString())).thenReturn(resourceXML);
+    when(mockedDataDir.resourceFile(anyString())).thenReturn(resourceXML);
+
+    doReturn(new SimplifiedResource()).when(manager).toSimplifiedResourceReconstructedVersion(any());
 
     // construct resource directory with a few resources
     File resourceDirectory = FileUtils.createTempDir();

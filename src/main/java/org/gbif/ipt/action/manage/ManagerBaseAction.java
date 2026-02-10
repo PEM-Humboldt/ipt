@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,23 +17,34 @@ import org.gbif.ipt.action.POSTAction;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.model.Resource;
+import org.gbif.ipt.service.InvalidConfigException;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 
+import javax.inject.Inject;
+
 import org.apache.commons.lang3.StringUtils;
 
-import com.google.inject.Inject;
+import lombok.Getter;
+import lombok.Setter;
 
 public class ManagerBaseAction extends POSTAction {
 
+  private static final long serialVersionUID = -7385261456013846954L;
+
   // the resourceManager session is populated by the resource interceptor and kept alive for an entire manager session
   protected final ResourceManager resourceManager;
+  @Setter
+  @Getter
   protected Resource resource;
 
   @Inject
-  public ManagerBaseAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
-    ResourceManager resourceManager) {
+  public ManagerBaseAction(
+      SimpleTextProvider textProvider,
+      AppConfig cfg,
+      RegistrationManager registrationManager,
+      ResourceManager resourceManager) {
     super(textProvider, cfg, registrationManager);
     this.resourceManager = resourceManager;
   }
@@ -60,17 +69,10 @@ public class ManagerBaseAction extends POSTAction {
   }
 
   protected void saveResource() {
-    resourceManager.save(resource);
+    try {
+      resourceManager.save(resource);
+    } catch (InvalidConfigException e) {
+      addActionError(e.getMessage());
+    }
   }
-
-
-  public Resource getResource() {
-    return resource;
-  }
-
-
-  public void setResource(Resource resource) {
-    this.resource = resource;
-  }
-
 }

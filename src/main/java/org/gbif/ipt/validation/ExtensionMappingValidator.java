@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,8 +34,12 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ExtensionMappingValidator {
+
+  private static final Logger LOG = LogManager.getLogger(ExtensionMappingValidator.class);
 
   private static final TemporalParser TEXTDATE_PARSER = DateParsers.defaultTemporalParser();
 
@@ -111,7 +113,7 @@ public class ExtensionMappingValidator {
     testData.add(pm.getDefaultValue());
     if (pm.getIndex() != null) {
       for (String[] row : peek) {
-        if (row.length >= pm.getIndex() && pm.getIndex() >= 0) {
+        if (pm.getIndex() < row.length && pm.getIndex() >= 0) {
           testData.add(row[pm.getIndex()]);
         }
       }
@@ -142,9 +144,7 @@ public class ExtensionMappingValidator {
         } else if (DataType.uri == dt) {
           new URI(val);
         }
-      } catch (NumberFormatException e) {
-        return false;
-      } catch (URISyntaxException e) {
+      } catch (NumberFormatException | URISyntaxException e) {
         return false;
       }
     }

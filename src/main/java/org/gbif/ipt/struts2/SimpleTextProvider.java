@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -104,6 +102,7 @@ public class SimpleTextProvider {
   public String getText(LocaleProvider localeProvider, String key, String defaultValue, Object[] args) {
     // Locale, defaulting to English if it cannot be determined
     Locale locale = (localeProvider.getLocale() == null) ? Locale.ENGLISH : localeProvider.getLocale();
+
     String text = null;
     for (String resName : baseBundleNames) {
       ResourceBundle bundle = findResourceBundle(resName, locale);
@@ -112,6 +111,16 @@ public class SimpleTextProvider {
         break;
       }
     }
+
+    if (text != null) {
+      // Always run MessageFormat to unescape apostrophes
+      try {
+        text = MessageFormat.format(text, args != null ? args : new Object[]{});
+      } catch (IllegalArgumentException e) {
+        // If text has no placeholders, format may throw; ignore
+      }
+    }
+
     return text;
   }
 

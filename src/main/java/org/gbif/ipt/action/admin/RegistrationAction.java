@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,11 +16,16 @@ package org.gbif.ipt.action.admin;
 import org.gbif.ipt.action.POSTAction;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.model.Ipt;
+import org.gbif.ipt.model.KeyNamePair;
+import org.gbif.ipt.model.Network;
 import org.gbif.ipt.model.Organisation;
+import org.gbif.ipt.model.Resource;
+import org.gbif.ipt.model.voc.PublicationStatus;
 import org.gbif.ipt.service.AlreadyExistingException;
 import org.gbif.ipt.service.RegistryException;
 import org.gbif.ipt.service.RegistryException.Type;
 import org.gbif.ipt.service.admin.RegistrationManager;
+import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.service.registry.RegistryManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 import org.gbif.ipt.validation.IptValidator;
@@ -30,13 +33,21 @@ import org.gbif.ipt.validation.OrganisationSupport;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.servlet.http.HttpSession;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.inject.Inject;
-import com.google.inject.servlet.SessionScoped;
+import org.apache.struts2.ServletActionContext;
 
 /**
  * The Action responsible for all user input relating to the registration options.
@@ -46,63 +57,150 @@ public class RegistrationAction extends POSTAction {
   // logging
   private static final Logger LOG = LogManager.getLogger(RegistrationAction.class);
 
-  @SessionScoped
-  public static class RegisteredOrganisations {
-
-    private List<Organisation> organisations = new ArrayList<>();
-    private final RegistryManager registryManager;
-
-    @Inject
-    public RegisteredOrganisations(RegistryManager registryManager) {
-      this.registryManager = registryManager;
-    }
-
-    public boolean isLoaded() {
-      return !organisations.isEmpty();
-    }
-
-    public void load() throws RuntimeException {
-      LOG.debug("getting list of organisations from registry");
-      List<Organisation> tempOrganisations;
-      tempOrganisations = registryManager.getOrganisations();
-      organisations.clear();
-
-      // empty <option></option> needed by Select2 jquery library, to be able to display placeholder "Select an org.."
-      Organisation o = new Organisation();
-      o.setName("");
-      organisations.add(o);
-
-      organisations.addAll(tempOrganisations);
-      LOG.debug("organisations returned: " + organisations.size());
-    }
-
-  }
-
   private static final long serialVersionUID = -6522969037528106704L;
+
+  private static final String SESSION_ORGANISATIONS_KEY = "organisations";
+  private static final String SESSION_ORGANISATIONS_LAST_UPDATED_KEY = "organisations.lastUpdated";
+  private static final String SESSION_NETWORKS_KEY = "networks";
+  private static final String SESSION_NETWORKS_LAST_UPDATED_KEY = "networks.lastUpdated";
+
   private final RegistryManager registryManager;
+  private final ResourceManager resourceManager;
   private final OrganisationSupport organisationValidation;
   private final IptValidator iptValidation;
+
+  private String registeredIptPassword;
+  private String hostingOrganisationToken;
+  protected boolean tokenChange = false;
+
+  private String networkKey;
+  private boolean applyToExistingResources = false;
 
   private boolean validatedBaseURL = false;
 
   private List<Organisation> organisations = new ArrayList<>();
+  private Map<String, String> networks = new LinkedHashMap<>();
   private Organisation organisation;
   private Ipt ipt;
-  private RegisteredOrganisations orgSession;
 
   @Inject
-  public RegistrationAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
-    RegistryManager registryManager, OrganisationSupport organisationValidation, IptValidator iptValidation,
-    RegisteredOrganisations orgSession) {
+  public RegistrationAction(
+      SimpleTextProvider textProvider,
+      AppConfig cfg,
+      RegistrationManager registrationManager,
+      RegistryManager registryManager,
+      ResourceManager resourceManager,
+      OrganisationSupport organisationValidation,
+      IptValidator iptValidation
+  ) {
     super(textProvider, cfg, registrationManager);
     this.registryManager = registryManager;
+    this.resourceManager = resourceManager;
     this.organisationValidation = organisationValidation;
     this.iptValidation = iptValidation;
-    this.orgSession = orgSession;
+  }
+
+  private void loadOrganisations() {
+    HttpSession session = ServletActionContext.getRequest().getSession();
+    Object sessionOrganisationsRaw = session.getAttribute(SESSION_ORGANISATIONS_KEY);
+    boolean requestRegistry = false;
+
+    if (sessionOrganisationsRaw == null) {
+      // null session organisation cache - request registry
+      requestRegistry = true;
+    } else if (sessionOrganisationsRaw instanceof List) {
+      // Safely cast to List<?> and check if it contains Organisation objects
+      List<?> organisationsGenericList = (List<?>) sessionOrganisationsRaw;
+      if (!organisationsGenericList.isEmpty() && organisationsGenericList.get(0) instanceof Organisation) {
+        // The list is already in the session and is of the correct type
+        //noinspection unchecked
+        organisations = (List<Organisation>) sessionOrganisationsRaw;
+      } else {
+        // organisation cache is empty or of wrong type - request registry
+        requestRegistry = true;
+      }
+    } else {
+      // organisation cache is of wrong type - request registry
+      requestRegistry = true;
+    }
+
+    if (requestRegistry) {
+      LOG.debug("Fetching organisations from registry");
+      try {
+        organisations = registryManager.getOrganisations();
+        LOG.debug("Organisations returned from the Registry: {}", organisations.size());
+
+        // empty <option></option> needed by Select2 jquery library, to be able to display placeholder "Select an org.."
+        Organisation o = new Organisation();
+        o.setName("");
+        organisations.add(0, o);
+        session.setAttribute(SESSION_ORGANISATIONS_KEY, organisations);
+        session.setAttribute(SESSION_ORGANISATIONS_LAST_UPDATED_KEY, new Date());
+      } catch (RegistryException e) {
+        String msg = getText("admin.registration.error.registry");
+        if (e.getType() == Type.PROXY) {
+          msg = getText("admin.registration.error.proxy");
+        } else if (e.getType() == Type.SITE_DOWN) {
+          msg = getText("admin.registration.error.siteDown");
+        } else if (e.getType() == Type.NO_INTERNET) {
+          msg = getText("admin.registration.error.internetConnection");
+        }
+        LOG.error(msg, e);
+        addActionError(msg);
+      }
+    }
+  }
+
+  private void loadNetworks() {
+    HttpSession session = ServletActionContext.getRequest().getSession();
+    Object sessionNetworksRaw = session.getAttribute(SESSION_NETWORKS_KEY);
+    boolean requestRegistry = false;
+
+    if (sessionNetworksRaw == null) {
+      // null session networks cache - request registry
+      requestRegistry = true;
+    } else if (sessionNetworksRaw instanceof List) {
+      // Safely cast to Map<?,?> and check if it contains String objects
+      Map<?, ?> networksGenericList = (Map<?, ?>) sessionNetworksRaw;
+      if (!networksGenericList.isEmpty() && networksGenericList.get(0) instanceof String) {
+        // The map is already in the session and is of the correct type
+        //noinspection unchecked
+        networks = (Map<String, String>) sessionNetworksRaw;
+      } else {
+        // network cache is empty or of wrong type - request registry
+        requestRegistry = true;
+      }
+    } else {
+      // network cache is of wrong type - request registry
+      requestRegistry = true;
+    }
+
+    if (requestRegistry) {
+      LOG.debug("Fetching networks from registry");
+      try {
+        networks = registryManager.getNetworksBrief().stream()
+            .collect(Collectors.toMap(KeyNamePair::getKey, KeyNamePair::getName));
+        LOG.debug("Networks returned from the Registry: {}", networks.size());
+
+        networks.put("", getText("admin.ipt.network.selection"));
+
+        session.setAttribute(SESSION_NETWORKS_KEY, networks);
+        session.setAttribute(SESSION_NETWORKS_LAST_UPDATED_KEY, new Date());
+      } catch (RegistryException e) {
+        LOG.error("Failed to load networks", e);
+        String msg = RegistryException.logRegistryException(e, this);
+        addActionWarning(getText("admin.networks.couldnt.load", new String[] {cfg.getRegistryUrl()}) + msg);
+        networks = new HashMap<>();
+      }
+    }
   }
 
   public Organisation getHostingOrganisation() {
     return registrationManager.getHostingOrganisation();
+  }
+
+  public Network getNetwork() {
+    return registrationManager.getNetwork();
   }
 
   /**
@@ -123,7 +221,7 @@ public class RegistrationAction extends POSTAction {
    * @return the organisations
    */
   public List<Organisation> getOrganisations() {
-    organisations.addAll(orgSession.organisations);
+    loadOrganisations();
     return organisations;
   }
 
@@ -142,22 +240,11 @@ public class RegistrationAction extends POSTAction {
   public void prepare() {
     super.prepare();
     // will not be session scoping the list of organisations from the registry as this is basically a 1 time step
-    if (getRegisteredIpt() == null && !orgSession.isLoaded()) {
-      try {
-        orgSession.load();
-      } catch (RegistryException e) {
-        String msg = getText("admin.registration.error.registry");
-        if (e.getType() == Type.PROXY) {
-          msg = getText("admin.registration.error.proxy");
-        } else if (e.getType() == Type.SITE_DOWN) {
-          msg = getText("admin.registration.error.siteDown");
-        } else if (e.getType() == Type.NO_INTERNET) {
-          msg = getText("admin.registration.error.internetConnection");
-        }
-        LOG.error(msg, e);
-        addActionError(msg);
-      }
+    if (getRegisteredIpt() == null) {
+      loadOrganisations();
     }
+
+    loadNetworks();
   }
 
   @Override
@@ -222,7 +309,11 @@ public class RegistrationAction extends POSTAction {
 
   public String update() {
     try {
+      if (cancel) {
+        return cancel();
+      }
       registryManager.updateIpt(getRegisteredIpt());
+      updateResources(getRegisteredIpt());
       registrationManager.save();
       addActionMessage(getText("admin.registration.success.update"));
     } catch (RegistryException e) {
@@ -236,8 +327,91 @@ public class RegistrationAction extends POSTAction {
       addActionError(msg);
       LOG.error(msg);
       return INPUT;
-    } catch (IOException e) {
+    } catch (Exception e) {
       addActionError(e.getMessage());
+      LOG.error("Exception caught", e);
+      return INPUT;
+    }
+    return SUCCESS;
+  }
+
+  private void updateResources(Ipt ipt) {
+    List<Resource> resources = resourceManager.list(PublicationStatus.REGISTERED);
+    if (!resources.isEmpty()) {
+      LOG.info("Next, update {} resource registrations...", resources.size());
+      for (Resource resource : resources) {
+        try {
+          registryManager.updateResource(resource, ipt.getKey().toString());
+        } catch (IllegalArgumentException e) {
+          LOG.error(e.getMessage());
+        }
+      }
+      LOG.info("Resource registrations updated successfully!");
+    }
+  }
+
+  public String changeTokens() {
+    try {
+      if (cancel) {
+        return cancel();
+      }
+      if (StringUtils.isNotEmpty(hostingOrganisationToken)) {
+        getHostingOrganisation().setPassword(hostingOrganisationToken);
+      }
+      if (StringUtils.isNotEmpty(registeredIptPassword)) {
+        getRegisteredIpt().setWsPassword(registeredIptPassword);
+      }
+      registrationManager.save();
+      addActionMessage(getText("admin.ipt.success.update"));
+    } catch (Exception e) {
+      addActionError(getText("admin.ipt.update.failed"));
+      LOG.error("Exception caught", e);
+      return INPUT;
+    }
+    return SUCCESS;
+  }
+
+  public String associateWithNetwork() {
+    try {
+      if (cancel) {
+        return cancel();
+      }
+      if (StringUtils.isNotEmpty(networkKey)) {
+        String networkName = networks.get(networkKey);
+        registrationManager.associateWithNetwork(networkKey, networkName);
+
+        if (applyToExistingResources) {
+          List<Resource> resources = resourceManager.list();
+          for (Resource resource : resources) {
+            if (resource.isRegistered()) {
+              registryManager.addResourceToNetwork(resource, networkKey);
+            }
+          }
+        }
+
+        addActionMessage(getText("admin.ipt.success.associateWithNetwork", new String[] {networkName}));
+      } else {
+        Network network = getNetwork();
+
+        if (network != null) {
+          String networkName = Optional.ofNullable(network.getName()).orElse("");
+          String networkKey = Optional.ofNullable(network.getKey()).map(UUID::toString).orElse("");
+          registrationManager.removeAssociationWithNetwork();
+
+          if (applyToExistingResources) {
+            List<Resource> resources = resourceManager.list();
+            for (Resource resource : resources) {
+              if (resource.isRegistered()) {
+                registryManager.removeResourceFromNetwork(resource, networkKey);
+              }
+            }
+          }
+
+          addActionMessage(getText("admin.ipt.success.associationWithNetworkRemoved", new String[]{networkName}));
+        }
+      }
+    } catch (Exception e) {
+      addActionError(getText("admin.ipt.update.failed"));
       LOG.error("Exception caught", e);
       return INPUT;
     }
@@ -246,14 +420,67 @@ public class RegistrationAction extends POSTAction {
 
   @Override
   public void validate() {
-    if (isHttpPost()) {
-      if (getRegisteredIpt() != null) {
-        iptValidation.validateUpdate(this, getRegisteredIpt());
-      } else {
-        iptValidation.validate(this, ipt);
-        validatedBaseURL = true;
-        organisationValidation.validate(this, organisation);
-      }
+    if (!isHttpPost() || cancel) {
+      return;
     }
+
+    if (tokenChange) {
+      if (StringUtils.isNotEmpty(hostingOrganisationToken)) {
+        organisationValidation.validateOrganisationToken(this, getHostingOrganisation().getKey(), hostingOrganisationToken);
+      }
+      if (StringUtils.isNotEmpty(registeredIptPassword)) {
+        iptValidation.validateIptPassword(this, registeredIptPassword);
+      }
+    } else if (getRegisteredIpt() != null) {
+      iptValidation.validateUpdate(this, getRegisteredIpt());
+    } else {
+      iptValidation.validate(this, ipt);
+      validatedBaseURL = true;
+      organisationValidation.validate(this, organisation);
+    }
+  }
+
+  public String getRegisteredIptPassword() {
+    return registeredIptPassword;
+  }
+
+  public void setRegisteredIptPassword(String registeredIptPassword) {
+    this.registeredIptPassword = registeredIptPassword;
+  }
+
+  public String getHostingOrganisationToken() {
+    return hostingOrganisationToken;
+  }
+
+  public void setHostingOrganisationToken(String hostingOrganisationToken) {
+    this.hostingOrganisationToken = hostingOrganisationToken;
+  }
+
+  public boolean isTokenChange() {
+    return tokenChange;
+  }
+
+  public void setTokenChange(boolean tokenChange) {
+    this.tokenChange = tokenChange;
+  }
+
+  public Map<String, String> getNetworks() {
+    return networks;
+  }
+
+  public String getNetworkKey() {
+    return networkKey;
+  }
+
+  public void setNetworkKey(String networkKey) {
+    this.networkKey = networkKey;
+  }
+
+  public boolean isApplyToExistingResources() {
+    return applyToExistingResources;
+  }
+
+  public void setApplyToExistingResources(boolean applyToExistingResources) {
+    this.applyToExistingResources = applyToExistingResources;
   }
 }

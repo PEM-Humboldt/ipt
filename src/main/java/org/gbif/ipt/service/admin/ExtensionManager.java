@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,45 +14,40 @@
 package org.gbif.ipt.service.admin;
 
 import org.gbif.ipt.model.Extension;
-import org.gbif.ipt.service.DeletionNotAllowedException;
+import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.service.InvalidConfigException;
 import org.gbif.ipt.service.RegistryException;
-import org.gbif.ipt.service.admin.impl.ExtensionManagerImpl;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 
-import com.google.inject.ImplementedBy;
-
 /**
  * This interface details ALL methods associated with the DwC extensions.
  */
-@ImplementedBy(ExtensionManagerImpl.class)
 public interface ExtensionManager {
 
   /**
    * Safely remove an installed extension by its unique rowType, making sure no mappings to this extension exist.
    *
    * @param rowType of installed extension to remove
-   *
-   * @throws DeletionNotAllowedException if at least one mapping to this extension exists preventing deletion
    */
-  void uninstallSafely(String rowType) throws DeletionNotAllowedException;
+  void uninstallSafely(String rowType);
 
   /**
    * Update an installed extension to the latest version, identified by its rowType.
    */
-  void update(String rowType) throws IOException;
+  Extension update(String rowType) throws IOException;
 
   /**
-   * Update extension if it changed since last time it was updated.
-   *
-   * @param rowType the rowType of the extension
-   *
-   * @return true if the update happened, false otherwise
+   * Migrate a resource's extension mappings to an extension to a newer version of that extension.
    */
-  boolean updateIfChanged(String rowType) throws IOException, RegistryException;
+  void migrateResourceToNewExtensionVersion(Resource r, Extension current, Extension newer);
+
+  /**
+   * Update all extensions if they changed since the last time they were updated.
+   */
+  void updateIfChanged() throws IOException, RegistryException;
 
   /**
    * Get a locally installed extension by its rowType.
@@ -136,4 +129,9 @@ public interface ExtensionManager {
    * @return list of redundant groups in an extension
    */
   List<String> getRedundantGroups(Extension extension, Extension core);
+
+  /**
+   * Checks whether the extension is the latest.
+   */
+  boolean isLatest(Extension extension, List<Extension> latestExtensions);
 }

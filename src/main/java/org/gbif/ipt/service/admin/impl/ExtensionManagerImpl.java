@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,14 +29,11 @@ import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.Vocabulary;
 import org.gbif.ipt.model.factory.ExtensionFactory;
 import org.gbif.ipt.service.BaseManager;
-import org.gbif.ipt.service.DeletionNotAllowedException;
-import org.gbif.ipt.service.DeletionNotAllowedException.Reason;
 import org.gbif.ipt.service.InvalidConfigException;
 import org.gbif.ipt.service.InvalidConfigException.TYPE;
 import org.gbif.ipt.service.RegistryException;
 import org.gbif.ipt.service.admin.ExtensionManager;
 import org.gbif.ipt.service.admin.RegistrationManager;
-import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.service.registry.RegistryManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 import org.gbif.utils.HttpClient;
@@ -59,7 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
+import javax.inject.Inject;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.FileUtils;
@@ -71,12 +66,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.xml.sax.SAXException;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import static org.gbif.utils.HttpUtil.success;
 
-@Singleton
 public class ExtensionManagerImpl extends BaseManager implements ExtensionManager {
 
   // logging
@@ -86,13 +77,13 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
   private final static String TAXON_KEYWORD = "dwc:taxon";
   private final static String OCCURRENCE_KEYWORD = "dwc:occurrence";
   private final static String EVENT_KEYWORD = "dwc:event";
+  private final static String MATERIAL_ENTITY_KEYWORD = "dwc:materialentity";
   private final static String RECORD_LEVEL_CLASS = "Record-level";
-  private final Map<String, Extension> extensionsByRowtype = new HashMap<>();
   private final ExtensionFactory factory;
   private final HttpClient downloader;
-  private final ResourceManager resourceManager;
   private final ConfigWarnings warnings;
   private final RegistryManager registryManager;
+  private final ExtensionsHolder extensionsHolder;
 
   // create instance of BaseAction - allows class to retrieve i18n terms via getText()
   private final BaseAction baseAction;
@@ -109,16 +100,23 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
   }
 
   @Inject
-  public ExtensionManagerImpl(AppConfig cfg, DataDir dataDir, ExtensionFactory factory, ResourceManager resourceManager,
-                              HttpClient client, ConfigWarnings warnings, SimpleTextProvider textProvider,
-                              RegistrationManager registrationManager, RegistryManager registryManager) {
+  public ExtensionManagerImpl(
+      AppConfig cfg,
+      DataDir dataDir,
+      ExtensionFactory factory,
+      HttpClient client,
+      ConfigWarnings warnings,
+      SimpleTextProvider textProvider,
+      RegistrationManager registrationManager,
+      RegistryManager registryManager,
+      ExtensionsHolder extensionsHolder) {
     super(cfg, dataDir);
     this.factory = factory;
-    this.resourceManager = resourceManager;
     this.downloader = client;
     this.warnings = warnings;
     this.baseAction = new BaseAction(textProvider, cfg, registrationManager);
     this.registryManager = registryManager;
+    this.extensionsHolder = extensionsHolder;
   }
 
   public static String normalizeRowType(String rowType) {
@@ -140,19 +138,11 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
   }
 
   @Override
-  public void uninstallSafely(String rowType) throws DeletionNotAllowedException {
-    if (extensionsByRowtype.containsKey(rowType)) {
-      // check if its used by some resources
-      for (Resource r : resourceManager.list()) {
-        if (!r.getMappings(rowType).isEmpty()) {
-          String msg = "Extension mapped in resource " + r.getShortname();
-          LOG.warn(msg);
-          throw new DeletionNotAllowedException(Reason.EXTENSION_MAPPED, msg);
-        }
-      }
+  public void uninstallSafely(String rowType) {
+    if (extensionsHolder.getExtensionsByRowtype().containsKey(rowType)) {
       uninstall(rowType);
     } else {
-      LOG.warn("Extension not installed locally, cant delete " + rowType);
+      LOG.warn("Extension not installed locally, cant delete {}", rowType);
     }
   }
 
@@ -162,8 +152,8 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
    * @param rowType rowType of extension to uninstall
    */
   private void uninstall(String rowType) {
-    if (extensionsByRowtype.containsKey(rowType)) {
-      extensionsByRowtype.remove(rowType);
+    if (extensionsHolder.getExtensionsByRowtype().containsKey(rowType)) {
+      extensionsHolder.getExtensionsByRowtype().remove(rowType);
       File f = getExtensionFile(rowType);
       if (f.exists()) {
         FileUtils.deleteQuietly(f);
@@ -176,14 +166,13 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
   }
 
   @Override
-  public synchronized void update(String rowType) throws IOException, RegistryException {
+  public synchronized Extension update(String rowType) throws IOException, RegistryException {
     // identify installed extension by rowType
     Extension installed = get(rowType);
+    Extension latestVersion = null;
 
     if (installed != null) {
-
       // verify there is a newer (latest) version
-      Extension latestVersion = null;
       for (Extension e : registryManager.getExtensions()) {
         // match by rowType and isLatest, plus the URL cannot be null in order to be installed
         if (e.getRowType() != null && e.getRowType().equalsIgnoreCase(rowType) && e.isLatest()) {
@@ -204,56 +193,78 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
       }
 
       if (isNewVersion && latestVersion.getUrl() != null) {
-        // check if there are any associated resource mappings
-        List<Resource> resourcesToMigrate = new ArrayList<>();
-        for (Resource r : resourceManager.list()) {
-          if (!r.getMappings(rowType).isEmpty()) {
-            resourcesToMigrate.add(r);
-          }
-        }
-
         // first download latestVersion XML file
         File tmpFile = download(latestVersion.getUrl());
         Extension extension = loadFromFile(tmpFile);
 
-        // if there are mappings to this extension - do migrations to latest version, save resources
-        if (!resourcesToMigrate.isEmpty()) {
-          for (Resource r : resourcesToMigrate) {
-            LOG.info("Updating " + rowType + " mappings for resource: " + r.getTitleAndShortname() + "...");
-            migrateResourceToNewExtensionVersion(r, installed, extension);
-            resourceManager.save(r);
-            LOG.info("Updated " + rowType + " mappings successfully for resource: " + r.getTitleAndShortname());
-          }
-        }
-
         // uninstall and install new version
         uninstall(rowType);
         finishInstall(tmpFile, extension);
+
+        // set missing fields
+        latestVersion.setProperties(extension.getProperties());
+        latestVersion.setName(extension.getName());
+        latestVersion.setNamespace(extension.getNamespace());
+        latestVersion.setLink(extension.getLink());
+      } else {
+        latestVersion = null;
       }
     }
+
+    return latestVersion;
   }
 
   @Override
-  public synchronized boolean updateIfChanged(String rowType) throws IOException, RegistryException {
-    // identify installed extension by rowType
-    Extension installed = get(rowType);
-    if (installed != null) {
-      // match extension by rowType and issued date
-      Extension matched = null;
-      for (Extension ex : registryManager.getExtensions()) {
-        if (ex.getRowType() != null && ex.getRowType().equalsIgnoreCase(rowType)
-            && installed.getIssued() != null && ex.getIssued() != null && installed.getIssued().compareTo(ex.getIssued()) == 0) {
-          matched = ex;
-          break;
+  public synchronized void updateIfChanged() throws IOException, RegistryException {
+    List<Extension> installedExtensions = list();
+    List<Extension> registryExtensions = registryManager.getExtensions();
+
+    for (Extension installed : installedExtensions) {
+      if (installed == null || installed.getRowType() == null) {
+        LOG.error("Installed extension is null or rowType is null");
+      } else {
+        String rowType = installed.getRowType();
+        LOG.debug("Updating extension {}", rowType);
+        // match extension by rowType and issued date
+        Extension matched = null;
+        boolean isMatched = false;
+
+        for (Extension ex : registryExtensions) {
+          if (ex.getRowType() != null && ex.getRowType().equalsIgnoreCase(rowType)) {
+            isMatched = true;
+            if (installed.getIssued() != null && ex.getIssued() != null
+                && installed.getIssued().compareTo(ex.getIssued()) < 0
+                && ex.isLatest()) {
+              matched = ex;
+              break;
+            }
+          }
+        }
+
+        // verify the version was updated
+        if (!isMatched) {
+          LOG.error("No matching extension found for {}", rowType);
+        } else if (matched == null) {
+          LOG.debug("Extension {} is already up-to-date", rowType);
+        } else if (matched.getUrl() == null) {
+          LOG.error("Matched extension {} doesn't have a URL", rowType);
+        } else {
+          LOG.debug("Found matching extension {}", matched.getUrl());
+          File extensionFile = getExtensionFile(rowType);
+          boolean downloadResult = downloader.downloadIfChanged(matched.getUrl(), extensionFile);
+
+          if (downloadResult) {
+            LOG.debug("Downloaded extension {}", matched.getUrl());
+            Extension result = loadFromFile(extensionFile);
+
+            // update extension in local lookup
+            extensionsHolder.getExtensionsByRowtype().replace(rowType, result);
+          } else {
+            LOG.error("Failed to download extension {} from {}", rowType, matched.getUrl());
+          }
         }
       }
-      // verify the version was updated
-      if (matched != null && matched.getUrl() != null) {
-        File extensionFile = getExtensionFile(rowType);
-        return downloader.downloadIfChanged(matched.getUrl(), extensionFile);
-      }
     }
-    return false;
   }
 
   /**
@@ -263,7 +274,8 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
    * @param current extension
    * @param newer   newer version of extension to migrate mappings to
    */
-  protected void migrateResourceToNewExtensionVersion(Resource r, Extension current, Extension newer) {
+  @Override
+  public void migrateResourceToNewExtensionVersion(Resource r, Extension current, Extension newer) {
     // sanity check that the current and newer extensions share same rowType
     if (!current.getRowType().equalsIgnoreCase(newer.getRowType()) || r.getMappings(current.getRowType()).isEmpty()) {
       throw new IllegalStateException();
@@ -377,7 +389,7 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
 
   @Override
   public Extension get(String rowType) {
-    return extensionsByRowtype.get(normalizeRowType(rowType));
+    return extensionsHolder.getExtensionsByRowtype().get(normalizeRowType(rowType));
   }
 
   /**
@@ -472,7 +484,7 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
       File installedFile = getExtensionFile(extension.getRowType());
       FileUtils.moveFile(tmpFile, installedFile);
       // keep extension in local lookup: allowed one installed extension per rowType
-      extensionsByRowtype.put(extension.getRowType(), extension);
+      extensionsHolder.getExtensionsByRowtype().put(extension.getRowType(), extension);
     } catch (IOException e) {
       LOG.error("Installing extension failed, while trying to move and rename extension file: " + e.getMessage(), e);
       throw e;
@@ -518,7 +530,7 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
 
   @Override
   public List<Extension> list() {
-    return new ArrayList<>(extensionsByRowtype.values());
+    return new ArrayList<>(extensionsHolder.getExtensionsByRowtype().values());
   }
 
   @Override
@@ -530,6 +542,10 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
         return search(TAXON_KEYWORD, true, false);
       } else if (coreRowType.equalsIgnoreCase(Constants.DWC_ROWTYPE_EVENT)) {
         return search(EVENT_KEYWORD, true, false);
+      } else if (coreRowType.equalsIgnoreCase(Constants.DWC_ROWTYPE_MATERIAL_ENTITY)) {
+        Set<Extension> suitableExtensionsSet = new HashSet<>(search(MATERIAL_ENTITY_KEYWORD, true, false));
+        suitableExtensionsSet.addAll(search(OCCURRENCE_KEYWORD, true, false));
+        return new ArrayList<>(suitableExtensionsSet);
       } else {
         return search(coreRowType, true, false);
       }
@@ -546,6 +562,8 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
         return search(TAXON_KEYWORD, false, true);
       } else if (coreRowType.equalsIgnoreCase(Constants.DWC_ROWTYPE_EVENT)) {
         return search(EVENT_KEYWORD, false, true);
+      } else if (coreRowType.equalsIgnoreCase(Constants.DWC_ROWTYPE_MATERIAL_ENTITY)) {
+        return search(MATERIAL_ENTITY_KEYWORD, false, true);
       } else {
         return search(coreRowType, false, true);
       }
@@ -569,6 +587,15 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
   public int load() {
     File extensionDir = dataDir.configFile(CONFIG_FOLDER);
     int counter = 0;
+
+    List<Extension> allRegisteredExtensions;
+    try {
+      allRegisteredExtensions = registryManager.getLatestExtensions();
+    } catch (Exception e) {
+      LOG.error("Failed to load extensions from the Registry. Cannot check the latest extensions", e);
+      allRegisteredExtensions = Collections.emptyList();
+    }
+
     if (extensionDir.isDirectory()) {
       List<File> extensionFiles = new ArrayList<>();
       FilenameFilter ff = new SuffixFileFilter(EXTENSION_FILE_SUFFIX, IOCase.INSENSITIVE);
@@ -576,8 +603,11 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
       for (File ef : extensionFiles) {
         try {
           Extension extension = loadFromFile(ef);
+          // update isLatest
+          extension.setLatest(isLatest(extension, allRegisteredExtensions));
+
           // keep extension in local lookup: allowed one installed extension per rowType
-          extensionsByRowtype.put(extension.getRowType(), extension);
+          extensionsHolder.getExtensionsByRowtype().put(extension.getRowType(), extension);
           counter++;
         } catch (InvalidConfigException e) {
           // when IPT is in test mode, remove/uninstall invalid extension definition and prompt admin to reinstall it
@@ -649,7 +679,7 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
     keyword = StringUtils.trimToNull(keyword);
     if (keyword != null) {
       keyword = keyword.toLowerCase();
-      for (Extension e : extensionsByRowtype.values()) {
+      for (Extension e : extensionsHolder.getExtensionsByRowtype().values()) {
         if ((searchForCores && !e.isCore()) || (!searchForCores && e.isCore())) {
           continue;
         }
@@ -675,5 +705,28 @@ public class ExtensionManagerImpl extends BaseManager implements ExtensionManage
     } else {
       return new ArrayList<>();
     }
+  }
+
+  @Override
+  public boolean isLatest(Extension extension, List<Extension> latestExtensions) {
+    for (Extension rExtension : latestExtensions) {
+      // check if registered extension is latest, and if it is, try to use it in comparison
+      if (extension.getRowType().equalsIgnoreCase(rExtension.getRowType())) {
+        Date installedExtensionIssuedDate = extension.getIssued();
+        Date latestExtensionIssuedDate = rExtension.getIssued();
+        if (installedExtensionIssuedDate == null && latestExtensionIssuedDate != null) {
+          LOG.debug("Installed extension with rowType {} has no issued date. A newer version issued {} exists.", extension.getRowType(), latestExtensionIssuedDate);
+          return false;
+        } else if (latestExtensionIssuedDate != null && latestExtensionIssuedDate.compareTo(installedExtensionIssuedDate) > 0) {
+          LOG.debug("Installed extension with rowType {} was issued {}. A newer version issued {} exists.", extension.getRowType(), installedExtensionIssuedDate, latestExtensionIssuedDate);
+          return false;
+        } else {
+          LOG.debug("Installed extension with rowType {} is the latest version", extension.getRowType());
+          return true;
+        }
+      }
+    }
+
+    return true;
   }
 }

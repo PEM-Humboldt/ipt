@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +13,7 @@
  */
 package org.gbif.ipt.config;
 
+import org.gbif.ipt.model.IptColorScheme;
 import org.gbif.ipt.service.InvalidConfigException;
 import org.gbif.ipt.service.InvalidConfigException.TYPE;
 import org.gbif.ipt.utils.InputStreamUtils;
@@ -30,60 +29,69 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.UriBuilder;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.gson.annotations.Since;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
-@Singleton
 public class AppConfig {
 
   public enum REGISTRY_TYPE {
     PRODUCTION, DEVELOPMENT
   }
 
+  private static final String UI_SETTINGS_FOLDER = ".uiSettings";
+  private static final String COLOR_SCHEME_PROPFILE = "ipt-color-scheme.properties";
   protected static final String DATADIR_PROPFILE = "ipt.properties";
   static final String CLASSPATH_PROPFILE = "application.properties";
   public static final String BASEURL = "ipt.baseURL";
-  @Since(2.1)
+   // Since 2.1
   public static final String CORE_ROW_TYPES = "ipt.core_rowTypes";
   public static final String CORE_ROW_ID_TERMS = "ipt.core_idTerms";
   public static final String PROXY = "proxy";
   public static final String DEBUG = "debug";
   public static final String ARCHIVAL_MODE = "archivalMode";
   public static final String ARCHIVAL_LIMIT = "archivalLimit";
-  public static final String ANALYTICS_GBIF = "analytics.gbif";
   public static final String ANALYTICS_KEY = "analytics.key";
   public static final String IPT_LATITUDE = "location.lat";
   public static final String IPT_LONGITUDE = "location.lon";
   public static final String DEV_VERSION = "dev.version";
   public static final String ADMIN_EMAIL = "admin.email";
+  public static final String DEFAULT_LOCALE = "defaultLocale";
+  public static final String LOGO_REDIRECT_URL = "logoRedirectUrl";
+  public static final String SESSION_TIMEOUT_PROPERTY = "session.timeout";
+  public static final String DATAPACKAGE_FOREIGN_KEYS_VALIDATION = "datapackage.fk.validation";
   private static final String PRODUCTION_TYPE_LOCKFILE = ".gbifreg";
+  public static final String BUILD_NUMBER_VARIABLE_SUFFIX = "-r${buildNumber}";
+  public static final String BUILD_NUMBER_REGEX = "-r\\$\\{buildNumber\\}$|-r\\w{7}$";
   private Properties properties = new Properties();
+  private IptColorScheme colorScheme;
   private static final Logger LOG = LogManager.getLogger(AppConfig.class);
   private DataDir dataDir;
   private REGISTRY_TYPE type;
 
-  public static final int CSRF_TOKEN_EXPIRATION = 15 * 60; // in seconds
-  public static final int CSRF_PAGE_REFRESH_DELAY = 10 * 60 * 1000; // in milliseconds, should be lower than CSRF_TOKEN_EXPIRATION
+  private static final int SESSION_TIMEOUT = 60 * 60; // in seconds
+  private static final int CSRF_TOKEN_EXPIRATION = 15 * 60; // in seconds
+  private static final int CSRF_PAGE_REFRESH_DELAY = 10 * 60 * 1000; // in milliseconds, should be lower than CSRF_TOKEN_EXPIRATION
 
   // to support compatibility with historical data directories, we default to the original hard coded
   // types that were scattered across the code.
@@ -91,12 +99,17 @@ public class AppConfig {
 
   // mapping of the id to the term that is the row ID
   private static final Map<String, String> DEFAULT_CORE_ROW_TYPES_ID_TERMS;
+  private static final Set<Locale> IPT_SUPPORTED_LOCALES;
+  private static final Set<String> IPT_SUPPORTED_LANGUAGES;
 
   private static List<String> coreRowTypes;
   private static Map<String, String> coreRowTypeIdTerms;
 
   static {
-    DEFAULT_CORE_ROW_TYPES = Arrays.asList(Constants.DWC_ROWTYPE_OCCURRENCE, Constants.DWC_ROWTYPE_TAXON, Constants.DWC_ROWTYPE_EVENT);
+    DEFAULT_CORE_ROW_TYPES = Arrays.asList(
+        Constants.DWC_ROWTYPE_OCCURRENCE,
+        Constants.DWC_ROWTYPE_TAXON,
+        Constants.DWC_ROWTYPE_EVENT);
 
     DEFAULT_CORE_ROW_TYPES_ID_TERMS = new HashMap<>();
     DEFAULT_CORE_ROW_TYPES_ID_TERMS.put(Constants.DWC_ROWTYPE_OCCURRENCE, Constants.DWC_OCCURRENCE_ID);
@@ -107,16 +120,34 @@ public class AppConfig {
     coreRowTypeIdTerms = DEFAULT_CORE_ROW_TYPES_ID_TERMS;
   }
 
+  static {
+    IPT_SUPPORTED_LOCALES = new HashSet<>();
+    IPT_SUPPORTED_LOCALES.add(Locale.UK); // Used to ensure a day-month-year order in formatted dates.
+    IPT_SUPPORTED_LOCALES.add(Locale.FRENCH);
+    IPT_SUPPORTED_LOCALES.add(Locale.CHINESE);
+    IPT_SUPPORTED_LOCALES.add(Locale.JAPANESE);
+    IPT_SUPPORTED_LOCALES.add(new Locale("es"));
+    IPT_SUPPORTED_LOCALES.add(new Locale("pt"));
+    IPT_SUPPORTED_LOCALES.add(new Locale("ru"));
+
+    IPT_SUPPORTED_LANGUAGES = new HashSet<>();
+    IPT_SUPPORTED_LANGUAGES.add("en");
+    IPT_SUPPORTED_LANGUAGES.add("fr");
+    IPT_SUPPORTED_LANGUAGES.add("zh");
+    IPT_SUPPORTED_LANGUAGES.add("ja");
+    IPT_SUPPORTED_LANGUAGES.add("es");
+    IPT_SUPPORTED_LANGUAGES.add("pt");
+    IPT_SUPPORTED_LANGUAGES.add("ru");
+  }
+
   private AppConfig() {
   }
 
-  @Inject
   public AppConfig(DataDir dataDir) throws InvalidConfigException {
     this.dataDir = dataDir;
     // also loaded via ConfigManager constructor if datadir was linked at startup already
     // If it wasn't, this is the only place to load at least the default classpath config settings
     loadConfig();
-
   }
 
   /**
@@ -140,6 +171,13 @@ public class AppConfig {
    */
   public static List<String> getCoreRowTypes() {
     return coreRowTypes;
+  }
+
+  public Map<String, String> getSupportedDataSchemaNamesWithVersions() {
+    // filter packages - some available only for dev!
+    return Arrays.stream(SupportedDataPackageType.values())
+        .filter(dp -> type != REGISTRY_TYPE.PRODUCTION || dp.isProductionType())
+        .collect(Collectors.toMap(SupportedDataPackageType::getName, SupportedDataPackageType::getSupportedVersion));
   }
 
   /**
@@ -171,6 +209,10 @@ public class AppConfig {
 
   public String getAdminEmail() {
     return properties.getProperty(ADMIN_EMAIL);
+  }
+
+  public String getDefaultLocale() {
+    return properties.getProperty(DEFAULT_LOCALE);
   }
 
   public DataDir getDataDir() {
@@ -207,6 +249,20 @@ public class AppConfig {
     } catch (NumberFormatException e) {
       return 3;
     }
+  }
+
+  public int getSessionTimeout() {
+    String sessionTimeout = properties.getProperty(SESSION_TIMEOUT_PROPERTY);
+    if (sessionTimeout != null) {
+      return Integer.parseInt(sessionTimeout) * 60;
+    }
+    else {
+      return SESSION_TIMEOUT;
+    }
+  }
+
+  public int getCsrfTokenExpiration() {
+    return CSRF_TOKEN_EXPIRATION;
   }
 
   public int getCsrfPageRefreshDelay() {
@@ -261,9 +317,13 @@ public class AppConfig {
    */
   @NotNull
   public String getResourceArchiveUrl(@NotNull String shortname) {
-    Objects.requireNonNull(getBaseUrl());
+    String baseUrl = getBaseUrl();
+    if (StringUtils.isEmpty(baseUrl)) {
+      LOG.error("IPT's base URL must not be null or empty");
+      throw new RuntimeException("IPT's base URL must not be null or empty");
+    }
 
-    return UriBuilder.fromPath(getBaseUrl()).path(Constants.REQ_PATH_DWCA)
+    return UriBuilder.fromPath(baseUrl).path(Constants.REQ_PATH_ARCHIVE)
       .queryParam(Constants.REQ_PARAM_RESOURCE, shortname).build().toString();
   }
 
@@ -272,9 +332,28 @@ public class AppConfig {
    */
   @NotNull
   public String getResourceEmlUrl(@NotNull String shortname) {
-    Objects.requireNonNull(getBaseUrl());
+    String baseUrl = getBaseUrl();
+    if (StringUtils.isEmpty(baseUrl)) {
+      LOG.error("IPT's base URL must not be null or empty");
+      throw new RuntimeException("IPT's base URL must not be null or empty");
+    }
 
-    return UriBuilder.fromPath(getBaseUrl()).path(Constants.REQ_PATH_EML)
+    return UriBuilder.fromPath(baseUrl).path(Constants.REQ_PATH_EML)
+        .queryParam(Constants.REQ_PARAM_RESOURCE, shortname).build().toString();
+  }
+
+  /**
+   * @return String URI to resource's last published Data Package Metadata file (no version number)
+   */
+  @NotNull
+  public String getResourceDataPackageMetadataUrl(@NotNull String shortname) {
+    String baseUrl = getBaseUrl();
+    if (StringUtils.isEmpty(baseUrl)) {
+      LOG.error("IPT's base URL must not be null or empty");
+      throw new RuntimeException("IPT's base URL must not be null or empty");
+    }
+
+    return UriBuilder.fromPath(baseUrl).path(Constants.REQ_PATH_METADATA)
       .queryParam(Constants.REQ_PARAM_RESOURCE, shortname).build().toString();
   }
 
@@ -283,9 +362,13 @@ public class AppConfig {
    */
   @NotNull
   public String getResourceLogoUrl(@NotNull String shortname) {
-    Objects.requireNonNull(getBaseUrl());
+    String baseUrl = getBaseUrl();
+    if (StringUtils.isEmpty(baseUrl)) {
+      LOG.error("IPT's base URL must not be null or empty");
+      throw new RuntimeException("IPT's base URL must not be null or empty");
+    }
 
-    return UriBuilder.fromPath(getBaseUrl()).path(Constants.REQ_PATH_LOGO)
+    return UriBuilder.fromPath(baseUrl).path(Constants.REQ_PATH_LOGO)
       .queryParam(Constants.REQ_PARAM_RESOURCE, shortname).build().toString();
   }
 
@@ -302,9 +385,13 @@ public class AppConfig {
    */
   @NotNull
   public URI getResourceUri(@NotNull String shortname) {
-    Objects.requireNonNull(getBaseUrl());
+    String baseUrl = getBaseUrl();
+    if (StringUtils.isEmpty(baseUrl)) {
+      LOG.error("IPT's base URL must not be null or empty");
+      throw new RuntimeException("IPT's base URL must not be null or empty");
+    }
 
-    return UriBuilder.fromPath(getBaseUrl()).path(Constants.REQ_PATH_RESOURCE)
+    return UriBuilder.fromPath(baseUrl).path(Constants.REQ_PATH_RESOURCE)
       .queryParam(Constants.REQ_PARAM_RESOURCE, shortname).build();
   }
 
@@ -313,9 +400,13 @@ public class AppConfig {
    */
   @NotNull
   public String getResourceGuid(@NotNull String shortname) {
-    Objects.requireNonNull(getBaseUrl());
+    String baseUrl = getBaseUrl();
+    if (StringUtils.isEmpty(baseUrl)) {
+      LOG.error("IPT's base URL must not be null or empty");
+      throw new RuntimeException("IPT's base URL must not be null or empty");
+    }
 
-    return UriBuilder.fromPath(getBaseUrl()).path(Constants.REQ_PATH_RESOURCE)
+    return UriBuilder.fromPath(baseUrl).path(Constants.REQ_PATH_RESOURCE)
       .queryParam(Constants.REQ_PARAM_ID, shortname).build().toString();
   }
 
@@ -324,9 +415,13 @@ public class AppConfig {
    */
   @NotNull
   public URI getResourceVersionUri(@NotNull String shortname, @NotNull BigDecimal version) {
-    Objects.requireNonNull(getBaseUrl());
+    String baseUrl = getBaseUrl();
+    if (StringUtils.isEmpty(baseUrl)) {
+      LOG.error("IPT's base URL must not be null or empty");
+      throw new RuntimeException("IPT's base URL must not be null or empty");
+    }
 
-    return UriBuilder.fromPath(getBaseUrl()).path(Constants.REQ_PATH_RESOURCE)
+    return UriBuilder.fromPath(baseUrl).path(Constants.REQ_PATH_RESOURCE)
       .queryParam(Constants.REQ_PARAM_RESOURCE, shortname)
       .queryParam(Constants.REQ_PARAM_VERSION, version.toPlainString()).build();
   }
@@ -338,13 +433,19 @@ public class AppConfig {
    */
   @NotNull
   public String getResourceVersionUri(@NotNull String shortname, @NotNull String version) {
-    Objects.requireNonNull(getBaseUrl());
-
     return getResourceVersionUri(shortname, new BigDecimal(version)).toString();
   }
 
   public String getVersion() {
-    return properties.getProperty(DEV_VERSION);
+    String version = properties.getProperty(DEV_VERSION);
+    // remove suffix if it was not filled
+    return StringUtils.removeEnd(version, BUILD_NUMBER_VARIABLE_SUFFIX);
+  }
+
+  public String getShortVersion() {
+    String version = properties.getProperty(DEV_VERSION);
+    // remove build number suffix in the end
+    return RegExUtils.removePattern(version, BUILD_NUMBER_REGEX);
   }
 
   public boolean hasLocation() {
@@ -375,10 +476,6 @@ public class AppConfig {
     return null;
   }
 
-  public boolean isGbifAnalytics() {
-    return "true".equalsIgnoreCase(properties.getProperty(ANALYTICS_GBIF));
-  }
-
   /**
    * @return true if the datadir is linked to the test registry, false otherwise
    *
@@ -388,13 +485,14 @@ public class AppConfig {
   }
 
   /**
-   * Load application configuration from application properties file (application.properties) and from
-   * user configuration file (ipt.properties), which includes populating core configuration.
+   * Load application configuration from application properties file (application.properties), from
+   * user configuration file (ipt.properties) and color configuration file (ipt-color-scheme.properties),
+   * which includes populating core configuration.
    */
   public void loadConfig() throws InvalidConfigException {
+    // load default configuration from application.properties
     InputStreamUtils streamUtils = new InputStreamUtils();
     InputStream configStream = streamUtils.classpathStream(CLASSPATH_PROPFILE);
-    // load default configuration from application.properties
     try {
       Properties props = new Properties();
       if (configStream == null) {
@@ -426,6 +524,40 @@ public class AppConfig {
         } else {
           LOG.warn("DataDir configured, but user configuration doesnt exist: " + userCfgFile.getAbsolutePath());
         }
+
+        // load (and create if absent) default colors configuration from ipt-color.scheme.properties
+        File cfgFile = new File(dataDir.dataDir, "config/" + UI_SETTINGS_FOLDER + '/' + COLOR_SCHEME_PROPFILE);
+        if (!cfgFile.exists()) {
+          LOG.info("IPT UI settings not found, try to create them and then load");
+          Path parentDir = cfgFile.getParentFile().toPath();
+          if (!Files.exists(parentDir)) {
+            try {
+              Files.createDirectories(parentDir);
+            } catch (IOException e) {
+              LOG.error("Failed to create .uiSettings directory", e);
+            }
+          }
+
+          // populate properties with default values and store
+          try (OutputStream out = Files.newOutputStream(cfgFile.toPath())) {
+            // create object with default values
+            colorScheme = new IptColorScheme();
+            Properties uiProps = colorScheme.toProperties();
+            uiProps.store(out, "Default IPT color scheme configuration, last saved " + new Date());
+          } catch (IOException e) {
+            LOG.error("Failed to load the default application configuration from ipt-color-scheme.properties", e);
+          }
+        } else {
+          LOG.info("Loading IPT UI settings");
+          try (InputStream in = Files.newInputStream(cfgFile.toPath())) {
+            Properties uiProps = new Properties();
+            uiProps.load(in);
+            colorScheme = new IptColorScheme(uiProps);
+          } catch (IOException e) {
+            LOG.error("Failed to load the application configuration from ipt-color-scheme.properties", e);
+          }
+        }
+
         // check if this datadir is a production or test installation
         // we use a hidden file to indicate the production type
         readRegistryLock();
@@ -503,6 +635,28 @@ public class AppConfig {
     }
   }
 
+  /**
+   * Store color scheme configuration to the property file.
+   *
+   * @param colorScheme IPT color scheme
+   */
+  public void saveColorSchemeConfig(IptColorScheme colorScheme) throws IOException {
+    this.colorScheme = colorScheme;
+    File cfgFile = new File(dataDir.dataDir, "config/" + UI_SETTINGS_FOLDER + '/' + COLOR_SCHEME_PROPFILE);
+    try (OutputStream out = Files.newOutputStream(cfgFile.toPath())) {
+      Properties props = colorScheme.toProperties();
+      props.store(out, "IPT color scheme configuration, last saved " + new Date());
+    }
+  }
+
+  public IptColorScheme getColorSchemeConfig() {
+    return colorScheme;
+  }
+
+  public String getLogoRedirectUrl() {
+    return properties.getProperty(LOGO_REDIRECT_URL);
+  }
+
   // public to be accessible by ConfigManager
   public void saveConfig() throws IOException {
     // save property config file
@@ -534,6 +688,10 @@ public class AppConfig {
     properties.setProperty(key, StringUtils.trimToEmpty(value));
   }
 
+  public void setDefaultLocale(String value) {
+    properties.setProperty(DEFAULT_LOCALE, value);
+  }
+
   protected void setRegistryType(REGISTRY_TYPE newType) throws InvalidConfigException {
     Objects.requireNonNull(newType, "Registry type cannot be null");
     if (this.type != null) {
@@ -562,5 +720,21 @@ public class AppConfig {
       lock.flush();
       LOG.info("Locked DataDir to registry of type " + registryType);
     }
+  }
+
+  public boolean isSupportedLanguage(String language) {
+    return IPT_SUPPORTED_LANGUAGES.contains(language);
+  }
+
+  public boolean isSupportedLocale(Locale locale) {
+    return IPT_SUPPORTED_LOCALES.contains(locale);
+  }
+
+  public void setLogoRedirectUrl(String logoRedirectUrl) {
+    properties.setProperty(LOGO_REDIRECT_URL, logoRedirectUrl);
+  }
+
+  public boolean isDatapackageForeignKeysValidationEnabled() {
+    return "true".equalsIgnoreCase(properties.getProperty(DATAPACKAGE_FOREIGN_KEYS_VALIDATION));
   }
 }

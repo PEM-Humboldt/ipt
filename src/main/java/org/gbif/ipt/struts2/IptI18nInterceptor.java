@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,6 +21,7 @@ import org.apache.commons.lang3.LocaleUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.struts2.interceptor.I18nInterceptor;
+import org.gbif.ipt.config.AppConfig;
 
 /**
  * An interceptor that ensures that all Locales supported by the IPT can be handled properly. Needed because
@@ -30,9 +29,11 @@ import org.apache.struts2.interceptor.I18nInterceptor;
  */
 public class IptI18nInterceptor extends I18nInterceptor {
 
+  private static final long serialVersionUID = -177385481327691899L;
   private static final Logger LOG = LogManager.getLogger(IptI18nInterceptor.class);
-
   private static final Set<Locale> IPT_SUPPORTED_LOCALES;
+
+  private AppConfig appConfig;
 
   static {
     IPT_SUPPORTED_LOCALES = new HashSet<>();
@@ -40,7 +41,6 @@ public class IptI18nInterceptor extends I18nInterceptor {
     IPT_SUPPORTED_LOCALES.add(new Locale("es"));
   }
 
-  @Override
   protected Locale getLocaleFromParam(Object requestedLocale) {
     Locale locale = null;
     try {
@@ -48,7 +48,7 @@ public class IptI18nInterceptor extends I18nInterceptor {
         locale = (requestedLocale instanceof Locale) ? (Locale) requestedLocale
             : LocaleUtils.toLocale(requestedLocale.toString());
         if (locale != null && LOG.isDebugEnabled()) {
-          LOG.debug("Applied request locale: " + locale.getLanguage());
+          LOG.debug("Applied request locale: {}", locale.getLanguage());
         }
       }
     } catch (IllegalArgumentException e) {
@@ -58,9 +58,17 @@ public class IptI18nInterceptor extends I18nInterceptor {
     if (Locale.ENGLISH.equals(locale)) {
       locale = Locale.UK;
     }
-    if (locale != null && !IPT_SUPPORTED_LOCALES.contains(locale)) {;
+    if (locale != null && !isSupportedLocale(locale)) {
       locale = Locale.getDefault();
     }
     return locale;
+  }
+
+  private boolean isSupportedLocale(Locale locale) {
+    return appConfig != null ? appConfig.isSupportedLocale(locale) : IPT_SUPPORTED_LOCALES.contains(locale);
+  }
+
+  public void setAppConfig(AppConfig appConfig) {
+    this.appConfig = appConfig;
   }
 }

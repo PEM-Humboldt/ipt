@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +13,7 @@
  */
 package org.gbif.ipt.validation;
 
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.utils.CoordinateUtils;
 
 import java.util.stream.Stream;
@@ -28,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Unit test for decToDms method in CoordinateUtils class.
  */
-public class CoordinateUtilsTest {
+public class CoordinateUtilsTest extends IptBaseTest {
 
   private static String degreeSign = "\u00B0";
 

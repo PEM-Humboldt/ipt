@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,13 +26,18 @@ import org.gbif.ipt.model.RowIterable;
 import org.gbif.ipt.model.Source;
 import org.gbif.ipt.model.SqlSource;
 import org.gbif.ipt.model.TextFileSource;
+import org.gbif.ipt.model.UrlMetadata;
 import org.gbif.ipt.model.UrlSource;
 import org.gbif.ipt.service.AlreadyExistingException;
 import org.gbif.ipt.service.BaseManager;
 import org.gbif.ipt.service.ImportException;
 import org.gbif.ipt.service.InvalidFilenameException;
 import org.gbif.ipt.service.SourceException;
+import org.gbif.ipt.service.file.DataFile;
+import org.gbif.ipt.service.file.FileStoreManager;
 import org.gbif.ipt.service.manage.SourceManager;
+import org.gbif.ipt.service.manage.ResourceUpdateListener;
+import org.gbif.ipt.utils.URLUtils;
 import org.gbif.utils.file.ClosableIterator;
 import org.gbif.utils.file.ClosableReportingIterator;
 import org.gbif.utils.file.csv.UnknownDelimitersException;
@@ -42,11 +45,10 @@ import org.gbif.utils.file.csv.UnknownDelimitersException;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -55,18 +57,20 @@ import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import com.google.inject.Inject;
 
 public class SourceManagerImpl extends BaseManager implements SourceManager {
 
@@ -302,17 +306,28 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
 
   private static final String ACCEPTED_FILE_NAMES = "[\\w.\\-\\s\\)\\(]+";
 
-  // Allowed characters in file names: alpha-numeric characters, plus ".", "-", "_", ")", "(", and " "
-  private Pattern acceptedPattern = Pattern.compile(ACCEPTED_FILE_NAMES);
+  private FileStoreManager fileStoreManager;
 
-  @Inject
-  public SourceManagerImpl(AppConfig cfg, DataDir dataDir) {
+  // Allowed characters in file names: alphanumeric characters, plus ".", "-", "_", ")", "(", and " "
+  private Pattern acceptedPattern = Pattern.compile(ACCEPTED_FILE_NAMES);
+  private final List<ResourceUpdateListener> listeners = new ArrayList<>();
+
+  public SourceManagerImpl(AppConfig cfg, DataDir dataDir, FileStoreManager fileStoreManager) {
     super(cfg, dataDir);
+    this.fileStoreManager = fileStoreManager;
   }
 
+  // TODO: 24/04/2023 implement
+  public static void copyArchiveFileProperties(File from, TextFileSource to) {
+    to.setEncoding("UTF-8");
+    to.setFieldsEnclosedBy(null);
+    to.setFieldsTerminatedBy(",");
+    to.setIgnoreHeaderLines(1);
+    to.setDateFormat("YYYY-MM-DD");
+  }
   public static void copyArchiveFileProperties(ArchiveFile from, TextFileSource to) {
     to.setEncoding(from.getEncoding());
-    to.setFieldsEnclosedBy(from.getFieldsEnclosedBy() == null ? null : from.getFieldsEnclosedBy().toString());
+    to.setFieldsEnclosedBy(from.getFieldsEnclosedBy() == null ? "\"" : from.getFieldsEnclosedBy().toString());
     to.setFieldsTerminatedBy(from.getFieldsTerminatedBy());
     to.setIgnoreHeaderLines(from.getIgnoreHeaderLines());
     to.setDateFormat(from.getDateFormat());
@@ -320,14 +335,14 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
 
   public static void copyArchiveFileProperties(ArchiveFile from, UrlSource to) {
     to.setEncoding(from.getEncoding());
-    to.setFieldsEnclosedBy(from.getFieldsEnclosedBy() == null ? null : from.getFieldsEnclosedBy().toString());
+    to.setFieldsEnclosedBy(from.getFieldsEnclosedBy() == null ? "\"" : from.getFieldsEnclosedBy().toString());
     to.setFieldsTerminatedBy(from.getFieldsTerminatedBy());
     to.setIgnoreHeaderLines(from.getIgnoreHeaderLines());
     to.setDateFormat(from.getDateFormat());
   }
 
   /**
-   * Tests if the the file name is composed of alpha-numeric characters, plus ".", "-", "_", ")", "(", and " ".
+   * Tests if the file name is composed of alphanumeric characters, plus ".", "-", "_", ")", "(", and " ".
    *
    * @param fileName the file name
    *
@@ -351,7 +366,7 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
   private TextFileSource addTextFile(File file) throws ImportException {
     TextFileSource src = new TextFileSource();
     try {
-      // anaylze individual files using the dwca reader
+      // analyze individual files using the dwca reader
       Archive arch = DwcFiles.fromLocation(file.toPath());
       copyArchiveFileProperties(arch.getCore(), src);
     } catch (UnknownDelimitersException e) {
@@ -371,7 +386,7 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
   @Override
   public FileSource add(Resource resource, File file, String fileName) throws ImportException,
     InvalidFilenameException {
-    LOG.debug("ADDING SOURCE " + fileName + " FROM " + file.getAbsolutePath());
+    LOG.debug("ADDING SOURCE {} FROM {}", fileName, file.getAbsolutePath());
 
     if (acceptableFileName(fileName)) {
       FileSource src;
@@ -413,7 +428,7 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
 
   @Override
   public UrlSource add(Resource resource, URI url, String sourceName) throws ImportException {
-    LOG.debug("ADDING URL SOURCE " + url);
+    LOG.debug("ADDING URL SOURCE {}", url);
 
     UrlSource src;
     String filename = FilenameUtils.getName(url.toString());
@@ -428,26 +443,22 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
     }
 
     src = new UrlSource();
-    File file = new File(dataDir.tmpDir(), filename);
+    File file = dataDir.sourceFile(resource, filename);
+    src.setFile(file);
+    src.setProcessing(true);
 
-    try (InputStream in = url.toURL().openStream()) {
-      Files.copy(in, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-      src.setFile(file);
-      // analyze individual files using the dwca reader
-      Archive arch = DwcFiles.fromLocation(file.toPath());
-      copyArchiveFileProperties(arch.getCore(), src);
-    } catch (IOException e) {
-      // this file is invalid
-      LOG.warn(e.getMessage());
-      throw new ImportException(e);
-    } catch (UnsupportedArchiveException e) {
-      // fine, can't read it with dwca library, but might still be a valid file for manual setup
-      LOG.warn(e.getMessage());
-    }
+    downloadDataFromUrlAsync(resource, url, sourceName);
 
     src.setName(finalSourceName);
     src.setUrl(url);
     src.setResource(resource);
+
+    try {
+      UrlMetadata urlMetadata = org.gbif.ipt.utils.FileUtils.fetchUrlMetadata(url.toString());
+      src.setFileSize(urlMetadata.getContentLength());
+    } catch (IOException e) {
+      LOG.error("Failed to read URL metadata from {}: {}", url.toString(), e.getMessage());
+    }
 
     try {
       src.setLastModified(new Date());
@@ -457,8 +468,135 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
       throw new ImportException(e);
     }
 
-    analyze(src);
     return src;
+  }
+
+  private void downloadDataFromUrlAsync(Resource resource, URI url, String sourceName) {
+    LOG.info("Staring asynchronous download data from the URL {}", url);
+    UUID key = UUID.randomUUID();
+
+    try {
+      String encodedFileURL = url.toString();
+
+      Optional<String> redirectedUrl = URLUtils.getRedirectedUrl(encodedFileURL);
+      if (redirectedUrl.isPresent()) {
+        encodedFileURL = redirectedUrl.get();
+      }
+
+      FileStoreManager.AsyncDownloadResult downloadResult =
+          fileStoreManager.downloadDataFile(
+              encodedFileURL,
+              dataDir.tmpFile(key.toString()).getAbsolutePath(),
+              resultDataFile -> {
+                LOG.info(
+                    "File has been downloaded and decompressed from URL {}, key {}", url, key);
+                processSuccessfulDownload(key, resource, sourceName, resultDataFile);
+              },
+              err -> {
+                LOG.error("Error processing file", err);
+                processFailedDownload(key, resource, sourceName, err.getMessage());
+              });
+      LOG.info("Asynchronous download {}", downloadResult);
+    } catch (Exception e) {
+      LOG.error("Failed to download data from URL {}", url);
+      processFailedDownload(key, resource, sourceName, e.getMessage());
+    }
+  }
+
+  private void processSuccessfulDownload(UUID key, Resource resource, String sourceName, DataFile dataFile) {
+    LOG.info("Processing successful download {}", key);
+    LOG.info("Data file: {}", dataFile);
+
+    UrlSource src = (UrlSource) resource.getSource(sourceName);
+
+    File downloadDir = dataDir.tmpFile(key.toString());
+    try (Stream<Path> paths = Files.list(downloadDir.toPath()).filter(Files::isRegularFile)) {
+      List<Path> files = paths.collect(Collectors.toList());
+
+      // look for occurrence
+      Optional<Path> targetFile;
+      Optional<Path> matchingOccurrence = files.stream()
+          .filter(path -> {
+            String name = path.getFileName().toString().toLowerCase();
+            return name.contains("occurrence");
+          })
+          .findFirst();
+      targetFile = matchingOccurrence;
+
+      if (matchingOccurrence.isEmpty()) {
+        // look for event
+        Optional<Path> matchingEvent = files.stream()
+            .filter(path -> {
+              String name = path.getFileName().toString().toLowerCase();
+              return name.contains("event");
+            })
+            .findFirst();
+        targetFile = matchingEvent;
+
+        if (matchingEvent.isEmpty()) {
+          // take largest
+          targetFile = files.stream()
+              .max(Comparator.comparingLong(path -> {
+                try {
+                  return Files.size(path);
+                } catch (IOException e) {
+                  return -1L;
+                }
+              }));
+        }
+      }
+
+      if (targetFile.isPresent()) {
+        processFile(resource, targetFile.get(), src);
+
+        // Log the rest as skipped
+        for (Path file : files) {
+          if (!targetFile.get().equals(file)) {
+            LOG.info("Skipped: {}", file.getFileName());
+          }
+        }
+      } else {
+        LOG.error("Failed to get file for processing. Resource {}, source {}", resource.getShortname(), sourceName);
+      }
+
+      FileUtils.deleteDirectory(downloadDir);
+
+      notifyListeners(resource);
+    } catch (IOException e) {
+      LOG.error("Failed to process downloaded file(s) {}", key, e);
+    } finally {
+      src.setProcessing(false);
+    }
+  }
+
+  private void processFile(Resource resource, Path targetFile, UrlSource src) throws IOException {
+    // Process the target file
+    LOG.info("Processing: {}", targetFile.getFileName());
+    File sourceFile = dataDir.sourceFile(resource, targetFile.getFileName().toString());
+
+    sourceFile.createNewFile();
+
+    FileUtils.copyFile(targetFile.toFile(), sourceFile);
+    LOG.info("Filed {} copied to resource {} sources",  targetFile.getFileName(), resource.getShortname());
+
+    src.setFile(sourceFile);
+    // analyze individual files using the dwca reader
+    Archive arch = DwcFiles.fromLocation(sourceFile.toPath());
+    copyArchiveFileProperties(arch.getCore(), src);
+
+    LOG.info("Start analyzing source file {}", sourceFile);
+    src.analyze();
+  }
+
+  private void processFailedDownload(UUID key, Resource resource, String sourceName, String errorMessage) {
+    LOG.error("Error processing source {} with key {} for resource {}: {}",
+        sourceName, key, resource.getShortname(), errorMessage);
+    Source source = resource.getSource(sourceName);
+    if (source != null) {
+      source.setProcessing(false);
+      source.setReadable(false);
+    }
+    notifyListeners(resource);
   }
 
   @Override
@@ -466,10 +604,24 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
     if (source instanceof SqlSource) {
       return analyze((SqlSource) source);
     } else if (source instanceof UrlSource) {
-      return analyze((UrlSource) source);
+      return analyzeAsync((UrlSource) source);
     } else {
       return analyze((FileSource) source);
     }
+  }
+
+  private String analyzeAsync(UrlSource src) {
+    // skip already in process
+    if (src.isProcessing()) {
+      LOG.info("URL source {} is already processing", src.getName());
+      return null;
+    }
+
+    src.setProcessing(true);
+
+    // download data from the URL and analyze it
+    downloadDataFromUrlAsync(src.getResource(), src.getUrl(), src.getName());
+    return null;
   }
 
   private String analyze(UrlSource src) {
@@ -556,6 +708,7 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
   }
 
   private String analyze(FileSource src) {
+    String problem = null;
     File logFile = dataDir.sourceLogFile(src.getResource().getShortname(), src.getName());
     try {
       FileUtils.deleteQuietly(logFile);
@@ -582,14 +735,14 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
       }
     } catch (IOException e) {
       LOG.warn("Can't write source log file " + logFile.getAbsolutePath(), e);
+      problem = e.getMessage();
     }
 
-    return null;
+    return problem;
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.gbif.ipt.service.manage.SourceManager#columns(org.gbif.ipt.model.SourceBase)
+  /**
+   * {@inheritDoc}
    */
   @Override
   public List<String> columns(Source source) {
@@ -665,9 +818,8 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
     return columns;
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.gbif.ipt.service.manage.MappingConfigManager#delete(org.gbif.ipt.model.SourceBase.TextFileSource)
+  /**
+   * {@inheritDoc}
    */
   @Override
   public boolean delete(Resource resource, Source source) {
@@ -676,11 +828,29 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
     }
 
     resource.deleteSource(source);
+
+    if (source instanceof UrlSource) {
+      // also delete the local data file
+      UrlSource us = (UrlSource) source;
+      boolean delete = us.getFile().delete();
+
+      if (!delete) {
+        LOG.error("Failed to delete the local file {} for the URL source {} of the resource {}",
+            us.getFile().getAbsolutePath(), source.getName(), resource.getShortname());
+      }
+    }
+
     if (source instanceof TextFileSource) {
       // also delete source data file
       TextFileSource fs = (TextFileSource) source;
-      fs.getFile().delete();
+      boolean delete = fs.getFile().delete();
+
+      if (!delete) {
+        LOG.error("Failed to delete the file {} for the Text file source {} of the resource {}",
+            fs.getFile().getAbsolutePath(), source.getName(), resource.getShortname());
+      }
     }
+
     if (source instanceof ExcelFileSource) {
       // also delete source data file if no further source uses it
       ExcelFileSource es = (ExcelFileSource) source;
@@ -693,7 +863,12 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
         }
       }
       if (del) {
-        es.getFile().delete();
+        del = es.getFile().delete();
+
+        if (!del) {
+          LOG.error("Failed to delete the file {} for the Excel file source {} of the resource {}",
+              es.getFile().getAbsolutePath(), source.getName(), resource.getShortname());
+        }
       }
     }
     return true;
@@ -736,9 +911,8 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
     return conn;
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.gbif.ipt.service.manage.SourceManager#inspectColumn(org.gbif.ipt.model.SourceBase, int, int)
+  /**
+   * {@inheritDoc}
    */
   @Override
   public Set<String> inspectColumn(Source source, int column, int maxValues, int maxRows) throws SourceException {
@@ -775,9 +949,8 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.gbif.ipt.service.manage.SourceManager#peek(org.gbif.ipt.model.SourceBase)
+  /**
+   * {@inheritDoc}
    */
   @Override
   public List<String[]> peek(Source source, int rows) {
@@ -864,6 +1037,7 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
     if (source == null) {
       return null;
     }
+
     try {
       if (source instanceof SqlSource) {
         return new SqlRowIterator((SqlSource) source);
@@ -871,10 +1045,20 @@ public class SourceManagerImpl extends BaseManager implements SourceManager {
         // Excel, file and URL sources
         return ((RowIterable) source).rowIterator();
       }
-
     } catch (Exception e) {
       LOG.error("Exception while reading source " + source.getName(), e);
       throw new SourceException("Can't build iterator for source " + source.getName() + " :" + e.getMessage());
+    }
+  }
+
+  @Override
+  public void addListener(ResourceUpdateListener listener) {
+    listeners.add(listener);
+  }
+
+  private void notifyListeners(Resource resource) {
+    for (ResourceUpdateListener listener : listeners) {
+      listener.onSourceUpdated(resource);
     }
   }
 }

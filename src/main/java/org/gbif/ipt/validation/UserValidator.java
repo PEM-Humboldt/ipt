@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +16,8 @@ package org.gbif.ipt.validation;
 import org.gbif.ipt.action.BaseAction;
 import org.gbif.ipt.model.User;
 
+import static org.gbif.ipt.validation.EmailValidationMessageTranslator.EMAIL_ERROR_TRANSLATIONS;
+
 public class UserValidator extends BaseValidator {
 
   public boolean validate(BaseAction action, User user) {
@@ -28,9 +28,13 @@ public class UserValidator extends BaseValidator {
     boolean valid = true;
     if (user != null) {
       if (exists(user.getEmail())) {
-        if (!isValidEmail(user.getEmail())) {
+        ValidationResult result = checkEmailValid(user.getEmail());
+        if (!result.isValid()) {
           valid = false;
-          action.addFieldError("user.email", action.getText("validation.email.invalid"));
+          action.addFieldError(
+                  "user.email",
+                  action.getText(EMAIL_ERROR_TRANSLATIONS.getOrDefault(result.getMessage(), "validation.email.invalid"))
+          );
         }
       } else {
         action.addFieldError("user.email", action.getText("validation.email.required"));
@@ -46,6 +50,7 @@ public class UserValidator extends BaseValidator {
       }
       if (validatePassword && !exists(user.getPassword(), 4)) {
         valid = false;
+        action.addFieldError("newPassword", action.getText("validation.password.required"));
         action.addFieldError("user.password", action.getText("validation.password.required"));
       }
 
@@ -57,6 +62,7 @@ public class UserValidator extends BaseValidator {
     boolean valid = true;
     if (!exists(password, 4)) {
       valid = false;
+      action.addFieldError("newPassword", action.getText("validation.password.required"));
       action.addFieldError("user.password", action.getText("validation.password.required"));
     }
     return valid;

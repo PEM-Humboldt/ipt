@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,15 +28,15 @@ import org.gbif.doi.metadata.datacite.ResourceType;
 import org.gbif.doi.service.InvalidMetadataException;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.model.Resource;
-import org.gbif.metadata.eml.Agent;
-import org.gbif.metadata.eml.Citation;
-import org.gbif.metadata.eml.Eml;
-import org.gbif.metadata.eml.GeospatialCoverage;
-import org.gbif.metadata.eml.KeywordSet;
-import org.gbif.metadata.eml.PhysicalData;
-import org.gbif.metadata.eml.TemporalCoverage;
-import org.gbif.metadata.eml.TemporalCoverageType;
-import org.gbif.metadata.eml.UserId;
+import org.gbif.metadata.eml.ipt.model.Agent;
+import org.gbif.metadata.eml.ipt.model.Citation;
+import org.gbif.metadata.eml.ipt.model.Eml;
+import org.gbif.metadata.eml.ipt.model.GeospatialCoverage;
+import org.gbif.metadata.eml.ipt.model.KeywordSet;
+import org.gbif.metadata.eml.ipt.model.PhysicalData;
+import org.gbif.metadata.eml.ipt.model.TemporalCoverage;
+import org.gbif.metadata.eml.ipt.model.TemporalCoverageType;
+import org.gbif.metadata.eml.ipt.model.UserId;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -217,17 +215,14 @@ public class DataCiteMetadataBuilder {
    */
   protected static DataCiteMetadata.Descriptions getDescriptions(Eml eml) {
     DataCiteMetadata.Descriptions descriptions = FACTORY.createDataCiteMetadataDescriptions();
-    if (!eml.getDescription().isEmpty()) {
-      for (String para : eml.getDescription()) {
-        if (StringUtils.isNotBlank(para)) {
-          DataCiteMetadata.Descriptions.Description description = FACTORY.createDataCiteMetadataDescriptionsDescription();
-          description.setDescriptionType(DescriptionType.ABSTRACT);
-          description.setLang(eml.getMetadataLanguage());
-          description.getContent().add(para);
-          descriptions.getDescription().add(description);
-        }
-      }
+    if (eml.getDescription() != null) {
+      DataCiteMetadata.Descriptions.Description description = FACTORY.createDataCiteMetadataDescriptionsDescription();
+      description.setDescriptionType(DescriptionType.ABSTRACT);
+      description.setLang(eml.getMetadataLanguage());
+      description.getContent().add(eml.getDescription());
+      descriptions.getDescription().add(description);
     }
+
     return descriptions;
   }
 
@@ -534,9 +529,9 @@ public class DataCiteMetadataBuilder {
         contributor.setContributorName(contributorName);
       }
       // 3. try position name
-      else if (StringUtils.isNotBlank(agent.getPosition())) {
+      else if (!agent.getPosition().isEmpty() && StringUtils.isNotBlank(agent.getPosition().get(0))) {
         final DataCiteMetadata.Contributors.Contributor.ContributorName contributorName = FACTORY.createDataCiteMetadataContributorsContributorContributorName();
-        contributorName.setValue(agent.getPosition());
+        contributorName.setValue(agent.getPosition().get(0));
         contributor.setContributorName(contributorName);
         // affiliation is optional
         if (StringUtils.isNotBlank(agent.getOrganisation())) {

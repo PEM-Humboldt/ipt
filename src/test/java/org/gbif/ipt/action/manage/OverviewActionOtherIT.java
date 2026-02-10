@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,6 +20,7 @@ import org.gbif.datacite.rest.client.configuration.ClientConfiguration;
 import org.gbif.doi.metadata.datacite.DataCiteMetadata;
 import org.gbif.doi.service.DoiService;
 import org.gbif.doi.service.datacite.RestJsonApiDataCiteService;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.DataDir;
 import org.gbif.ipt.model.Organisation;
@@ -29,6 +28,7 @@ import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.voc.DOIRegistrationAgency;
 import org.gbif.ipt.model.voc.IdentifierStatus;
 import org.gbif.ipt.model.voc.PublicationStatus;
+import org.gbif.ipt.service.admin.DataPackageSchemaManager;
 import org.gbif.ipt.service.admin.ExtensionManager;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.UserAccountManager;
@@ -36,11 +36,12 @@ import org.gbif.ipt.service.admin.VocabulariesManager;
 import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.service.registry.RegistryManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
+import org.gbif.ipt.task.GenerateDataPackageFactory;
 import org.gbif.ipt.task.GenerateDwcaFactory;
 import org.gbif.ipt.utils.DataCiteMetadataBuilder;
-import org.gbif.metadata.eml.Agent;
-import org.gbif.metadata.eml.Citation;
-import org.gbif.metadata.eml.Eml;
+import org.gbif.metadata.eml.ipt.model.Agent;
+import org.gbif.metadata.eml.ipt.model.Citation;
+import org.gbif.metadata.eml.ipt.model.Eml;
 import org.gbif.utils.file.properties.PropertiesUtil;
 
 import java.io.IOException;
@@ -70,7 +71,7 @@ import static org.mockito.Mockito.when;
  * need a special DOI account.
  */
 @Disabled
-public class OverviewActionOtherIT {
+public class OverviewActionOtherIT extends IptBaseTest {
 
   private static final Logger LOG = LogManager.getLogger(OverviewActionIT.class);
   private static final UUID ORGANISATION_KEY = UUID.fromString("dce7a3c9-ea78-4be7-9abc-e3838de70dc5");
@@ -171,8 +172,10 @@ public class OverviewActionOtherIT {
         mock(UserAccountManager.class),
         mock(ExtensionManager.class),
         mock(GenerateDwcaFactory.class),
+        mock(GenerateDataPackageFactory.class),
         mock(VocabulariesManager.class),
-        mock(RegistryManager.class));
+        mock(RegistryManager.class),
+        mock(DataPackageSchemaManager.class));
 
     LOG.info("Testing DataCite with GBIF test Prefix...");
     action.setReserveDoi("true");
@@ -243,8 +246,10 @@ public class OverviewActionOtherIT {
         mock(UserAccountManager.class),
         mock(ExtensionManager.class),
         mock(GenerateDwcaFactory.class),
+        mock(GenerateDataPackageFactory.class),
         mock(VocabulariesManager.class),
-        mock(RegistryManager.class));
+        mock(RegistryManager.class),
+        mock(DataPackageSchemaManager.class));
 
     LOG.info("Testing DataCite with GBIF test Prefix...");
     action.setReserveDoi("true");
@@ -314,8 +319,10 @@ public class OverviewActionOtherIT {
         mock(UserAccountManager.class),
         mock(ExtensionManager.class),
         mock(GenerateDwcaFactory.class),
+        mock(GenerateDataPackageFactory.class),
         mock(VocabulariesManager.class),
-        mock(RegistryManager.class));
+        mock(RegistryManager.class),
+        mock(DataPackageSchemaManager.class));
 
     LOG.info("Testing DataCite with GBIF test Prefix...");
     action.setReserveDoi("true");
@@ -382,8 +389,10 @@ public class OverviewActionOtherIT {
         mock(UserAccountManager.class),
         mock(ExtensionManager.class),
         mock(GenerateDwcaFactory.class),
+        mock(GenerateDataPackageFactory.class),
         mock(VocabulariesManager.class),
-        mock(RegistryManager.class));
+        mock(RegistryManager.class),
+        mock(DataPackageSchemaManager.class));
 
     LOG.info("Testing DataCite with test Prefix...");
     action.setDeleteDoi("true");

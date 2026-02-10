@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,19 +13,20 @@
  */
 package org.gbif.ipt.struts2;
 
+import org.gbif.ipt.action.portal.AppFileAction;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 
 import java.net.URI;
 import java.security.SecureRandom;
 import java.util.Map;
-
+import javax.inject.Inject;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.struts2.StrutsStatics;
 
-import com.google.inject.Inject;
 import com.opensymphony.xwork2.ActionContext;
 import com.opensymphony.xwork2.ActionInvocation;
 import com.opensymphony.xwork2.interceptor.AbstractInterceptor;
@@ -42,7 +41,6 @@ public class CsrfLoginInterceptor extends AbstractInterceptor {
   private final static int TOKEN_LENGTH = 32;
   private static SecureRandom rnd = new SecureRandom();
 
-  @Inject
   private AppConfig cfg;
 
   @Override
@@ -51,6 +49,11 @@ public class CsrfLoginInterceptor extends AbstractInterceptor {
     ActionContext ac = invocation.getInvocationContext();
     HttpServletResponse resp = (HttpServletResponse) ac.get(StrutsStatics.HTTP_RESPONSE);
     Map<String, Object> session = ac.getSession();
+
+    // skip for logos and files
+    if (invocation.getAction() instanceof AppFileAction) {
+      return invocation.invoke();
+    }
 
     Cookie csrfCookie = new Cookie(CSRFtoken, null);
     if (session.containsKey(Constants.SESSION_USER)) {
@@ -66,12 +69,12 @@ public class CsrfLoginInterceptor extends AbstractInterceptor {
       String token = sb.toString();
       // add token to cookie
       csrfCookie.setValue(token);
-      csrfCookie.setMaxAge(AppConfig.CSRF_TOKEN_EXPIRATION);
+      csrfCookie.setMaxAge(cfg.getCsrfTokenExpiration());
       csrfCookie.setHttpOnly(true);
 
       try {
         URI iptUri = URI.create(cfg.getBaseUrl());
-        csrfCookie.setPath(iptUri.getPath());
+        csrfCookie.setPath(StringUtils.isEmpty(iptUri.getPath()) ? "/" : iptUri.getPath());
         csrfCookie.setDomain(iptUri.getHost());
         csrfCookie.setSecure(iptUri.getScheme().equalsIgnoreCase("https"));
       } catch (Exception e) {
@@ -84,5 +87,10 @@ public class CsrfLoginInterceptor extends AbstractInterceptor {
     resp.addCookie(csrfCookie);
 
     return invocation.invoke();
+  }
+
+  @Inject
+  public void setCfg(AppConfig cfg) {
+    this.cfg = cfg;
   }
 }

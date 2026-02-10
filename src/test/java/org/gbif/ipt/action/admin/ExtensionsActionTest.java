@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +13,7 @@
  */
 package org.gbif.ipt.action.admin;
 
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.ConfigWarnings;
 import org.gbif.ipt.config.Constants;
@@ -63,7 +62,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings("HttpUrlsUsage")
-public class ExtensionsActionTest {
+public class ExtensionsActionTest extends IptBaseTest {
 
   ExtensionsAction action;
   List<Extension> extensions;
@@ -84,8 +83,7 @@ public class ExtensionsActionTest {
     // create instance of RegistryManager
     RegistryManager registryManager =
       new RegistryManagerImpl(mock(AppConfig.class), mock(DataDir.class), mockHttpClient, mock(SAXParserFactory.class),
-        mock(ConfigWarnings.class), mock(SimpleTextProvider.class), mock(RegistrationManager.class), mock(
-        ResourceManager.class));
+        mock(ConfigWarnings.class), mock(SimpleTextProvider.class));
 
     // load list of all registered extensions
     extensions = registryManager.getExtensions();
@@ -93,21 +91,21 @@ public class ExtensionsActionTest {
     // create instance of action
     action = new ExtensionsAction(mock(SimpleTextProvider.class), mock(AppConfig.class),
       mock(RegistrationManager.class), mock(ExtensionManager.class), mock(VocabulariesManager.class),
-      registryManager, mock(ConfigWarnings.class));
+      registryManager, mock(ConfigWarnings.class), mock(ResourceManager.class));
   }
 
   @Test
   public void testGetLatestVersions() {
-    // start with 52 extensions
-    assertEquals(52, extensions.size());
+    // start with 53 extensions
+    assertEquals(53, extensions.size());
     // start with 3 extensions with Occurrence rowType
     assertEquals(3, countOccurrenceExtensions(extensions));
 
     // filter extensions list so that it only includes the latest version of each extension
     List<Extension> filtered = action.getLatestVersions(extensions);
 
-    // end with 44 extensions
-    assertEquals(44, filtered.size());
+    // end with 45 extensions
+    assertEquals(45, filtered.size());
     // end with 1 extension with Occurrence rowType
     assertEquals(1, countOccurrenceExtensions(filtered));
     // make sure that Occurrence extension is the right one

@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,7 +13,7 @@
  */
 package org.gbif.ipt.model;
 
-import org.gbif.metadata.DateUtils;
+import org.gbif.metadata.eml.ipt.util.DateUtils;
 
 import java.io.Serializable;
 import java.net.MalformedURLException;
@@ -30,11 +28,12 @@ import java.util.Objects;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
 import com.google.gson.annotations.SerializedName;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Class represents a Vocabulary.
  */
-public class Vocabulary implements Comparable, Serializable {
+public class Vocabulary implements Comparable<Object>, Serializable {
 
   private static final long serialVersionUID = 22000013267L;
   @SerializedName("identifier")
@@ -70,7 +69,7 @@ public class Vocabulary implements Comparable, Serializable {
   }
 
   @Override
-  public int compareTo(Object object) {
+  public int compareTo(@NotNull Object object) {
     Vocabulary myClass = (Vocabulary) object;
     return new CompareToBuilder().append(this.uriString, myClass.uriString).toComparison();
   }
@@ -181,6 +180,7 @@ public class Vocabulary implements Comparable, Serializable {
    *
    * @return identifier for Vocabulary
    */
+  @SuppressWarnings("JavadocLinkAsPlainText")
   public String getUriString() {
     return uriString;
   }
@@ -194,6 +194,7 @@ public class Vocabulary implements Comparable, Serializable {
    *
    * @return resolvable URL to Vocabulary
    */
+  @SuppressWarnings("JavadocLinkAsPlainText")
   public URI getUriResolvable() {
     return uriResolvable;
   }
@@ -233,5 +234,21 @@ public class Vocabulary implements Comparable, Serializable {
    */
   public void setIssuedDateAsString(String dateString) throws ParseException {
     issued = DateUtils.calendarDate(dateString);
+  }
+
+  @Override
+  public String toString() {
+    return "Vocabulary{" +
+      "uriString='" + uriString + '\'' +
+      ", uriResolvable=" + uriResolvable +
+      ", title='" + title + '\'' +
+      ", description='" + description + '\'' +
+      ", subject='" + subject + '\'' +
+      ", isLatest=" + isLatest +
+      ", issued=" + issued +
+      ", link=" + link +
+      ", concepts=" + concepts +
+      ", modified=" + modified +
+      '}';
   }
 }

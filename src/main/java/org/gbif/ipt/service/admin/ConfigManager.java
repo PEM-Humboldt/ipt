@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,19 +14,15 @@
 package org.gbif.ipt.service.admin;
 
 import org.gbif.ipt.service.InvalidConfigException;
-import org.gbif.ipt.service.admin.impl.ConfigManagerImpl;
 
 import java.io.File;
 import java.net.URL;
-
-import com.google.inject.ImplementedBy;
 
 /**
  * This interface details ALL methods associated with an IPT configuration.
  * This includes configuration such as the deployment URL, the data directory
  * etc.
  */
-@ImplementedBy(ConfigManagerImpl.class)
 public interface ConfigManager {
 
   /**
@@ -114,12 +108,6 @@ public interface ConfigManager {
    */
   void setArchivalLimit(Integer archivalLimit) throws  InvalidConfigException;
 
-  /**
-   * Simple wrapper around AppConfig to en/disable google analytics for all IPTs monitored by gbif
-   * The modified AppConfig is not immediately persisted - remember to call save() at some point!
-   */
-  void setGbifAnalytics(boolean useGbifAnalytics) throws InvalidConfigException;
-
   void setIptLocation(Double lat, Double lon) throws InvalidConfigException;
 
   void setProxy(String proxy) throws InvalidConfigException;
@@ -134,4 +122,14 @@ public interface ConfigManager {
    * The modified AppConfig is not immediately persisted - remember to call save() at some point!
    */
   void setAdminEmail(String adminEmail);
+
+  /**
+   * Sets default IPT language.
+   */
+  void setDefaultLocale(String defaultLanguage);
+
+  /**
+   * Sets logo redirect URL (by default public URL of the IPT).
+   */
+  void setLogoRedirectUrl(String logoRedirectUrl);
 }

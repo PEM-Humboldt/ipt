@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,15 +24,17 @@ import org.gbif.ipt.service.admin.VocabulariesManager;
 import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 import org.gbif.ipt.utils.MapUtils;
-import org.gbif.metadata.eml.MaintenanceUpdateFrequency;
+import org.gbif.metadata.eml.ipt.model.MaintenanceUpdateFrequency;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.TimeZone;
+import javax.inject.Inject;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.inject.Inject;
 
 public class AutoPublishAction extends ManagerBaseAction {
 
@@ -42,6 +42,9 @@ public class AutoPublishAction extends ManagerBaseAction {
   private static final Logger LOG = LogManager.getLogger(AutoPublishAction.class);
 
   private static final String OFF_FREQUENCY = "off";
+  private static final String COLON = ":";
+  private static final String DEFAULT_TIME = "12:00";
+  private static final String DEFAULT_THRESHOLD = "10";
 
   private final VocabulariesManager vocabManager;
 
@@ -50,12 +53,14 @@ public class AutoPublishAction extends ManagerBaseAction {
   private Map<String, String> biMonths;
   private Map<Integer, String> days;
   private Map<String, String> daysOfWeek;
-  private Map<Integer, String> hours;
-  private Map<Integer, String> minutes;
 
   @Inject
-  public AutoPublishAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager, ResourceManager resourceManager,
-                           VocabulariesManager vocabManager) {
+  public AutoPublishAction(
+      SimpleTextProvider textProvider,
+      AppConfig cfg,
+      RegistrationManager registrationManager,
+      ResourceManager resourceManager,
+      VocabulariesManager vocabManager) {
     super(textProvider, cfg, registrationManager, resourceManager);
     this.vocabManager = vocabManager;
   }
@@ -69,8 +74,9 @@ public class AutoPublishAction extends ManagerBaseAction {
     populateBiMonths();
     populateDays();
     populateDaysOfWeek();
-    populateHours();
-    populateMinutes();
+
+    setServerTimeZone();
+    setUpdateFrequencyTime();
   }
 
   @Override
@@ -80,15 +86,30 @@ public class AutoPublishAction extends ManagerBaseAction {
     String updateFrequencyBiMonth = req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_FREQUENCY_BIMONTH);
     int updateFrequencyDay = Integer.parseInt(req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_FREQUENCY_DAY));
     String updateFrequencyDayOfWeek = req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_FREQUENCY_DAYOFWEEK);
-    int updateFrequencyHour = Integer.parseInt(req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_FREQUENCY_HOUR));
-    int updateFrequencyMinute = Integer.parseInt(req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_FREQUENCY_MINUTE));
+    String updateFrequencyTime = req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_FREQUENCY_TIME);
+    String[] hoursAndMinutes = updateFrequencyTime != null && updateFrequencyTime.contains(COLON)
+        ? updateFrequencyTime.split(COLON) : DEFAULT_TIME.split(COLON);
+    int updateFrequencyHour = Integer.parseInt(hoursAndMinutes[0]);
+    int updateFrequencyMinute = Integer.parseInt(hoursAndMinutes[1]);
+
+    // auto-publication options
+    boolean skipUnchanged = Boolean.parseBoolean(req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_SKIP_UNCHANGED));
+    boolean skipDrop = Boolean.parseBoolean(req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_SKIP_DROP));
+
+    String recordsDropThresholdRaw = Optional.ofNullable(req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_DROP_THRESHOLD))
+        .map(StringUtils::trimToNull)
+        .orElse(DEFAULT_THRESHOLD);
+    int recordsDropThreshold = Integer.parseInt(recordsDropThresholdRaw);
 
     if (OFF_FREQUENCY.equals(updateFrequency)) {
-      LOG.debug("Turning off auto-publishing for [" + resource.getShortname() + "]");
+      addActionMessage(getText("manage.autopublish.message.off"));
+      LOG.debug("Turning off auto-publishing for [{}]", resource.getShortname());
       resource.setPublicationMode(PublicationMode.AUTO_PUBLISH_OFF);
       resource.clearAutoPublishingFrequency();
     } else if (MaintenanceUpdateFrequency.findByIdentifier(updateFrequency) != null) {
-      LOG.debug("Updating auto-publishing for [" + resource.getShortname() + "] to: " + updateFrequency);
+      addActionMessage(getText("manage.autopublish.message.on", new String[]{updateFrequency}));
+      LOG.debug("Updating auto-publishing for [{}] to: {}", resource.getShortname(),
+        updateFrequency);
       resource.setPublicationMode(PublicationMode.AUTO_PUBLISH_ON);
       resource.setAutoPublishingFrequency(
         updateFrequency,
@@ -99,22 +120,24 @@ public class AutoPublishAction extends ManagerBaseAction {
         updateFrequencyHour,
         updateFrequencyMinute);
     } else {
-      LOG.error("Cannot update auto-publishing setting for [" + resource.getShortname() + "]. Unkown frequency: " + updateFrequency);
+      addActionError(getText("manage.autopublish.message.error"));
+      LOG.error("Cannot update auto-publishing setting for [{}]. Unknown frequency: {}",
+        resource.getShortname(), updateFrequency);
       return ERROR;
     }
 
+    resource.setSkipPublicationIfNotChanged(skipUnchanged);
+    resource.setSkipPublicationIfRecordsDrop(skipDrop);
+    resource.setRecordsDropThreshold(recordsDropThreshold);
+
     // update next published date
     resourceManager.updatePublicationMode(resource);
-    LOG.debug("Next published date updated for resource [" + resource.getShortname() + "]");
+    LOG.debug("Next published date updated for resource [{}]", resource.getShortname());
 
     // save entire resource config
     saveResource();
-    LOG.debug("Resource [" + resource.getShortname() + "] saved with new auto-publishing setting");
+    LOG.debug("Resource [{}] saved with new auto-publishing setting", resource.getShortname());
 
-    return SUCCESS;
-  }
-
-  public String cancel() {
     return SUCCESS;
   }
 
@@ -136,14 +159,6 @@ public class AutoPublishAction extends ManagerBaseAction {
 
   public Map<String, String> getDaysOfWeek() {
     return daysOfWeek;
-  }
-
-  public Map<Integer, String> getHours() {
-    return hours;
-  }
-
-  public Map<Integer, String> getMinutes() {
-    return minutes;
   }
 
   /**
@@ -186,22 +201,34 @@ public class AutoPublishAction extends ManagerBaseAction {
   private void populateDaysOfWeek() {
     daysOfWeek = new LinkedHashMap<>();
     for (DayEnum dayOfWeek : DayEnum.values()) {
-      daysOfWeek.put(dayOfWeek.getIdentifier(), getText("manage.autopublish." + dayOfWeek.getIdentifier()));
+      daysOfWeek.put(
+          dayOfWeek.getIdentifier(), getText("manage.autopublish." + dayOfWeek.getIdentifier()));
     }
   }
 
-  private void populateHours() {
-    hours = new LinkedHashMap<>();
-    for (int i = 0; i <= 23; i++) {
-      hours.put(i, ((i < 10) ? "0" : "") + i);
+  private void setServerTimeZone() {
+    req.setAttribute("serverTimeZone", TimeZone.getDefault().getDisplayName(false, TimeZone.SHORT));
+  }
+
+  private void setUpdateFrequencyTime() {
+    // Retrieve the saved time and set it as a request attribute
+    if (resource.getPublicationMode().equals(PublicationMode.AUTO_PUBLISH_ON)) {
+      int savedHour = Optional.ofNullable(resource.getUpdateFrequencyHour()).orElse(12);
+      int savedMinute = Optional.ofNullable(resource.getUpdateFrequencyMinute()).orElse(0);
+      String savedTime = String.format("%02d:%02d", savedHour, savedMinute);
+      req.setAttribute("updateFrequencyTime", savedTime);
     }
   }
 
-  private void populateMinutes() {
-    minutes = new LinkedHashMap<>();
-    for (int i = 0; i <= 59; i++) {
-      minutes.put(i, ((i < 10) ? "0" : "") + i);
-    }
+  public boolean isSkipUnchanged() {
+    return resource.isSkipPublicationIfNotChanged();
   }
 
+  public boolean isSkipDrop() {
+    return resource.isSkipPublicationIfRecordsDrop();
+  }
+
+  public int getRecordsDropThreshold() {
+    return resource.getRecordsDropThreshold();
+  }
 }

@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,7 +20,7 @@ import org.gbif.ipt.model.User;
 import org.gbif.ipt.service.manage.ResourceManager;
 
 import java.util.Map;
-
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.struts2.dispatcher.Parameter;
 
-import com.google.inject.Inject;
 import com.opensymphony.xwork2.ActionContext;
 import com.opensymphony.xwork2.ActionInvocation;
 import com.opensymphony.xwork2.interceptor.AbstractInterceptor;
@@ -50,7 +47,6 @@ public class RequireManagerInterceptor extends AbstractInterceptor {
 
   private static final long serialVersionUID = -7688584369470756187L;
 
-  @Inject
   private ResourceManager resourceManager;
 
   protected static String getResourceParam(ActionInvocation invocation) {
@@ -119,27 +115,32 @@ public class RequireManagerInterceptor extends AbstractInterceptor {
 
     // user is logged in, check if user has manager rights
     if (user.hasManagerRights()) {
-        // now also check if we have rights for a specific resource requested
-        // lets see if we are about to manage a new resource
-        String requestedResource = getResourceParam(invocation);
-        if (requestedResource != null) {
-          // does resource exist at all?
-          Resource resource = resourceManager.get(requestedResource);
-          if (resource == null) {
-            return BaseAction.NOT_FOUND;
-          }
-          // authorized?
-          if (!isAuthorized(user, resource)) {
-            return BaseAction.NOT_ALLOWED;
-          }
-          // locked?
-          if (resourceManager.isLocked(requestedResource)) {
-            return BaseAction.LOCKED;
-          }
+      // now also check if we have rights for a specific resource requested
+      // lets see if we are about to manage a new resource
+      String requestedResource = getResourceParam(invocation);
+      if (requestedResource != null) {
+        // does resource exist at all?
+        Resource resource = resourceManager.get(requestedResource);
+        if (resource == null) {
+          return BaseAction.NOT_FOUND;
+        }
+        // authorized?
+        if (!isAuthorized(user, resource)) {
+          return BaseAction.NOT_ALLOWED;
+        }
+        // locked?
+        if (resourceManager.isLocked(requestedResource)) {
+          return BaseAction.LOCKED;
+        }
       }
       return invocation.invoke();
     }
 
     return BaseAction.NOT_ALLOWED_MANAGER;
+  }
+
+  @Inject
+  public void setResourceManager(ResourceManager resourceManager) {
+    this.resourceManager = resourceManager;
   }
 }

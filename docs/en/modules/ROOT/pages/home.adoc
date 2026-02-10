@@ -9,7 +9,7 @@ If there are any public resources, they will appear in a table having the follow
 
 * **Logo** - the resource logo (configurable in Additional Metadata page of the resource metadata)
 * **Name** - the title of the resource as given in the Title entry of the resource metadata. The Name appears as a link, which will open the resource's homepage (see below).
-* **Organization** - the organization under which the resource has been registered, if any. If the resource is not registered, the value in the Organization column will be "Not registered". Review the information under the "Organizations" heading in the "Administration Menu" section for more information about registering organizations and registering a resource under an organization.
+* **Organization** - the organization under which the resource has been registered, if any. If the resource is not registered, the value in the Organization column will be "No organization". Review the information under the "Organizations" heading in the "Administration Menu" section for more information about registering organizations and registering a resource under an organization.
 * **Type** - the type of the resource as given in the Type drop down on the xref:manage-resources.adoc#basic-metadata[Basic Metadata] page of the resource metadata
 * **Subtype** - the subtype of the resource as given in the Subtype drop down on the xref:manage-resources.adoc#basic-metadata[Basic Metadata] page of the resource metadata
 * **Records** - the number of rows of data in the core data file of the last published Darwin Core Archive for the resource. For resources having data in one or more extension files, the number links to the Data Records page on the resource homepage showing a breakdown of record counts by extension.
@@ -45,3 +45,9 @@ Following are explanations of the table columns:
 * **Change summary** - a summary of what has changed since the last published version.
 * **DOI handle** - the DOI handle assigned to the published version. **Note**: If the DOI is different from the DOI of the last published version, this indicates that a scientifically significant change has been done to the resource.
 * **Last modified by** - the IPT user that last modified the published version.
+
+=== Deletion of a version
+
+Resource managers and administrators can delete old published versions of a dataset.
+
+First use the version history table to find and open the version to be deleted, then click *Delete version* at the top of the page. The latest published version of a resource cannot be deleted.

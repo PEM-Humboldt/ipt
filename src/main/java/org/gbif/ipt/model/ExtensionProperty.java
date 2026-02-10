@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +18,11 @@ import org.gbif.dwc.terms.Term;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * A single property of an extension. Often also known as concept or term.
@@ -40,9 +42,12 @@ public class ExtensionProperty implements Comparable<ExtensionProperty>, Term, S
   private DataType type = DataType.string;
   private String link;
   private String examples;
+  private String comments;
+  private String label;
   private String description;
   private boolean required;
   private Vocabulary vocabulary;
+  private Map<String, ExtensionPropertyTranslation> translations = new HashMap<>();
 
   public ExtensionProperty() {
   }
@@ -84,12 +89,20 @@ public class ExtensionProperty implements Comparable<ExtensionProperty>, Term, S
     return Objects.equals(extension, o.extension) && Objects.equals(qualname, o.qualname);
   }
 
+  public String getLabel() {
+    return label;
+  }
+
   public String getDescription() {
     return description;
   }
 
   public String getExamples() {
     return examples;
+  }
+
+  public String getComments() {
+    return comments;
   }
 
   public Extension getExtension() {
@@ -142,12 +155,20 @@ public class ExtensionProperty implements Comparable<ExtensionProperty>, Term, S
     return qualname;
   }
 
+  public void setLabel(String label) {
+    this.label = label;
+  }
+
   public void setDescription(String description) {
     this.description = description;
   }
 
   public void setExamples(String examples) {
     this.examples = examples;
+  }
+
+  public void setComments(String comments) {
+    this.comments = comments;
   }
 
   public void setExtension(Extension extension) {
@@ -228,4 +249,19 @@ public class ExtensionProperty implements Comparable<ExtensionProperty>, Term, S
   public boolean isClass() {
     return false;
   }
+
+  public Map<String, ExtensionPropertyTranslation> getTranslations() {
+    return translations;
+  }
+
+  public void setTranslations(Map<String, ExtensionPropertyTranslation> translations) {
+    this.translations = translations;
+  }
+
+  public void addTranslation(ExtensionPropertyTranslation translation) {
+    if (StringUtils.isNotEmpty(translation.getLanguage())) {
+      translations.put(translation.getLanguage(), translation);
+    }
+  }
+
 }

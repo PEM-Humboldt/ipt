@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +13,8 @@
  */
 package org.gbif.ipt.utils;
 
+import org.gbif.ipt.model.UrlMetadata;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -28,10 +28,15 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
+import org.apache.commons.lang3.LocaleUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -66,19 +71,39 @@ public class FileUtils {
   }
 
   public static String formatSize(long longSize, int decimalPos) {
-    NumberFormat fmt = NumberFormat.getNumberInstance();
+    return formatSize(longSize, decimalPos, false);
+  }
+
+  public static String formatSize(long longSize, int decimalPos, boolean inseparableDelimiter) {
+    return formatSize(longSize, decimalPos, Locale.UK.toString(), inseparableDelimiter);
+  }
+
+  public static String formatSize(long longSize, int decimalPos, String strLocale, boolean inseparableDelimiter) {
+    String delimiter = inseparableDelimiter ? "&nbsp;" : " ";
+
+    Locale locale = Optional.ofNullable(strLocale).map(LocaleUtils::toLocale).orElse(Locale.UK);
+
+    NumberFormat fmt = NumberFormat.getNumberInstance(locale);
     if (decimalPos >= 0) {
       fmt.setMaximumFractionDigits(decimalPos);
     }
-    double val = longSize / (1000f * 1000f);
+
+    double val = longSize / (1000f * 1000f * 1000f);
     if (val > 1) {
-      return fmt.format(val) + " MB";
+      return fmt.format(val) + delimiter + "GB";
     }
+
+    val = longSize / (1000f * 1000f);
+    if (val > 1) {
+      return fmt.format(val) + delimiter + "MB";
+    }
+
     val = longSize / 1000f;
     if (val > 1) {
-      return fmt.format(val) + " kB";
+      return fmt.format(val) + delimiter +  "KB";
     }
-    return longSize + " bytes";
+
+    return longSize + delimiter + "bytes";
   }
 
   public static Reader getUtf8Reader(File file) throws FileNotFoundException {
@@ -156,5 +181,35 @@ public class FileUtils {
             + baseName
             + (TEMP_DIR_ATTEMPTS - 1)
             + ')');
+  }
+
+  /**
+   * Returns file extension.
+   *
+   * @param file file
+   * @return extension of the file
+   */
+  public static String getFileExtension(File file) {
+    String fileName = file.getName();
+    int lastIndexOfDot = fileName.lastIndexOf(".");
+    if (lastIndexOfDot == -1) {
+      return "";
+    }
+    return fileName.substring(lastIndexOfDot + 1);
+  }
+
+  public static UrlMetadata fetchUrlMetadata(String url) throws IOException {
+    URL remoteUrl = new URL(url);
+    HttpURLConnection conn = (HttpURLConnection) remoteUrl.openConnection();
+    conn.setRequestMethod("HEAD");
+    conn.connect();
+
+    int status = conn.getResponseCode();
+    String contentType = conn.getContentType();
+    long contentLength = conn.getContentLengthLong();
+    String lastModified = conn.getHeaderField("Last-Modified");
+    String acceptRanges = conn.getHeaderField("Accept-Ranges");
+
+    return new UrlMetadata(status, contentType, contentLength, lastModified, acceptRanges);
   }
 }

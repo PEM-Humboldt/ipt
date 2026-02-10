@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +16,7 @@ package org.gbif.ipt.service.admin.impl;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.ConfigWarnings;
 import org.gbif.ipt.config.DataDir;
+import org.gbif.ipt.config.ExtensionMonitor;
 import org.gbif.ipt.config.LoggingConfigFactory;
 import org.gbif.ipt.config.LoggingConfiguration;
 import org.gbif.ipt.config.PublishingMonitor;
@@ -27,6 +26,7 @@ import org.gbif.ipt.service.BaseManager;
 import org.gbif.ipt.service.InvalidConfigException;
 import org.gbif.ipt.service.InvalidConfigException.TYPE;
 import org.gbif.ipt.service.admin.ConfigManager;
+import org.gbif.ipt.service.admin.DataPackageSchemaManager;
 import org.gbif.ipt.service.admin.ExtensionManager;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.UserAccountManager;
@@ -40,7 +40,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
@@ -52,40 +54,48 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
-@Singleton
 public class ConfigManagerImpl extends BaseManager implements ConfigManager {
 
   private final UserAccountManager userManager;
   private final ResourceManager resourceManager;
   private final ExtensionManager extensionManager;
   private final VocabulariesManager vocabManager;
+  private final DataPackageSchemaManager schemaManager;
   private final RegistrationManager registrationManager;
   private final ConfigWarnings warnings;
   private final HttpClient client;
   private final PublishingMonitor publishingMonitor;
+  private final ExtensionMonitor extensionMonitor;
   private static final String PATH_TO_CSS = "/styles/main.css";
 
   private static final int DEFAULT_TO = 4000; // Default time out
   private static final String DEPRECATED_VOCAB_PERSISTENCE_FILE = "vocabularies.xml";
 
   @Inject
-  public ConfigManagerImpl(DataDir dataDir, AppConfig cfg, UserAccountManager userManager,
-                           ResourceManager resourceManager, ExtensionManager extensionManager,
-                           VocabulariesManager vocabManager, RegistrationManager registrationManager,
-                           ConfigWarnings warnings, HttpClient client, PublishingMonitor
-    publishingMonitor) {
+  public ConfigManagerImpl(
+      DataDir dataDir,
+      AppConfig cfg,
+      UserAccountManager userManager,
+      ResourceManager resourceManager,
+      ExtensionManager extensionManager,
+      VocabulariesManager vocabManager,
+      DataPackageSchemaManager schemaManager,
+      RegistrationManager registrationManager,
+      ConfigWarnings warnings,
+      HttpClient client,
+      PublishingMonitor publishingMonitor,
+      ExtensionMonitor extensionMonitor) {
     super(cfg, dataDir);
     this.userManager = userManager;
     this.resourceManager = resourceManager;
     this.extensionManager = extensionManager;
     this.vocabManager = vocabManager;
+    this.schemaManager = schemaManager;
     this.registrationManager = registrationManager;
     this.warnings = warnings;
     this.client = client;
     this.publishingMonitor = publishingMonitor;
+    this.extensionMonitor = extensionMonitor;
     if (dataDir.isConfigured()) {
       LOG.info("IPT DataDir configured - loading its configuration");
       try {
@@ -219,6 +229,12 @@ public class ConfigManagerImpl extends BaseManager implements ConfigManager {
     LOG.info("Loading extensions ...");
     extensionManager.load();
 
+    LOG.info("Loading data package schemas ...");
+    schemaManager.load();
+
+    LOG.info("Ensure supported versions of default schemas are installed...");
+    schemaManager.installOrUpdateDefaults();
+
     if (!dataDir.configFile(RegistrationManagerImpl.PERSISTENCE_FILE_V2).exists()) {
       LOG.info("Perform 1-time event: migrate registration.xml into registration2.xml with passwords encrypted");
       registrationManager.encryptRegistration();
@@ -237,6 +253,10 @@ public class ConfigManagerImpl extends BaseManager implements ConfigManager {
     // start publishing monitor
     LOG.info("Starting Publishing Monitor...");
     publishingMonitor.start();
+
+    // start extension monitor
+    LOG.info("Starting Extension Monitor...");
+    extensionMonitor.start();
   }
 
   private void checkResourcesDirAtStartup(File resourcesDir) {
@@ -409,11 +429,6 @@ public class ConfigManagerImpl extends BaseManager implements ConfigManager {
   }
 
   @Override
-  public void setGbifAnalytics(boolean useGbifAnalytics) throws InvalidConfigException {
-    cfg.setProperty(AppConfig.ANALYTICS_GBIF, Boolean.toString(useGbifAnalytics));
-  }
-
-  @Override
   public void setIptLocation(Double lat, Double lon) throws InvalidConfigException {
     if (lat == null || lon == null) {
       cfg.setProperty(AppConfig.IPT_LATITUDE, "");
@@ -515,5 +530,18 @@ public class ConfigManagerImpl extends BaseManager implements ConfigManager {
   @Override
   public void setAdminEmail(String adminEmail) {
     cfg.setProperty(AppConfig.ADMIN_EMAIL, adminEmail);
+  }
+
+  @Override
+  public void setDefaultLocale(String defaultLocale) {
+    Optional.ofNullable(defaultLocale)
+            .filter(cfg::isSupportedLanguage)
+            .ifPresent(cfg::setDefaultLocale);
+  }
+
+  @Override
+  public void setLogoRedirectUrl(String logoRedirectUrl) {
+    Optional.ofNullable(logoRedirectUrl)
+        .ifPresent(cfg::setLogoRedirectUrl);
   }
 }

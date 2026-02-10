@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,20 +14,18 @@
 package org.gbif.ipt.service.registry;
 
 import org.gbif.api.model.registry.Network;
+import org.gbif.ipt.model.DataPackageSchema;
 import org.gbif.ipt.model.Extension;
 import org.gbif.ipt.model.Ipt;
+import org.gbif.ipt.model.KeyNamePair;
 import org.gbif.ipt.model.Organisation;
 import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.Vocabulary;
 import org.gbif.ipt.service.RegistryException;
-import org.gbif.ipt.service.registry.impl.RegistryManagerImpl;
 
 import java.util.List;
 import java.util.UUID;
 
-import com.google.inject.ImplementedBy;
-
-@ImplementedBy(RegistryManagerImpl.class)
 public interface RegistryManager {
 
   /**
@@ -42,13 +38,63 @@ public interface RegistryManager {
   void deregister(Resource resource) throws RegistryException;
 
   /**
-   * Gets list of all registered extensions from the Registry.
+   * Gets a list of all latest registered extensions from the Registry.
+   *
+   * @return list of the latest extensions, or an empty list if none were retrieved from valid response
+   *
+   * @throws RegistryException if the list of extensions couldn't be populated
+   */
+  List<Extension> getLatestExtensions() throws RegistryException;
+
+  /**
+   * Gets a list of all registered extensions from the Registry.
    *
    * @return list of extensions, or an empty list if none were retrieved from valid response
    *
    * @throws RegistryException if the list of extensions couldn't be populated
    */
   List<Extension> getExtensions() throws RegistryException;
+
+  /**
+   * Gets a list of all registered data package schemas from the Registry.
+   *
+   * @return list of data package schemas, or an empty list if none were retrieved from valid response
+   *
+   * @throws RegistryException if the list of data package schemas couldn't be populated
+   */
+  List<DataPackageSchema> getLatestDataPackageSchemas() throws RegistryException;
+
+  /**
+   * Get the latest compatible version with the provided one
+   *
+   * @param schemaName schema name
+   * @param schemaVersion schema version
+   * @return the latest compatible version with the provided one
+   *
+   * @throws RegistryException if the data couldn't be populated
+   */
+  String getLatestCompatibleSchemaVersion(String schemaName, String schemaVersion) throws RegistryException;
+
+  /**
+   * Get the schema by schema name and version
+   *
+   * @param schemaName schema name
+   * @param schemaVersion schema version
+   * @return the schema
+   *
+   * @throws RegistryException if the data couldn't be populated
+   */
+  DataPackageSchema getSchema(String schemaName, String schemaVersion) throws RegistryException;
+
+  /**
+   * Gets list of all registered data schemas from the Registry.
+   * Similar to {@link this#getLatestDataPackageSchemas()} but returns schemas with versions supported by the IPT.
+   *
+   * @return list of data schemas, or an empty list if none were retrieved from valid response
+   *
+   * @throws RegistryException if the list of data schemas couldn't be populated
+   */
+  List<DataPackageSchema> getSupportedDataSchemas() throws RegistryException;
 
   /**
    * Retrieves a list of Organisation from the Registry.
@@ -106,9 +152,11 @@ public interface RegistryManager {
   String registerIPT(Ipt ipt, Organisation organisation) throws RegistryException;
 
   /**
-   * Update an IPT instance against the GBIF Registry. Also updates all registered resources against the GBIF Registry.
+   * Update an IPT instance against the GBIF Registry.
    * This method ensures the GBIF Registry has the correct endpoint URLs for both the IPT and all its registered
    * resources.
+   * <p>
+   * NOTE: All the resources registered against the GBIF Registry should be updated seprately!
    *
    * @param ipt IPT whose registration is being updated
    *
@@ -143,6 +191,8 @@ public interface RegistryManager {
   /**
    * Retrieves a list of all registered Resources associated to an Organization. If the name and UUID of the resource
    * cannot be populated, it isn't returned with the list.
+   * @deprecated as of 2.6.4 due to inefficiency.
+   * Use {@link RegistryManager#isResourceBelongsToOrganisation(String, String)} instead
    *
    * @param key organization key (UUID in String format)
    *
@@ -150,7 +200,21 @@ public interface RegistryManager {
    *
    * @throws RegistryException if the list could not be retrieved for any reason
    */
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated
   List<Resource> getOrganisationsResources(String key) throws RegistryException;
+
+  /**
+   * Checks whether resource belongs to (published by) the organisation with the key.
+   *
+   * @param key resource key (UUID in String format)
+   * @param organisationKey organization key (UUID in String format)
+   *
+   * @return true/false
+   *
+   * @throws RegistryException if resource or organisation key are wrong
+   */
+  boolean isResourceBelongsToOrganisation(String key, String organisationKey) throws RegistryException;
 
   /**
    * Retrieves a list of Networks for the resource from the Registry.
@@ -162,13 +226,13 @@ public interface RegistryManager {
   List<Network> getResourceNetworks(Resource resource) throws RegistryException;
 
   /**
-   * Retrieves a list of Networks from the Registry.
+   * Retrieves a list of Networks (key and name only) from the Registry.
    *
    * @return list of Networks, or an empty list if none were retrieved from valid response
    *
    * @throws RegistryException if the list of Networks couldn't be populated
    */
-  List<Network> getNetworks() throws RegistryException;
+  List<KeyNamePair> getNetworksBrief() throws RegistryException;
 
   /**
    * Adds resource to the network in the Registry.

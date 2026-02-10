@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,32 +14,33 @@
 package org.gbif.ipt.service.registry.impl;
 
 import org.gbif.api.model.common.DOI;
-import org.gbif.api.model.common.paging.PagingResponse;
 import org.gbif.api.model.registry.Network;
 import org.gbif.dwc.terms.DwcTerm;
+import org.gbif.dwc.terms.Term;
 import org.gbif.ipt.action.BaseAction;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.ConfigWarnings;
 import org.gbif.ipt.config.DataDir;
+import org.gbif.ipt.model.DataPackageSchema;
 import org.gbif.ipt.model.Extension;
 import org.gbif.ipt.model.Ipt;
+import org.gbif.ipt.model.KeyNamePair;
 import org.gbif.ipt.model.Organisation;
 import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.VersionHistory;
 import org.gbif.ipt.model.Vocabulary;
-import org.gbif.ipt.model.voc.PublicationStatus;
+import org.gbif.ipt.model.datapackage.metadata.DataPackageMetadata;
+import org.gbif.ipt.model.datapackage.metadata.col.ColMetadata;
 import org.gbif.ipt.service.BaseManager;
 import org.gbif.ipt.service.RegistryException;
 import org.gbif.ipt.service.RegistryException.Type;
-import org.gbif.ipt.service.admin.RegistrationManager;
-import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.service.registry.RegistryManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 import org.gbif.ipt.utils.RegistryEntryHandler;
 import org.gbif.ipt.validation.AgentValidator;
-import org.gbif.metadata.eml.Agent;
-import org.gbif.metadata.eml.Eml;
-import org.gbif.metadata.eml.EmlFactory;
+import org.gbif.metadata.eml.ipt.EmlFactory;
+import org.gbif.metadata.eml.ipt.model.Agent;
+import org.gbif.metadata.eml.ipt.model.Eml;
 import org.gbif.utils.ExtendedResponse;
 import org.gbif.utils.HttpClient;
 import org.gbif.utils.HttpUtil;
@@ -58,14 +57,18 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import javax.inject.Inject;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -77,7 +80,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-import com.google.inject.Inject;
+
+import static org.gbif.ipt.config.Constants.CAMTRAP_DP;
+import static org.gbif.ipt.config.Constants.COL_DP;
 
 public class RegistryManagerImpl extends BaseManager implements RegistryManager {
 
@@ -89,9 +94,22 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
 
   private final RegistryEntryHandler newRegistryEntryHandler = new RegistryEntryHandler();
   private static final String SERVICE_TYPE_EML = "EML";
+  private static final String SERVICE_TYPE_CAMTRAP_DP = "CAMTRAP_DP";
+  private static final String SERVICE_TYPE_COLDP = "COLDP";
   private static final String SERVICE_TYPE_OCCURRENCE = "DWC-ARCHIVE-OCCURRENCE";
+  private static final String SERVICE_TYPE_MATERIAL_ENTITY = "DWC-ARCHIVE-MATERIAL-ENTITY";
   private static final String SERVICE_TYPE_CHECKLIST = "DWC-ARCHIVE-CHECKLIST";
   private static final String SERVICE_TYPE_SAMPLING_EVENT = "DWC-ARCHIVE-SAMPLING-EVENT";
+
+  private static final String SERVICE_SUBTYPE_SPECIMEN = "";
+  private static final String SERVICE_SUBTYPE_OBSERVATION = "";
+  private static final String SERVICE_SUBTYPE_TAXONOMIC_AUTHORITY = "";
+  private static final String SERVICE_SUBTYPE_NOMENCLATOR_AUTHORITY = "";
+  private static final String SERVICE_SUBTYPE_INVENTORY_THEMATIC = "";
+  private static final String SERVICE_SUBTYPE_INVENTORY_REGIONAL = "";
+  private static final String SERVICE_SUBTYPE_GLOBAL_SPECIES_DATASET = "";
+  private static final String SERVICE_SUBTYPE_DERIVED_FROM_OCCURRENCE = "";
+
   private static final String SERVICE_TYPE_RSS = "RSS";
   private static final String CONTACT_TYPE_TECHNICAL = "technical";
   private static final String CONTACT_TYPE_ADMINISTRATIVE = "administrative";
@@ -100,22 +118,24 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
   private SAXParser saxParser;
   private Gson gson;
   private ConfigWarnings warnings;
-  private ResourceManager resourceManager;
   // create instance of BaseAction - allows class to retrieve i18n terms via getText()
   private BaseAction baseAction;
 
   @Inject
-  public RegistryManagerImpl(AppConfig cfg, DataDir dataDir, HttpClient client, SAXParserFactory saxFactory,
-                             ConfigWarnings warnings, SimpleTextProvider textProvider, RegistrationManager registrationManager,
-                             ResourceManager resourceManager)
+  public RegistryManagerImpl(
+      AppConfig cfg,
+      DataDir dataDir,
+      HttpClient client,
+      SAXParserFactory saxFactory,
+      ConfigWarnings warnings,
+      SimpleTextProvider textProvider)
     throws ParserConfigurationException, SAXException {
     super(cfg, dataDir);
     this.saxParser = saxFactory.newSAXParser();
     this.http = client;
     this.gson = new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
     this.warnings = warnings;
-    this.resourceManager = resourceManager;
-    baseAction = new BaseAction(textProvider, cfg, registrationManager);
+    baseAction = new BaseAction(textProvider, cfg, null);
   }
 
   private List<NameValuePair> buildRegistryParameters(Resource resource) {
@@ -150,7 +170,7 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     // if primaryContact is null, use resource creator as primary contact.
     if (primaryContact == null) {
       primaryContact = new Agent();
-      primaryContact.setEmail(resource.getCreator().getEmail());
+      primaryContact.setEmail(Collections.singletonList(resource.getCreator().getEmail()));
       primaryContact.setFirstName(resource.getCreator().getFirstname());
       primaryContact.setLastName(resource.getCreator().getLastname());
       primaryContact.setRole(null);
@@ -161,17 +181,90 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     primaryContact.setRole(null);
 
     data.add(new BasicNameValuePair("primaryContactType", primaryContactType));
-    data.add(new BasicNameValuePair("primaryContactEmail", StringUtils.trimToEmpty(primaryContact.getEmail())));
+    data.add(new BasicNameValuePair("primaryContactEmail", !primaryContact.getEmail().isEmpty() ? StringUtils.trimToEmpty(primaryContact.getEmail().get(0)) : ""));
     data.add(new BasicNameValuePair("primaryContactName",
       StringUtils.trimToNull(StringUtils.trimToEmpty(primaryContact.getFullName()))));
     data.add(new BasicNameValuePair("primaryContactAddress",
       StringUtils.trimToEmpty(primaryContact.getAddress().toFormattedString())));
-    data.add(new BasicNameValuePair("primaryContactPhone", StringUtils.trimToEmpty(primaryContact.getPhone())));
+    data.add(new BasicNameValuePair("primaryContactPhone", !primaryContact.getPhone().isEmpty() ? StringUtils.trimToEmpty(primaryContact.getPhone().get(0)) : ""));
 
     // see if we have a published dwca or if its only metadata
     RegistryServices services = buildServiceTypeParams(resource);
     data.add(new BasicNameValuePair("serviceTypes", services.serviceTypes));
     data.add(new BasicNameValuePair("serviceURLs", services.serviceURLs));
+
+    if (resource.getSubtype() != null) {
+      data.add(new BasicNameValuePair("subtype", resource.getSubtype()));
+    }
+
+    return data;
+  }
+
+  private List<NameValuePair> buildRegistryParametersForDataPackage(Resource resource) {
+    if (COL_DP.equals(resource.getCoreType())) {
+      return buildRegistryParametersForColDP(resource);
+    } else if (CAMTRAP_DP.equals(resource.getCoreType())) {
+      return buildRegistryParametersForCamtrapDP(resource);
+    } else {
+      LOG.error("Unknown data package type: {}", resource.getCoreType());
+      return Collections.emptyList();
+    }
+  }
+
+  private List<NameValuePair> buildRegistryParametersForColDP(Resource resource) {
+    List<NameValuePair> data = new ArrayList<>();
+
+    DataPackageMetadata metadata = resource.getDataPackageMetadata();
+    ColMetadata colMetadata = null;
+
+    if (metadata instanceof ColMetadata) {
+      colMetadata = (ColMetadata) metadata;
+    }
+
+    if (colMetadata != null) {
+      data.add(new BasicNameValuePair("name", resource.getTitle() != null ? StringUtils.trimToEmpty(resource.getTitle())
+          : StringUtils.trimToEmpty(resource.getShortname())));
+      data.add(new BasicNameValuePair("description", metadata.getDescription()));
+
+      // Use resource creator as primary contact. May use one of the contributors in the future.
+      data.add(new BasicNameValuePair("primaryContactType", CONTACT_TYPE_TECHNICAL));
+      data.add(new BasicNameValuePair("primaryContactEmail", resource.getCreator().getEmail()));
+      data.add(new BasicNameValuePair("primaryContactName", resource.getCreator().getFirstname()));
+
+      // service type and url
+      data.add(new BasicNameValuePair("serviceTypes", SERVICE_TYPE_COLDP));
+      data.add(new BasicNameValuePair("serviceUrls", cfg.getResourceArchiveUrl(resource.getShortname())));
+
+      LOG.debug(data);
+    } else {
+      LOG.debug("Failed to extract ColMetadata to build registry parameters! Metadata type is {}",
+          metadata.getClass().getSimpleName());
+    }
+
+    return data;
+  }
+
+  private List<NameValuePair> buildRegistryParametersForCamtrapDP(Resource resource) {
+    List<NameValuePair> data = new ArrayList<>();
+
+    DataPackageMetadata metadata = resource.getDataPackageMetadata();
+
+    // TODO: 01/11/2022 DOI
+
+    data.add(new BasicNameValuePair("name", resource.getTitle() != null ? StringUtils.trimToEmpty(resource.getTitle())
+        : StringUtils.trimToEmpty(resource.getShortname())));
+
+    data.add(new BasicNameValuePair("description", metadata.getDescription()));
+    // TODO: 01/11/2022 logo and homepage
+
+    // Use resource creator as primary contact. May use one of the contributors in the future.
+    data.add(new BasicNameValuePair("primaryContactType", CONTACT_TYPE_TECHNICAL));
+    data.add(new BasicNameValuePair("primaryContactEmail", resource.getCreator().getEmail()));
+    data.add(new BasicNameValuePair("primaryContactName", resource.getCreator().getFirstname()));
+
+    // service type and url
+    data.add(new BasicNameValuePair("serviceTypes", SERVICE_TYPE_CAMTRAP_DP));
+    data.add(new BasicNameValuePair("serviceUrls", cfg.getResourceArchiveUrl(resource.getShortname())));
 
     return data;
   }
@@ -192,21 +285,27 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     rs.serviceURLs = cfg.getResourceEmlUrl(resource.getShortname());
 
     // check are there any other services: DWC-ARCHIVE-OCCURRENCE, DWC-ARCHIVE-CHECKLIST, or DWC-ARCHIVE-SAMPLING-EVENT
-    if (resource.hasPublishedData() && resource.getCoreTypeTerm() != null) {
-      if (DwcTerm.Occurrence == resource.getCoreTypeTerm()) {
+    Term resourceCoreTypeTerm = resource.getCoreTypeTerm();
+    String resourceShortname = resource.getShortname();
+    if (resource.hasPublishedData() && resourceCoreTypeTerm != null) {
+      if (DwcTerm.Occurrence == resourceCoreTypeTerm) {
         LOG.debug("Registering EML & DwC-A Occurrence Service");
-        rs.serviceURLs += "|" + cfg.getResourceArchiveUrl(resource.getShortname());
+        rs.serviceURLs += "|" + cfg.getResourceArchiveUrl(resourceShortname);
         rs.serviceTypes += "|" + SERVICE_TYPE_OCCURRENCE;
-      } else if (DwcTerm.Taxon == resource.getCoreTypeTerm()) {
+      } else if (DwcTerm.MaterialEntity == resourceCoreTypeTerm) {
+        LOG.debug("Registering EML & DwC-A Material Entity Service");
+        rs.serviceURLs += "|" + cfg.getResourceArchiveUrl(resourceShortname);
+        rs.serviceTypes += "|" + SERVICE_TYPE_MATERIAL_ENTITY;
+      } else if (DwcTerm.Taxon == resourceCoreTypeTerm) {
         LOG.debug("Registering EML & DwC-A Checklist Service");
-        rs.serviceURLs += "|" + cfg.getResourceArchiveUrl(resource.getShortname());
+        rs.serviceURLs += "|" + cfg.getResourceArchiveUrl(resourceShortname);
         rs.serviceTypes += "|" + SERVICE_TYPE_CHECKLIST;
-      } else if (DwcTerm.Event == resource.getCoreTypeTerm()) {
+      } else if (DwcTerm.Event == resourceCoreTypeTerm) {
         LOG.debug("Registering EML & DwC-A Sampling Event Service");
-        rs.serviceURLs += "|" + cfg.getResourceArchiveUrl(resource.getShortname());
+        rs.serviceURLs += "|" + cfg.getResourceArchiveUrl(resourceShortname);
         rs.serviceTypes += "|" + SERVICE_TYPE_SAMPLING_EVENT;
       } else {
-        LOG.warn("Unknown core resource type " + resource.getCoreTypeTerm());
+        LOG.warn("Unknown core resource type " + resourceCoreTypeTerm);
         LOG.debug("Registering EML service only");
       }
     } else {
@@ -215,9 +314,8 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     return rs;
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.gbif.ipt.service.registry.RegistryManager#deregister(org.gbif.ipt.model.Resource)
+  /**
+   * {@inheritDoc}
    */
   @Override
   public void deregister(Resource resource) throws RegistryException {
@@ -250,9 +348,22 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     return String.format("%s%s%s", cfg.getRegistryUrl(), "/registry/ipt/resource/", resourceKey);
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.gbif.ipt.service.registry.RegistryManager#getExtensions()
+  @Override
+  public List<Extension> getLatestExtensions() throws RegistryException {
+    Map<String, List<Extension>> jSONExtensions = gson
+        .fromJson(requestHttpGetFromRegistry(getExtensionsURL(true)).getContent(),
+            new TypeToken<Map<String, List<Extension>>>() {
+            }.getType());
+
+    List<Extension> allExtensions = (jSONExtensions.get("extensions") == null) ? new ArrayList<>() : jSONExtensions.get("extensions");
+
+    return allExtensions.stream()
+        .filter(Extension::isLatest)
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * {@inheritDoc}
    */
   @Override
   public List<Extension> getExtensions() throws RegistryException {
@@ -263,11 +374,75 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     return (jSONExtensions.get("extensions") == null) ? new ArrayList<>() : jSONExtensions.get("extensions");
   }
 
+  @Override
+  public List<DataPackageSchema> getLatestDataPackageSchemas() throws RegistryException {
+    Map<String, List<DataPackageSchema>> jSONDataSchemas = gson
+        .fromJson(requestHttpGetFromRegistry(getDataSchemasURL()).getContent(),
+            new TypeToken<Map<String, List<DataPackageSchema>>>() {
+            }.getType());
+    return (jSONDataSchemas.get("dataPackages") == null) ? new ArrayList<>() : jSONDataSchemas.get("dataPackages");
+  }
+
+  @Override
+  public String getLatestCompatibleSchemaVersion(String schemaName, String schemaVersion) throws RegistryException {
+    Map<String, String> jSON = gson
+        .fromJson(requestHttpGetFromRegistry(getDataSchemaVersionURL(schemaName, schemaVersion)).getContent(),
+            new TypeToken<Map<String, String>>() {
+            }.getType());
+
+    return jSON.get("latestCompatibleVersion");
+  }
+
+  @Override
+  public DataPackageSchema getSchema(String schemaName, String schemaVersion) throws RegistryException {
+    return gson
+        .fromJson(requestHttpGetFromRegistry(getDataSchemaURL(schemaName, schemaVersion)).getContent(),
+            new TypeToken<DataPackageSchema>() {
+            }.getType());
+  }
+
+  @Override
+  public List<DataPackageSchema> getSupportedDataSchemas() throws RegistryException {
+    List<DataPackageSchema> result = new ArrayList<>();
+    Map<String, String> schemasWithVersions = baseAction.getCfg().getSupportedDataSchemaNamesWithVersions();
+
+    for (Map.Entry<String, String> entrySchemaVersion : schemasWithVersions.entrySet()) {
+      DataPackageSchema jsonDataSchema = gson
+              .fromJson(requestHttpGetFromRegistry(getDataSchemaURL(entrySchemaVersion.getKey(), entrySchemaVersion.getValue())).getContent(),
+                      new TypeToken<DataPackageSchema>() {
+                      }.getType());
+      result.add(jsonDataSchema);
+    }
+
+    return result;
+  }
+
   /**
    * Returns the Extensions url.
    */
   private String getExtensionsURL(boolean json) {
     return String.format("%s%s%s", cfg.getRegistryUrl(), "/registry/extensions", json ? ".json" : "/");
+  }
+
+  /**
+   * Returns the Data schemas url.
+   */
+  private String getDataSchemasURL() {
+    return cfg.getRegistryUrl() + "/registry/dataPackages.json";
+  }
+
+  /**
+   * Returns the Data schema url by name and version.
+   */
+  private String getDataSchemaURL(String schemaName, String schemaVersion) {
+    return cfg.getRegistryUrl() + "/registry/dataPackages/" + schemaName + "/" + schemaVersion;
+  }
+
+  /**
+   * Returns the Data schema version url by name and version.
+   */
+  private String getDataSchemaVersionURL(String schemaName, String schemaVersion) {
+    return cfg.getRegistryUrl() + "/registry/dataPackages/" + schemaName + "/" + schemaVersion + "/version.json";
   }
 
   /**
@@ -307,9 +482,20 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
 
   /**
    * Returns the URI that will return a list of Resources associated to an Organization in JSON.
+   *
+   * @deprecated as of 2.6.4 due to inefficiency. Can be too many datasets in the organisation.
+   * Use {@link RegistryManagerImpl#getResourceBelongsToOrganisationUri(String, String)} instead
    */
+  @Deprecated
   private String getOrganisationsResourcesUri(final String organisationKey) {
     return String.format("%s%s%s", cfg.getRegistryUrl(), "/registry/resource.json?organisationKey=", organisationKey);
+  }
+
+  /**
+   * Returns the URI that will return whether resource belongs to organisation with the key.
+   */
+  private String getResourceBelongsToOrganisationUri(final String resourceKey, final String organisationKey) {
+    return cfg.getRegistryUrl() + "/registry/resource/" + resourceKey + "/belongs/organisation/" + organisationKey;
   }
 
   /**
@@ -319,16 +505,15 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     return String.format("%s%s%s", cfg.getRegistryUrl(), "/registry/organisation/", organisationKey + ".json");
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.gbif.ipt.service.registry.RegistryManager#getOrganisations()
+  /**
+   * {@inheritDoc}
    */
   @Override
   public List<Organisation> getOrganisations() {
     List<Map<String, String>> organisationsTemp = new ArrayList<>();
     try {
       organisationsTemp = gson
-        .fromJson(requestHttpGetFromRegistry(getOrganisationsURL(true)).getContent(),
+        .fromJson(requestHttpGetFromRegistry(getOrganisationsURL()).getContent(),
           new TypeToken<List<Map<String, String>>>() {
           }.getType());
     } catch (RegistryException e) {
@@ -342,7 +527,13 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
       msg = baseAction.getText("admin.organisations.couldnt.load", new String[] {cfg.getRegistryUrl()});
       warnings.addStartupError(msg);
       LOG.error(msg);
+    } catch (JsonSyntaxException e) {
+      // add startup error message that explains the consequence of the error
+      String msg = baseAction.getText("admin.organisations.couldnt.load", new String[] {cfg.getRegistryUrl()});
+      warnings.addStartupError(msg);
+      LOG.error(msg);
     }
+
     // populate Organisation list
     List<Organisation> organisations = new ArrayList<>();
     int invalid = 0;
@@ -367,9 +558,8 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     return organisations;
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.gbif.ipt.service.registry.RegistryManager#getOrganisation()
+  /**
+   * {@inheritDoc}
    */
   @Override
   public Organisation getRegisteredOrganisation(String key) {
@@ -404,22 +594,22 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
   /**
    * Returns the Organisations url
    */
-  private String getOrganisationsURL(boolean json) {
-    return String.format("%s%s%s", cfg.getRegistryUrl(), "/registry/organisation", json ? ".json" : "/");
+  private String getOrganisationsURL() {
+    return cfg.getRegistryUrl() + "/registry/organisation.json";
   }
 
   /**
    * Returns the Networks url
    */
   private String getListNetworksURL() {
-    return cfg.getRegistryUrl() + "/registry/network/";
+    return cfg.getRegistryUrl() + "/registry/network.json";
   }
 
   /**
    * Returns the Networks url
    */
   private String getResourceListNetworksURL(String resourceKey) {
-    return cfg.getRegistryUrl() + "/registry/dataset/" + resourceKey + "/networks";
+    return cfg.getRegistryUrl() + "/registry/resource/" + resourceKey + "/networks";
   }
 
   /**
@@ -469,9 +659,8 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     return new ByteArrayInputStream(source.getBytes(StandardCharsets.UTF_8));
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.gbif.ipt.service.registry.RegistryManager#getVocabularies()
+  /**
+   * {@inheritDoc}
    */
   @Override
   public List<Vocabulary> getVocabularies() throws RegistryException {
@@ -482,11 +671,18 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     return (jSONVocabularies.get("thesauri") == null) ? new ArrayList<>() : jSONVocabularies.get("thesauri");
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.gbif.ipt.service.registry.RegistryManager#getOrganisationsResources
+  @Override
+  public boolean isResourceBelongsToOrganisation(String key, String organisationKey) throws RegistryException {
+    String url = getResourceBelongsToOrganisationUri(key, organisationKey);
+    String rawContent = requestHttpGetFromRegistry(url).getContent();
+    return BooleanUtils.toBoolean(rawContent);
+  }
+
+  /**
+   * {@inheritDoc}
    */
   @Override
+  @Deprecated
   public List<Resource> getOrganisationsResources(String organisationKey) throws RegistryException {
     List<Map<String, String>> resourcesTemp;
     String url = getOrganisationsResourcesUri(organisationKey);
@@ -531,19 +727,21 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     List<Network> networks = new ArrayList<>();
     if (resource != null && resource.getKey() != null) {
       try {
-        networks = gson
-            .fromJson(requestHttpGetFromRegistry(getResourceListNetworksURL(resource.getKey().toString())).getContent(),
-                new TypeToken<List<Network>>() {
-                }.getType());
-      } catch (RegistryException e) {
-        // log as specific error message as possible about why the Registry error occurred
-        String msg = RegistryException.logRegistryException(e, baseAction);
-        // add startup error message about Registry error
-        warnings.addStartupError(msg);
-        LOG.error(msg);
+        ExtendedResponse response = requestHttpGetFromRegistry(getResourceListNetworksURL(resource.getKey().toString()));
 
-        // add startup error message that explains the consequence of the Registry error
-        msg = baseAction.getText("admin.networks.couldnt.load", new String[]{cfg.getRegistryUrl()});
+        if (response.getStatusCode() != 200) {
+          throw new RegistryException(
+              Type.BAD_RESPONSE,
+              getResourceListNetworksURL(resource.getKey().toString()),
+              "Wrong response code " + response.getStatusCode());
+        }
+
+        String content = response.getContent();
+        networks = gson
+            .fromJson(content, new TypeToken<List<Network>>() {}.getType());
+      } catch (JsonSyntaxException e) {
+        // add startup error message that explains the consequence of the error
+        String msg = baseAction.getText("admin.networks.couldnt.load", new String[]{cfg.getRegistryUrl()});
         warnings.addStartupError(msg);
         LOG.error(msg);
       }
@@ -553,28 +751,28 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
   }
 
   @Override
-  public List<Network> getNetworks() throws RegistryException {
-    // TODO: 24/11/2021 paging response!
-    PagingResponse<Network> networks = new PagingResponse<>();
+  public List<KeyNamePair> getNetworksBrief() throws RegistryException {
+    List<KeyNamePair> networks = new ArrayList<>();
     try {
-      networks = gson
-          .fromJson(requestHttpGetFromRegistry(getListNetworksURL()).getContent(),
-              new TypeToken<PagingResponse<Network>>() {
-              }.getType());
-    } catch (RegistryException e) {
-      // log as specific error message as possible about why the Registry error occurred
-      String msg = RegistryException.logRegistryException(e, baseAction);
-      // add startup error message about Registry error
-      warnings.addStartupError(msg);
-      LOG.error(msg);
+      ExtendedResponse response = requestHttpGetFromRegistry(getListNetworksURL());
+      if (response.getStatusCode() != 200) {
+        throw new RegistryException(
+            Type.BAD_RESPONSE,
+            getListNetworksURL(),
+            "Wrong response code " + response.getStatusCode());
+      }
 
-      // add startup error message that explains the consequence of the Registry error
-      msg = baseAction.getText("admin.networks.couldnt.load", new String[] {cfg.getRegistryUrl()});
+      String content = response.getContent();
+      networks = gson
+          .fromJson(content, new TypeToken<List<KeyNamePair>>() {}.getType());
+    } catch (JsonSyntaxException e) {
+      // add startup error message that explains the consequence of the error
+      String msg = baseAction.getText("admin.networks.couldnt.load", new String[] {cfg.getRegistryUrl()});
       warnings.addStartupError(msg);
       LOG.error(msg);
     }
 
-    return networks.getResults();
+    return networks;
   }
 
   @Override
@@ -595,9 +793,11 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     } catch (IOException e) {
       throw new RegistryException(Type.IO_ERROR, url, e);
     } catch (Exception e) {
-      String msg = "Bad registry response: " + e.getMessage();
-      LOG.error(msg, e);
-      throw new RegistryException(RegistryException.Type.BAD_RESPONSE, url, msg);
+      if (!(e instanceof RegistryException)) {
+        String msg = "Bad registry response: " + e.getMessage();
+        LOG.error(msg, e);
+        throw new RegistryException(RegistryException.Type.BAD_RESPONSE, url, msg);
+      }
     }
   }
 
@@ -619,9 +819,11 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     } catch (IOException e) {
       throw new RegistryException(Type.IO_ERROR, url, e);
     } catch (Exception e) {
-      String msg = "Bad registry response: " + e.getMessage();
-      LOG.error(msg, e);
-      throw new RegistryException(RegistryException.Type.BAD_RESPONSE, url, msg);
+      if (!(e instanceof RegistryException)) {
+        String msg = "Bad registry response: " + e.getMessage();
+        LOG.error(msg, e);
+        throw new RegistryException(RegistryException.Type.BAD_RESPONSE, url, msg);
+      }
     }
   }
 
@@ -694,7 +896,13 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
     }
 
     // populate params for ws call to register resource
-    List<NameValuePair> data = buildRegistryParameters(resource);
+    List<NameValuePair> data;
+    if (resource.isDataPackage()) {
+      data = buildRegistryParametersForDataPackage(resource);
+    } else {
+      data = buildRegistryParameters(resource);
+    }
+
     // add additional ipt and organisation parameters
     data.add(new BasicNameValuePair("organisationKey", StringUtils.trimToEmpty(org.getKey().toString())));
     data.add(new BasicNameValuePair("iptKey", StringUtils.trimToEmpty(ipt.getKey().toString())));
@@ -871,19 +1079,6 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
       Type type = getRegistryExceptionType(resp.getStatusCode());
       throw new RegistryException(type, url, "Update IPT registration failed: " + resp.getStatusLine());
     }
-
-    List<Resource> resources = resourceManager.list(PublicationStatus.REGISTERED);
-    if (!resources.isEmpty()) {
-      LOG.info("Next, update " + resources.size() + " resource registrations...");
-      for (Resource resource : resources) {
-        try {
-          updateResource(resource, ipt.getKey().toString());
-        } catch (IllegalArgumentException e) {
-          LOG.error(e.getMessage());
-        }
-      }
-      LOG.info("Resource registrations updated successfully!");
-    }
   }
 
   @Override
@@ -895,7 +1090,13 @@ public class RegistryManagerImpl extends BaseManager implements RegistryManager 
 
     LOG.info("Update resource registration... [key=" + resource.getKey().toString() + "]");
     // populate params for ws call to update registered resource
-    List<NameValuePair> data = buildRegistryParameters(resource);
+    List<NameValuePair> data;
+    if (resource.isDataPackage()) {
+      data = buildRegistryParametersForDataPackage(resource);
+    } else {
+      data = buildRegistryParameters(resource);
+    }
+
     // ensure IPT serves relationship always gets created/updated
     data.add(new BasicNameValuePair("iptKey", StringUtils.trimToEmpty(iptKey)));
 

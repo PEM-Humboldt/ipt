@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,30 +26,35 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.UriBuilder;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.struts2.interceptor.ServletRequestAware;
+import org.apache.struts2.interceptor.ServletResponseAware;
 import org.apache.struts2.interceptor.SessionAware;
 
-import com.google.inject.Inject;
 import com.opensymphony.xwork2.ActionContext;
 import com.opensymphony.xwork2.ActionSupport;
 import com.opensymphony.xwork2.Preparable;
 import com.opensymphony.xwork2.util.ValueStack;
 
+import static org.gbif.ipt.config.Constants.CANCEL;
+
 /**
  * The base of all IPT actions. This handles conditions such as menu items, a custom text provider, sessions, currently
  * logged in user, and hosting organization information.
  */
-public class BaseAction extends ActionSupport implements SessionAware, Preparable, ServletRequestAware {
+public class BaseAction extends ActionSupport implements SessionAware, Preparable, ServletRequestAware, ServletResponseAware {
 
   // logging
   private static final Logger LOG = LogManager.getLogger(BaseAction.class);
@@ -64,20 +67,25 @@ public class BaseAction extends ActionSupport implements SessionAware, Preparabl
   public static final String LOGIN = "login";
   public static final String HOME = "home";
   public static final String LOCKED = "locked";
-  public static final String NOT_AVAILABLE = "410";
+  public static final String GONE = "410";
 
   protected List<String> warnings = new ArrayList<>();
   protected Map<String, Object> session;
   protected HttpServletRequest req;
+  protected HttpServletResponse response;
   // a generic identifier for loading an object BEFORE the param interceptor sets values
-  protected String id;
+  public String id;
+  protected boolean cancel = false;
 
   protected SimpleTextProvider textProvider;
   protected AppConfig cfg;
   protected RegistrationManager registrationManager;
 
   @Inject
-  public BaseAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager) {
+  public BaseAction(
+      SimpleTextProvider textProvider,
+      AppConfig cfg,
+      RegistrationManager registrationManager) {
     this.textProvider = textProvider;
     this.cfg = cfg;
     this.registrationManager = registrationManager;
@@ -102,7 +110,9 @@ public class BaseAction extends ActionSupport implements SessionAware, Preparabl
    * If you want form validation with the workflow interceptor, please {@link #addActionError(String)} instead.
    */
   public void addActionWarning(String anErrorMessage) {
-    warnings.add(anErrorMessage);
+    if (!warnings.contains(anErrorMessage)) {
+      warnings.add(anErrorMessage);
+    }
   }
 
   public void addActionWarning(String anErrorMessage, Exception e) {
@@ -130,6 +140,53 @@ public class BaseAction extends ActionSupport implements SessionAware, Preparabl
     return cfg.getBaseUrl();
   }
 
+  public String getLogoRedirectURL() {
+    return Optional.ofNullable(cfg.getLogoRedirectUrl())
+        .orElse(cfg.getBaseUrl());
+  }
+
+  public String getPrimaryColor() {
+    String primaryColorHex = cfg.getColorSchemeConfig().getPrimaryColor();
+    return Integer.valueOf(primaryColorHex.substring(1, 3), 16) + ","
+        + Integer.valueOf(primaryColorHex.substring(3, 5), 16) + ","
+        + Integer.valueOf(primaryColorHex.substring(5, 7), 16);
+  }
+
+  public String getNavbarColor() {
+    String navbarColorHex = cfg.getColorSchemeConfig().getNavbarColor();
+    return Integer.valueOf(navbarColorHex.substring(1, 3), 16) + ","
+        + Integer.valueOf(navbarColorHex.substring(3, 5), 16) + ","
+        + Integer.valueOf(navbarColorHex.substring(5, 7), 16);
+  }
+
+  public String getNavbarLinkColor() {
+    String navbarLinkColorHex = cfg.getColorSchemeConfig().getNavbarLinkColor();
+    return Integer.valueOf(navbarLinkColorHex.substring(1, 3), 16) + ","
+        + Integer.valueOf(navbarLinkColorHex.substring(3, 5), 16) + ","
+        + Integer.valueOf(navbarLinkColorHex.substring(5, 7), 16);
+  }
+
+  public String getNavbarGbifLogoColor() {
+    String navbarGbifLogoColorHex = cfg.getColorSchemeConfig().getNavbarGbifLogoColor();
+    return Integer.valueOf(navbarGbifLogoColorHex.substring(1, 3), 16) + ","
+            + Integer.valueOf(navbarGbifLogoColorHex.substring(3, 5), 16) + ","
+            + Integer.valueOf(navbarGbifLogoColorHex.substring(5, 7), 16);
+  }
+
+  public String getNavbarActiveTabColor() {
+    String navbarActiveTabColorHex = cfg.getColorSchemeConfig().getNavbarActiveTabColor();
+    return Integer.valueOf(navbarActiveTabColorHex.substring(1, 3), 16) + ","
+            + Integer.valueOf(navbarActiveTabColorHex.substring(3, 5), 16) + ","
+            + Integer.valueOf(navbarActiveTabColorHex.substring(5, 7), 16);
+  }
+
+  public String getLinkColor() {
+    String linkColorHex = cfg.getColorSchemeConfig().getLinkColor();
+    return Integer.valueOf(linkColorHex.substring(1, 3), 16) + ","
+        + Integer.valueOf(linkColorHex.substring(3, 5), 16) + ","
+        + Integer.valueOf(linkColorHex.substring(5, 7), 16);
+  }
+
   /**
    * @return the requested URL using the configured base url including all query parameters but a potentially existing request_locale parameter.
    * Returns baseURL in case of errors reconstructing the correct URL.
@@ -143,7 +200,7 @@ public class BaseAction extends ActionSupport implements SessionAware, Preparabl
           .replaceQueryParam("request_locale")
           .build().toString();
     } catch (RuntimeException e) {
-      LOG.warn("Failed to reconstruct requestURL from " + req.getRequestURL(), e);
+      LOG.warn("Failed to reconstruct requestURL from {}. Error: {}", req.getRequestURL(), e.getMessage());
     }
     return getBaseURL();
   }
@@ -191,7 +248,7 @@ public class BaseAction extends ActionSupport implements SessionAware, Preparabl
 
   /**
    * Gets the provided locale. in ActionContext.
-   *
+   * <p>
    * fix #1449 NPE on none struts context.
    */
   @Override
@@ -304,6 +361,17 @@ public class BaseAction extends ActionSupport implements SessionAware, Preparabl
   }
 
   /**
+   * Extract request parameter from request as Optional.
+   *
+   * @param request request
+   * @param paramName parameter name
+   * @return wrapped value for the parameter
+   */
+  public Optional<String> getRequestParameter(HttpServletRequest request, String paramName) {
+    return Optional.ofNullable(request.getParameter(paramName));
+  }
+
+  /**
    * Override this method if you need to load entities based on the id value before the PARAM interceptor is called.
    * You can also use this method to prepare a new, empty instance in case no id was provided. If the id parameter
    * alone
@@ -319,9 +387,29 @@ public class BaseAction extends ActionSupport implements SessionAware, Preparabl
     id = StringUtils.trimToNull(req.getParameter("id"));
   }
 
+  /**
+   * Override this method if you need to cancel action.
+   */
+  public String cancel() throws Exception {
+    return CANCEL;
+  }
+
+  public void setCancel(String cancel) {
+    this.cancel = StringUtils.trimToNull(cancel) != null;
+  }
+
+  public boolean isCancel() {
+    return cancel;
+  }
+
   @Override
   public void setServletRequest(HttpServletRequest req) {
     this.req = req;
+  }
+
+  @Override
+  public void setServletResponse(HttpServletResponse response) {
+    this.response = response;
   }
 
   @Override

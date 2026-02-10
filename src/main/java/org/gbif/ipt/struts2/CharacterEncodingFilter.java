@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +14,6 @@
 package org.gbif.ipt.struts2;
 
 import java.io.IOException;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -26,13 +23,11 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.google.inject.Singleton;
-
 /**
  * Request filter that forces application to handle all requests and responses as UTF-8 encoded.
  */
-@Singleton
 public class CharacterEncodingFilter implements Filter {
+
   private static final String UTF8 = "UTF-8";
 
   @Override

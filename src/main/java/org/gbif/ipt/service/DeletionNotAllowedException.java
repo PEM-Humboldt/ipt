@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -37,6 +35,10 @@ public class DeletionNotAllowedException extends Exception {
      * Because the extension has been mapped in at least one resource. Used while deleting an extension.
      */
     EXTENSION_MAPPED,
+    /**
+     * Because the data package schema has been mapped in at least one resource. Used while deleting a data package schema.
+     */
+    DATA_SCHEMA_MAPPED,
     /**
      * Because the vocabulary is a default vocabulary. Used while deleting a vocabulary.
      */

@@ -1,31 +1,50 @@
 <#ftl output_format="HTML">
 <#include "/WEB-INF/pages/inc/header.ftl">
-<title><@s.text name="login.title"/></title>
+<title><@s.text name="menu.about"/></title>
 <#assign currentMenu = "about"/>
-<#--Custom styles only for about page-->
-<style>
-    h1 {
-        font-size: 20px !important;
-        font-weight: 400 !important;
-        text-align: center !important;
-        padding-top: .5rem !important;
-        padding-bottom: .5rem !important;
-        margin-bottom: .5rem !important;
-        color: #4e565f !important;
-        border-bottom: 1px solid #dee2e6 !important;
-    }
 
-    #not-registered {
-        text-align: center !important;
-    }
-</style>
 <#include "/WEB-INF/pages/inc/menu.ftl">
 
-<main class="container">
-    <div class="my-3 p-3 bg-body rounded shadow-sm">
-        <div class="mx-md-4 mx-2">
-            <@content?interpret />
+<div class="container-fluid border-bottom">
+    <div class="container bg-body border rounded-2 mb-4">
+        <div class="container my-3 p-3">
+            <div class="text-center">
+                <div class="fs-smaller">
+                    <span><@s.text name="menu.about"/></span>
+                </div>
+
+                <h1 class="pb-2 mb-0 pt-2 text-gbif-header fs-2 fw-normal">
+                    ${title}
+                </h1>
+
+                <div class="text-smaller text-gbif-primary mb-2">
+                    <#if (iptKey)??>
+                        <a href="${portalUrl}/installation/${iptKey}" target="_blank"><@s.text name="about.link"/></a>
+                    <#else>
+                        <#assign aDateTime = .now>
+                        ${aDateTime?date?string.long}
+                    </#if>
+                </div>
+            </div>
         </div>
+    </div>
+</div>
+
+<main class="container">
+    <div class="my-3 p-3">
+        <p class="text-center">
+            <span class="text-start d-inline-block">
+                <#if (hostingOrganisationName)??>
+                    <#if (iptDescription)??>
+                        <@iptDescription?interpret />
+                    <#else>
+                        <@s.text name="about.installation"/> ${hostingOrganisationName}
+                    </#if>
+                <#else>
+                    <@s.text name="about.notRegistered"/>
+                </#if>
+            </span>
+        </p>
     </div>
 </main>
 

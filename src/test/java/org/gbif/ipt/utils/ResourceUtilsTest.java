@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +18,7 @@ import java.math.BigDecimal;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.gbif.ipt.IptBaseTest;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
@@ -27,7 +26,7 @@ import org.xml.sax.SAXException;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ResourceUtilsTest {
+public class ResourceUtilsTest extends IptBaseTest {
 
   /**
    * @see org.gbif.ipt.service.manage.impl.ResourceManagerImplTest#testReconstructVersion()

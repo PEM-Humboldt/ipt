@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,9 +13,10 @@
  */
 package org.gbif.ipt.utils;
 
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.Constants;
-import org.gbif.metadata.eml.Eml;
-import org.gbif.metadata.eml.KeywordSet;
+import org.gbif.metadata.eml.ipt.model.Eml;
+import org.gbif.metadata.eml.ipt.model.KeywordSet;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class EmlUtilsTest {
+public class EmlUtilsTest extends IptBaseTest {
 
   private Eml eml;
 

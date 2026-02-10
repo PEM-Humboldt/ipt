@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,6 +17,7 @@ import org.gbif.api.model.common.DOI;
 import org.gbif.datacite.rest.client.configuration.ClientConfiguration;
 import org.gbif.doi.service.DoiService;
 import org.gbif.doi.service.datacite.RestJsonApiDataCiteService;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.config.DataDir;
@@ -29,6 +28,7 @@ import org.gbif.ipt.model.VersionHistory;
 import org.gbif.ipt.model.voc.DOIRegistrationAgency;
 import org.gbif.ipt.model.voc.IdentifierStatus;
 import org.gbif.ipt.model.voc.PublicationStatus;
+import org.gbif.ipt.service.admin.DataPackageSchemaManager;
 import org.gbif.ipt.service.admin.ExtensionManager;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.UserAccountManager;
@@ -36,12 +36,13 @@ import org.gbif.ipt.service.admin.VocabulariesManager;
 import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.service.registry.RegistryManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
+import org.gbif.ipt.task.GenerateDataPackageFactory;
 import org.gbif.ipt.task.GenerateDwcaFactory;
 import org.gbif.ipt.utils.DOIUtils;
-import org.gbif.metadata.eml.Agent;
-import org.gbif.metadata.eml.Citation;
-import org.gbif.metadata.eml.Eml;
-import org.gbif.metadata.eml.EmlWriter;
+import org.gbif.metadata.eml.ipt.IptEmlWriter;
+import org.gbif.metadata.eml.ipt.model.Agent;
+import org.gbif.metadata.eml.ipt.model.Citation;
+import org.gbif.metadata.eml.ipt.model.Eml;
 import org.gbif.utils.file.properties.PropertiesUtil;
 
 import java.io.File;
@@ -74,7 +75,7 @@ import static org.mockito.Mockito.when;
 /**
  * WARNING! This requires live DataCite service.
  */
-public class OverviewActionIT {
+public class OverviewActionIT extends IptBaseTest {
 
   private static final Logger LOG = LogManager.getLogger(OverviewActionIT.class);
   private static final UUID ORGANISATION_KEY = UUID.fromString("dce7a3c9-ea78-4be7-9abc-e3838de70dc5");
@@ -95,7 +96,7 @@ public class OverviewActionIT {
     creator.setLastName("Smith");
     eml.addCreator(creator);
     File tmpVersionedEmlFile = File.createTempFile("eml-#.0", ".xml");
-    EmlWriter.writeEmlFile(tmpVersionedEmlFile, eml);
+    IptEmlWriter.writeEmlFile(tmpVersionedEmlFile, eml);
     when(mockDataDir.resourceEmlFile(anyString(), any(BigDecimal.class))).thenReturn(tmpVersionedEmlFile);
     when(mockAppConfig.getDataDir()).thenReturn(mockDataDir);
     // mock returning target URLs
@@ -139,9 +140,18 @@ public class OverviewActionIT {
 
     // mock action for DataCite
     OverviewAction actionDataCite =
-        new OverviewAction(mock(SimpleTextProvider.class), mockAppConfig, mockRegistrationManagerDataCite,
-            mock(ResourceManager.class), mock(UserAccountManager.class), mock(ExtensionManager.class),
-            mock(GenerateDwcaFactory.class), mock(VocabulariesManager.class), mock(RegistryManager.class));
+        new OverviewAction(
+            mock(SimpleTextProvider.class),
+            mockAppConfig,
+            mockRegistrationManagerDataCite,
+            mock(ResourceManager.class),
+            mock(UserAccountManager.class),
+            mock(ExtensionManager.class),
+            mock(GenerateDwcaFactory.class),
+            mock(GenerateDataPackageFactory.class),
+            mock(VocabulariesManager.class),
+            mock(RegistryManager.class),
+            mock(DataPackageSchemaManager.class));
 
     return Stream.of(Arguments.of(actionDataCite, DOIRegistrationAgency.DATACITE));
   }

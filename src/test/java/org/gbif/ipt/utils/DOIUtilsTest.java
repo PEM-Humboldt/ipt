@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +14,7 @@
 package org.gbif.ipt.utils;
 
 import org.gbif.api.model.common.DOI;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.model.voc.DOIRegistrationAgency;
 
 import org.junit.jupiter.api.Test;
@@ -23,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class DOIUtilsTest {
+public class DOIUtilsTest extends IptBaseTest {
 
   @Test
   public void testMintDoiDataCite() {

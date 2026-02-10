@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,6 +25,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -64,6 +63,11 @@ public class MockVocabulariesManager extends IptMockBaseTest implements Vocabula
 
   @Override
   public Vocabulary install(URL url) {
+    return null;
+  }
+
+  @Override
+  public Vocabulary installIfAbsentOrOutdated(URL url) {
     return null;
   }
 
@@ -126,8 +130,18 @@ public class MockVocabulariesManager extends IptMockBaseTest implements Vocabula
   }
 
   @Override
+  public Map<String, String> getI18nDatasetTypesVocab(String lang, boolean sortAlphabetically) {
+    return new HashMap<>();
+  }
+
+  @Override
+  public Map<String, String> getI18nDatasetSubtypesVocab(String lang, boolean sortAlphabetically) {
+    return new HashMap<>();
+  }
+
+  @Override
   public List<Vocabulary> list() {
-    return new ArrayList<Vocabulary>();
+    return new ArrayList<>();
   }
 
   @Override
@@ -139,9 +153,7 @@ public class MockVocabulariesManager extends IptMockBaseTest implements Vocabula
   public void installOrUpdateDefaults() throws InvalidConfigException {
   }
 
-
   @Override
-  public boolean updateIfChanged(String uri) throws IOException, InvalidConfigException {
-    return false;
+  public void updateIfChanged() throws IOException, InvalidConfigException {
   }
 }

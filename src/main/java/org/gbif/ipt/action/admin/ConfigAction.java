@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,13 +27,14 @@ import org.gbif.ipt.utils.URLUtils;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.inject.Inject;
 
 /**
  * The Action responsible for all user input relating to the IPT configuration.
@@ -50,30 +49,43 @@ public class ConfigAction extends POSTAction {
   protected ConfigManager configManager;
   private final ResourceManager resourceManager;
 
+  private static final Map<String, String> DEFAULT_LOCALES = new HashMap<>();
+
+  static {
+    DEFAULT_LOCALES.put("en", "English");
+    DEFAULT_LOCALES.put("fr", "Française");
+    DEFAULT_LOCALES.put("es", "Español");
+    DEFAULT_LOCALES.put("zh", "繁體中文");
+    DEFAULT_LOCALES.put("pt", "Português");
+    DEFAULT_LOCALES.put("ja", "日本語");
+    DEFAULT_LOCALES.put("ru", "Русский");
+  }
+
   // these are transient properties that are set on a per request basis
   // getters and setters are called by the Struts2 interceptors based on the
   // http request submitted
   protected String baseUrl;
   protected String proxy;
+  protected String logoRedirectUrl;
   protected Boolean debug;
-  protected Boolean analyticsGbif;
   protected String analyticsKey;
   protected String adminEmail;
   protected Double latitude;
   protected Double longitude;
   protected Boolean archivalMode;
   protected Integer archivalLimit;
+  protected String defaultLocale;
 
   @Inject
-  public ConfigAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
-    ConfigManager configManager, ResourceManager resourceManager) {
+  public ConfigAction(
+      SimpleTextProvider textProvider,
+      AppConfig cfg,
+      RegistrationManager registrationManager,
+      ConfigManager configManager,
+      ResourceManager resourceManager) {
     super(textProvider, cfg, registrationManager);
     this.configManager = configManager;
     this.resourceManager = resourceManager;
-  }
-
-  public Boolean getAnalyticsGbif() {
-    return cfg.isGbifAnalytics();
   }
 
   public String getAnalyticsKey() {
@@ -86,6 +98,10 @@ public class ConfigAction extends POSTAction {
 
   public String getBaseUrl() {
     return cfg.getBaseUrl();
+  }
+
+  public String getLogoRedirectUrl() {
+    return cfg.getLogoRedirectUrl();
   }
 
   public String getDataDir() {
@@ -130,6 +146,14 @@ public class ConfigAction extends POSTAction {
    */
   public Integer getArchivalLimit() {
     return cfg.getArchivalLimit();
+  }
+
+  public String getDefaultLocale() {
+    return cfg.getDefaultLocale();
+  }
+
+  public Map<String, String> getDefaultLocales() {
+    return DEFAULT_LOCALES;
   }
 
   /**
@@ -194,6 +218,14 @@ public class ConfigAction extends POSTAction {
       return INPUT;
     }
 
+    // Logo redirect URL
+    try {
+      configManager.setLogoRedirectUrl(logoRedirectUrl);
+    } catch (InvalidConfigException e) {
+      addActionError(getText(e.getMessage()) + " " + logoRedirectUrl);
+      return INPUT;
+    }
+
     // ipt debug mode
     if (debug != null) {
       try {
@@ -226,16 +258,6 @@ public class ConfigAction extends POSTAction {
       return INPUT;
     }
 
-    // allow gbif analytics
-    if (analyticsGbif != null) {
-      try {
-        configManager.setGbifAnalytics(analyticsGbif);
-      } catch (InvalidConfigException e) {
-        addActionError(getText("admin.config.analyticsGbif.error"));
-        return INPUT;
-      }
-    }
-
     // google analyticsKey
     if (analyticsKey != null) {
       try {
@@ -254,6 +276,14 @@ public class ConfigAction extends POSTAction {
       return INPUT;
     }
 
+    // Default locale
+    try {
+      configManager.setDefaultLocale(defaultLocale);
+    } catch (InvalidConfigException e) {
+      addActionWarning(getText("admin.config.defaultLocale.error"));
+      return INPUT;
+    }
+
     try {
       configManager.saveConfig();
     } catch (InvalidConfigException e) {
@@ -265,11 +295,8 @@ public class ConfigAction extends POSTAction {
       return HOME;
     }
 
+    addActionMessage(getText("admin.config.success"));
     return SUCCESS;
-  }
-
-  public void setAnalyticsGbif(Boolean analyticsGbif) {
-    this.analyticsGbif = analyticsGbif;
   }
 
   public void setAnalyticsKey(String analyticsKey) {
@@ -283,6 +310,10 @@ public class ConfigAction extends POSTAction {
 
   public void setBaseUrl(String baseUrl) {
     this.baseUrl = baseUrl;
+  }
+
+  public void setLogoRedirectUrl(String logoRedirectUrl) {
+    this.logoRedirectUrl = logoRedirectUrl;
   }
 
   public void setDebug(Boolean debug) {
@@ -307,6 +338,10 @@ public class ConfigAction extends POSTAction {
 
   public void setArchivalLimit(Integer archivalLimit) {
     this.archivalLimit = archivalLimit;
+  }
+
+  public void setDefaultLocale(String defaultLocale) {
+    this.defaultLocale = defaultLocale;
   }
 
   /**

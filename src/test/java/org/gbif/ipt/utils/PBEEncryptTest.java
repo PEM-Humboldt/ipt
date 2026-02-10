@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,13 +13,14 @@
  */
 package org.gbif.ipt.utils;
 
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.IPTModule;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class PBEEncryptTest {
+public class PBEEncryptTest extends IptBaseTest {
 
   /**
    * Since we're using symmetric encryption with a fixed salt (defined in IPTModule),

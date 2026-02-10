@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,8 +13,8 @@
  */
 package peformance;
 
-import org.gbif.metadata.eml.Eml;
-import org.gbif.metadata.eml.EmlFactory;
+import org.gbif.metadata.eml.ipt.EmlFactory;
+import org.gbif.metadata.eml.ipt.model.Eml;
 
 import java.io.IOException;
 import java.net.URL;

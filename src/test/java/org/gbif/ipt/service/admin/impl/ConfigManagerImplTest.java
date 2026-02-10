@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,9 +13,11 @@
  */
 package org.gbif.ipt.service.admin.impl;
 
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.ConfigWarnings;
 import org.gbif.ipt.config.DataDir;
+import org.gbif.ipt.config.ExtensionMonitor;
 import org.gbif.ipt.config.PublishingMonitor;
 import org.gbif.ipt.mock.MockDataDir;
 import org.gbif.ipt.mock.MockRegistrationManager;
@@ -25,6 +25,7 @@ import org.gbif.ipt.mock.MockResourceManager;
 import org.gbif.ipt.mock.MockUserAccountManager;
 import org.gbif.ipt.service.InvalidConfigException;
 import org.gbif.ipt.service.admin.ConfigManager;
+import org.gbif.ipt.service.admin.DataPackageSchemaManager;
 import org.gbif.ipt.service.admin.ExtensionManager;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.UserAccountManager;
@@ -46,7 +47,7 @@ import static org.mockito.Mockito.mock;
 /**
  * This class tests the relevant methods of the ConfigManagerImpl class.
  */
-public class ConfigManagerImplTest {
+public class ConfigManagerImplTest extends IptBaseTest {
 
   private HttpClient client;
   private AppConfig appConfig;
@@ -59,16 +60,19 @@ public class ConfigManagerImplTest {
     ResourceManager mockedResourceManager = MockResourceManager.buildMock();
     ExtensionManager mockedExtensionManager = mock(ExtensionManager.class);
     VocabulariesManager mockedVocabularies = mock(VocabulariesManager.class);
+    DataPackageSchemaManager mockedSchemaManager = mock(DataPackageSchemaManager.class);
     RegistrationManager mockedRegistrationManager = MockRegistrationManager.buildMock();
     UserAccountManager mockedUserManager = MockUserAccountManager.buildMock();
     ConfigWarnings warnings = new ConfigWarnings();
     PublishingMonitor mockPublishingMonitor = mock(PublishingMonitor.class);
+    ExtensionMonitor mockExtensionMonitor = mock(ExtensionMonitor.class);
 
     client = HttpUtil.newMultithreadedClient(1000, 1, 1);
     appConfig = new AppConfig(mockedDataDir);
 
     return new ConfigManagerImpl(mockedDataDir, appConfig, mockedUserManager, mockedResourceManager,
-        mockedExtensionManager, mockedVocabularies, mockedRegistrationManager, warnings, client, mockPublishingMonitor);
+        mockedExtensionManager, mockedVocabularies, mockedSchemaManager, mockedRegistrationManager, warnings, client,
+        mockPublishingMonitor, mockExtensionMonitor);
   }
 
   /**

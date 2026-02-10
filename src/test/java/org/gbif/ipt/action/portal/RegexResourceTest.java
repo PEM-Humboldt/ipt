@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +15,7 @@ package org.gbif.ipt.action.portal;
 
 import java.util.regex.Pattern;
 
+import org.gbif.ipt.IptBaseTest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Unit test for the regex in the resource page.
  */
 
-public class RegexResourceTest {
+public class RegexResourceTest extends IptBaseTest {
 
   // It Matches for schemes http, https and ftp.
   private static final String REGEX = "(http(s)?|ftp)://(([\\w-]+\\.)?)+[\\w-]+(:\\d+)?+(/[\\w- ./-?%&=]*)?";

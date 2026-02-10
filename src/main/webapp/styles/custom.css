@@ -29,14 +29,103 @@ footer {
     background-color: #23212f;
 }
 
+/* Footer CEIBA: layout oscuro, tres zonas (I2D | GBIF+enlaces | Humboldt) */
+.footer-ceiba {
+    background-color: #23212f !important;
+    color: #fff;
+}
+
+.footer-ceiba .footer-row {
+    min-height: 70px;
+}
+
+.footer-ceiba .footer-brand-link {
+    text-decoration: none;
+    color: #fff;
+}
+
+.footer-ceiba .logo-I2D {
+    padding-right: 12px;
+    height: 50px;
+    flex-shrink: 0;
+}
+
+.footer-ceiba .footer-i2d-text {
+    padding-left: 12px;
+    border-left: 1px solid #fff;
+    font-size: 0.7rem;
+    line-height: 1.5;
+    text-transform: uppercase;
+    font-family: 'Montserrat', Helvetica, Arial, sans-serif;
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    display: flex;
+    flex-direction: column;
+}
+
+.footer-ceiba .footer-gbif-logo {
+    width: 40px;
+}
+
+.footer-ceiba .footer-version-text {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.85rem;
+}
+
+.footer-ceiba .footer-links.list-inline {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+}
+
+.footer-ceiba .footer-links.list-inline .list-inline-item {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.footer-ceiba ul.footer-links li.list-inline-item {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.footer-ceiba .footer-links .ipt-footer-item.footer-sep {
+    color: #fff;
+    margin: 0 0.6rem !important;
+    padding: 0 !important;
+}
+
+/* Forzar que no haya espacios entre elementos inline */
+.footer-ceiba .footer-links {
+    font-size: 0;
+}
+
+.footer-ceiba .footer-links .list-inline-item {
+    font-size: 0.875rem;
+}
+
+.footer-ceiba .footer-link-ceiba {
+    color: #4ba2ce !important;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.footer-ceiba .footer-link-ceiba:hover {
+    color: #6bb4dc !important;
+    text-decoration: underline;
+}
+
+.footer-ceiba .logo-IAvH {
+    height: 60px;
+    filter: brightness(0) invert(1);
+}
+
+/* Compatibilidad con estructura anterior por si se usa en otras páginas */
 .logosI2D {
-    display:flex;
+    display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
     align-items: center;
-}
-
-.logosI2D {
     vertical-align: middle;
 }
 
@@ -44,16 +133,16 @@ img.logo-I2D {
     padding-right: 10px;
     display: inline-block;
     height: 60px;
-    vertical-align:middle;
+    vertical-align: middle;
 }
 
 .logosI2D h6 {
-    color:#fff;
+    color: #fff;
     padding-left: 10px;
     border-left: 1px solid #fff;
     text-align: left;
     text-transform: uppercase;
-    font-family: 'Montserrat',Helvetica,Arial,sans-serif;
+    font-family: 'Montserrat', Helvetica, Arial, sans-serif;
     display: inline-block;
     vertical-align: middle;
 }
@@ -61,4 +150,31 @@ img.logo-I2D {
 .logosI2D a {
     text-decoration: none;
     color: #fff;
+}
+
+/* Ocultar completamente el spinner de DataTables - selector específico */
+#rtable_processing,
+#rtable_processing > div,
+#rtable_processing > div > div,
+.dataTables_processing,
+.dataTables_processing > div,
+.dataTables_processing > div > div,
+div.dataTables_processing > div:last-child > div,
+.dataTables_wrapper .dataTables_processing,
+.inline-spinner,
+.inline-spinner div {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Desactivar las animaciones de los spinners */
+.inline-spinner div:nth-child(1),
+.inline-spinner div:nth-child(2),
+.inline-spinner div:nth-child(3),
+.inline-spinner div:nth-child(4) {
+    animation: none !important;
 }

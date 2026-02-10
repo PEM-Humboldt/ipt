@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,7 +13,7 @@
  */
 package org.gbif.ipt.validation;
 
-import org.gbif.metadata.eml.Agent;
+import org.gbif.metadata.eml.ipt.model.Agent;
 
 /**
  * Perform all kind of validation to the Agent object.
@@ -25,11 +23,11 @@ public class AgentValidator extends BaseValidator {
   /**
    * This method validates whether an agent has the minimum information to be contacted.
    *
-   * @return true if name (at least lastname) and email exist. Otherwise return false.
+   * @return true if name (at least lastname) and email exist. Otherwise, return false.
    */
   public static boolean hasCompleteContactInfo(Agent agent) {
-    return agent != null && agent.getFullName() != null && !(agent.getFullName().length() == 0)
-      && agent.getEmail() != null && !(agent.getEmail().length() == 0);
+    return agent != null && agent.getFullName() != null && !(agent.getFullName().isEmpty())
+      && agent.getEmail() != null && !agent.getEmail().isEmpty() && !agent.getEmail().get(0).isEmpty();
 
   }
 }

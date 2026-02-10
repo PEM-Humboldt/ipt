@@ -4,13 +4,30 @@
 [#assign currentMenu = "manage"/]
 [#include "/WEB-INF/pages/inc/menu.ftl"/]
 
-<main class="container">
+<div class="container px-0">
+    [#include "/WEB-INF/pages/inc/action_alerts_warnings.ftl"]
+    [#include "/WEB-INF/pages/inc/action_alerts_errors.ftl"]
+</div>
 
-    <div class="my-3 p-3 bg-body rounded shadow-sm">
-        [#include "/WEB-INF/pages/inc/action_alerts.ftl"]
+<div class="container-fluid bg-body border-bottom">
+    <div class="container bg-body border rounded-2 mb-4">
+        <div class="container my-3 p-3">
+            <div class="text-center fs-smaller">
+                [@s.text name="basic.error"/]
+            </div>
 
-        <h5 class="border-bottom pb-2 mb-2 mx-md-4 mx-2 pt-2 text-gbif-header fw-400 text-center">[@s.text name="manage.404.title"/]</h5>
-        <p class="mx-md-4 mx-2 text-center">[@s.text name="manage.404.body"/]</p>
+            <div class="text-center">
+                <h1 class="pb-2 mb-0 pt-2 text-gbif-header fs-2 fw-normal">
+                    [@s.text name="manage.404.title"/]
+                </h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<main class="container main-content-container">
+    <div class="my-3 p-3">
+        <p class="text-center">[@s.text name="manage.404.body"/]</p>
     </div>
 </main>
 

@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,15 +19,16 @@ import org.gbif.dwc.terms.DwcTerm;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.gbif.ipt.IptBaseTest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ExtensionMappingTest {
+public class ExtensionMappingTest extends IptBaseTest {
 
   @Test
   public void testFieldsOrderedAlphabetically() {
-    Set<PropertyMapping> fields = new TreeSet<PropertyMapping>();
+    Set<PropertyMapping> fields = new TreeSet<>();
 
     // initialize PropertyMapping for DwC month term
     PropertyMapping field0 = new PropertyMapping();

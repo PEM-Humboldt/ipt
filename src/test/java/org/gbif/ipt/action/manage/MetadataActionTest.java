@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,13 +14,16 @@
 package org.gbif.ipt.action.manage;
 
 import org.gbif.api.model.common.DOI;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.ConfigWarnings;
+import org.gbif.ipt.config.DataDir;
 import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.voc.IdentifierStatus;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.VocabulariesManager;
 import org.gbif.ipt.service.manage.ResourceManager;
+import org.gbif.ipt.service.manage.ResourceMetadataInferringService;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 import org.gbif.ipt.utils.MapUtils;
 
@@ -37,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-public class MetadataActionTest {
+public class MetadataActionTest extends IptBaseTest {
 
   MetadataAction action;
   Map<String, String> datasetSubtypes;
@@ -47,7 +48,8 @@ public class MetadataActionTest {
 
     // initiate action
     action = new MetadataAction(mock(SimpleTextProvider.class), mock(AppConfig.class), mock(RegistrationManager.class),
-      mock(ResourceManager.class), mock(VocabulariesManager.class), mock(ConfigWarnings.class));
+      mock(ResourceManager.class), mock(VocabulariesManager.class), mock(ResourceMetadataInferringService.class),
+      mock(ConfigWarnings.class), mock(DataDir.class));
 
     // mock creation of datasetSubtypes Map, with 2 occurrence subtypes, and 6 checklist subtypes
     datasetSubtypes = new LinkedHashMap<>();
@@ -105,7 +107,7 @@ public class MetadataActionTest {
 
   @Test
   public void testLicensesProperties() {
-    assertEquals(6, MetadataAction.licenseProperties().size());
+    assertEquals(9, MetadataAction.licenseProperties().size());
   }
 
   @Test
@@ -114,6 +116,7 @@ public class MetadataActionTest {
     assertEquals(4, action.getLicenses().size()); // includes "select a license"
     assertEquals("Select a license", action.getLicenses().get(""));
     assertEquals(3, action.getLicenseTexts().size());
+    assertEquals(3, action.getLicenseUrls().size());
   }
 
   @Test

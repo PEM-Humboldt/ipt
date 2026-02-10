@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,13 +15,14 @@ package org.gbif.ipt.utils;
 
 import java.util.stream.Stream;
 
+import org.gbif.ipt.IptBaseTest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class XSSUtilTest {
+public class XSSUtilTest extends IptBaseTest {
 
   /**
    * Additional requests to test can be added here.

@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +13,7 @@
  */
 package org.gbif.ipt.action.portal;
 
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.utils.HttpClient;
 import org.gbif.utils.HttpUtil;
 
@@ -24,7 +23,7 @@ import java.net.URL;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-public class ResourceFileActionTest {
+public class ResourceFileActionTest extends IptBaseTest {
 
   /**
    * Manual test to tryout the conditional get archive download

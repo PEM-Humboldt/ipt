@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,10 +13,12 @@
  */
 package org.gbif.ipt.action.manage;
 
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.DataDir;
 import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.service.DeletionNotAllowedException;
+import org.gbif.ipt.service.admin.DataPackageSchemaManager;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.VocabulariesManager;
 import org.gbif.ipt.service.manage.ResourceManager;
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class CreateResourceActionTest {
+public class CreateResourceActionTest extends IptBaseTest {
   private static final Logger LOG = LogManager.getLogger(CreateResourceActionTest.class);
   private static final String SHORTNAME = "bugs";
   private CreateResourceAction action;
@@ -71,7 +71,7 @@ public class CreateResourceActionTest {
     // mock action
     action =
       new CreateResourceAction(mock(SimpleTextProvider.class), mock(AppConfig.class), mock(RegistrationManager.class),
-        mockResourceManager, mockDataDir, mock(VocabulariesManager.class));
+        mockResourceManager, mockDataDir, mock(VocabulariesManager.class), mock(DataPackageSchemaManager.class));
   }
 
   /**

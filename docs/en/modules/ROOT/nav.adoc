@@ -2,10 +2,9 @@
 * xref:introduction.adoc[]
 * xref:getting-started.adoc[]
 ** xref:requirements.adoc[]
-** xref:data-hosting-centres.adoc[]
 ** xref:installation.adoc[]
 *** xref:tomcat-installation-linux.adoc[]
-*** xref:tomcat-installation-windows.adoc[]
+//*** xref:tomcat-installation-windows.adoc[]
 ** xref:initial-setup.adoc[]
 * xref:overview.adoc[]
 * xref:home.adoc[]
@@ -23,7 +22,6 @@
 * Best Practice Guides
 ** xref:gbif-metadata-profile.adoc[Resource metadata]
 ** xref:best-practices-checklists.adoc[Checklist Data]
-** Occurrence Data (pending)
 ** xref:best-practices-sampling-event-data.adoc[Sampling Event Data]
 * xref:faq.adoc[]
 * Contributing

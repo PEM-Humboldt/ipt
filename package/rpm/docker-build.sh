@@ -1,28 +1,42 @@
 #!/bin/bash -e
 
+gitTag=$(git describe --tags --abbrev=0)
+nr_ver=$(echo $gitTag | sed s/ipt-//)
+echo "Building version $nr_ver"
+
+OS_TYPE=$(uname)
+if [[ "$OS_TYPE" == "Darwin" ]]; then
+  echo "OS type is $OS_TYPE (MacOS)"
+  sed -i '' "s|%define nr_ver .*|%define nr_ver $nr_ver|" SPECS/ipt.spec
+else
+  echo "OS type is $OS_TYPE (Linux)"
+  sed -i "s|%define nr_ver .*|%define nr_ver $nr_ver|" SPECS/ipt.spec
+fi
 CURRENT_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
 
-mkdir -p $CURRENT_DIR/{RPMS,SRPMS}
-chmod 777 $CURRENT_DIR/{RPMS,SOURCES,SRPMS}
+mkdir -p $CURRENT_DIR/RPMS
+chmod 777 $CURRENT_DIR/{RPMS,SOURCES}
 
-docker pull jc21/rpmbuild-centos7
-
-echo "EL 7 build"
+echo
+echo "EL8 build using Oracle Linux"
+docker pull oraclelinux:8
 docker run --rm \
-       -v $CURRENT_DIR/RPMS:/home/rpmbuilder/rpmbuild/RPMS/ \
-       -v $CURRENT_DIR/SOURCES:/home/rpmbuilder/rpmbuild/SOURCES/ \
-       -v $CURRENT_DIR/SPECS:/home/rpmbuilder/rpmbuild/SPECS/ \
-       -v $CURRENT_DIR/SRPMS:/home/rpmbuilder/rpmbuild/SRPMS/ \
-       jc21/rpmbuild-centos7 \
-       "rpmbuild/SPECS/rpm-build.sh"
+       -e nr_ver=$nr_ver \
+       -v $CURRENT_DIR/RPMS:/root/rpmbuild/RPMS/ \
+       -v $CURRENT_DIR/SOURCES:/root/rpmbuild/SOURCES/ \
+       -v $CURRENT_DIR/SPECS:/root/rpmbuild/SPECS/ \
+       oraclelinux:8 \
+       "/root/rpmbuild/SPECS/rpm-build.sh"
 
-echo "EL 8 build"
+echo
+echo "EL9 build using Oracle Linux"
+docker pull oraclelinux:9
 docker run --rm \
-       -v $CURRENT_DIR/RPMS:/home/rpmbuilder/rpmbuild/RPMS/ \
-       -v $CURRENT_DIR/SOURCES:/home/rpmbuilder/rpmbuild/SOURCES/ \
-       -v $CURRENT_DIR/SPECS:/home/rpmbuilder/rpmbuild/SPECS/ \
-       -v $CURRENT_DIR/SRPMS:/home/rpmbuilder/rpmbuild/SRPMS/ \
-       jc21/rpmbuild-centos8 \
-       "rpmbuild/SPECS/rpm-build.sh"
+       -e nr_ver=$nr_ver \
+       -v $CURRENT_DIR/RPMS:/root/rpmbuild/RPMS/ \
+       -v $CURRENT_DIR/SOURCES:/root/rpmbuild/SOURCES/ \
+       -v $CURRENT_DIR/SPECS:/root/rpmbuild/SPECS/ \
+       oraclelinux:9 \
+       "/root/rpmbuild/SPECS/rpm-build.sh"
 
-chmod 755 $CURRENT_DIR/{RPMS,SOURCES,SRPMS}
+chmod 755 $CURRENT_DIR/{RPMS,SOURCES}

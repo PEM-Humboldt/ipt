@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -51,8 +49,7 @@ public abstract class ReportingTask {
    *
    * @throws IOException if BufferedWriter to publication log file writer could not be created
    */
-  protected ReportingTask(int reportingIntervall, String resourceShortname, ReportHandler handler, DataDir dataDir)
-    throws IOException {
+  protected ReportingTask(int reportingIntervall, String resourceShortname, ReportHandler handler, DataDir dataDir) {
     this.resourceShortname = resourceShortname;
     this.handler = handler;
     this.reportingIntervall = reportingIntervall;
@@ -119,12 +116,14 @@ public abstract class ReportingTask {
    * @param resourceShortname resource short name
    *
    * @return BufferedWriter
-   *
-   * @throws IOException if publication log writer could not be created
    */
-  private BufferedWriter getPublicationLogWriter(String resourceShortname) throws IOException {
+  protected BufferedWriter getPublicationLogWriter(String resourceShortname) {
     File logFile = dataDir.resourcePublicationLogFile(resourceShortname);
-    return Files.newBufferedWriter(logFile.toPath(), StandardCharsets.UTF_8);
+    try {
+      return Files.newBufferedWriter(logFile.toPath(), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**

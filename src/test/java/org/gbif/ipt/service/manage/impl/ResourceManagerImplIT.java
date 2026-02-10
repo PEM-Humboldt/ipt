@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,6 +20,7 @@ import org.gbif.datacite.rest.client.configuration.ClientConfiguration;
 import org.gbif.doi.metadata.datacite.DataCiteMetadata;
 import org.gbif.doi.service.DoiService;
 import org.gbif.doi.service.datacite.RestJsonApiDataCiteService;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.config.DataDir;
@@ -31,28 +30,36 @@ import org.gbif.ipt.model.Resource;
 import org.gbif.ipt.model.User;
 import org.gbif.ipt.model.VersionHistory;
 import org.gbif.ipt.model.converter.ConceptTermConverter;
+import org.gbif.ipt.model.converter.DataPackageFieldConverter;
+import org.gbif.ipt.model.converter.DataPackageIdentifierConverter;
+import org.gbif.ipt.model.converter.ExtensionMappingConverter;
+import org.gbif.ipt.model.converter.TableSchemaNameConverter;
 import org.gbif.ipt.model.converter.ExtensionRowTypeConverter;
 import org.gbif.ipt.model.converter.JdbcInfoConverter;
 import org.gbif.ipt.model.converter.OrganisationKeyConverter;
-import org.gbif.ipt.model.converter.PasswordConverter;
+import org.gbif.ipt.model.converter.PasswordEncrypter;
 import org.gbif.ipt.model.converter.UserEmailConverter;
 import org.gbif.ipt.model.voc.DOIRegistrationAgency;
 import org.gbif.ipt.model.voc.IdentifierStatus;
 import org.gbif.ipt.model.voc.PublicationStatus;
+import org.gbif.ipt.service.admin.DataPackageSchemaManager;
 import org.gbif.ipt.service.admin.ExtensionManager;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.UserAccountManager;
 import org.gbif.ipt.service.admin.VocabulariesManager;
+import org.gbif.ipt.service.manage.MetadataReader;
+import org.gbif.ipt.service.manage.ResourceMetadataInferringService;
 import org.gbif.ipt.service.manage.SourceManager;
 import org.gbif.ipt.service.registry.RegistryManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 import org.gbif.ipt.task.Eml2Rtf;
+import org.gbif.ipt.task.GenerateDataPackageFactory;
 import org.gbif.ipt.task.GenerateDwcaFactory;
 import org.gbif.ipt.utils.DOIUtils;
 import org.gbif.ipt.utils.DataCiteMetadataBuilder;
-import org.gbif.metadata.eml.Agent;
-import org.gbif.metadata.eml.Eml;
-import org.gbif.metadata.eml.EmlWriter;
+import org.gbif.metadata.eml.ipt.IptEmlWriter;
+import org.gbif.metadata.eml.ipt.model.Agent;
+import org.gbif.metadata.eml.ipt.model.Eml;
 import org.gbif.utils.file.properties.PropertiesUtil;
 
 import java.io.File;
@@ -85,7 +92,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ResourceManagerImplIT {
+public class ResourceManagerImplIT extends IptBaseTest {
 
   private static final Logger LOG = LogManager.getLogger(ResourceManagerImplIT.class);
   private static DataDir MOCK_DATA_DIR = mock(DataDir.class);
@@ -108,11 +115,12 @@ public class ResourceManagerImplIT {
     UserEmailConverter mockEmailConverter = new UserEmailConverter(mockUserAccountManager);
     ExtensionRowTypeConverter mockExtensionRowTypeConverter = mock(ExtensionRowTypeConverter.class);
     ExtensionManager mockExtensionManager = mock(ExtensionManager.class);
+    DataPackageSchemaManager mockSchemaManager = mock(DataPackageSchemaManager.class);
     JdbcInfoConverter mockJdbcConverter = mock(JdbcInfoConverter.class);
     SourceManager mockSourceManager = mock(SourceManager.class);
     RegistryManager mockRegistryManager = MockRegistryManager.buildMock();
     GenerateDwcaFactory mockDwcaFactory = mock(GenerateDwcaFactory.class);
-    PasswordConverter mockPasswordConverter = mock(PasswordConverter.class);
+    PasswordEncrypter mockPasswordEncrypter = mock(PasswordEncrypter.class);
     Eml2Rtf mockEml2Rtf = mock(Eml2Rtf.class);
     VocabulariesManager mockVocabulariesManager = mock(VocabulariesManager.class);
     SimpleTextProvider mockSimpleTextProvider = mock(SimpleTextProvider.class);
@@ -151,12 +159,29 @@ public class ResourceManagerImplIT {
     DoiService dataCiteService = new RestJsonApiDataCiteService(cfg.getBaseApiUrl(), cfg.getUser(), cfg.getPassword());
     when(mockRegistrationManagerDataCite.getDoiService()).thenReturn(dataCiteService);
 
+    ResourceConvertersManager mockResourceConvertersManager = new ResourceConvertersManager(
+        mockEmailConverter, new OrganisationKeyConverter(mockRegistrationManagerDataCite), mock(ExtensionMappingConverter.class), mockExtensionRowTypeConverter,
+        mockConceptTermConverter, mock(DataPackageIdentifierConverter.class),
+        mock(TableSchemaNameConverter.class), mock(DataPackageFieldConverter.class), mockJdbcConverter);
+
     // mock ResourceManagerImpl for DataCite
-    ResourceManagerImpl managerDataCite = new ResourceManagerImpl(mockAppConfig, MOCK_DATA_DIR, mockEmailConverter,
-        new OrganisationKeyConverter(mockRegistrationManagerDataCite), mockExtensionRowTypeConverter, mockJdbcConverter,
-        mockSourceManager, mockExtensionManager, mockRegistryManager, mockConceptTermConverter, mockDwcaFactory,
-        mockPasswordConverter, mockEml2Rtf, mockVocabulariesManager, mockSimpleTextProvider,
-        mockRegistrationManagerDataCite);
+    ResourceManagerImpl managerDataCite = new ResourceManagerImpl(
+        mockAppConfig,
+        MOCK_DATA_DIR,
+        mockResourceConvertersManager,
+        mockSourceManager,
+        mockExtensionManager,
+        mockSchemaManager,
+        mockRegistryManager,
+        mockDwcaFactory,
+        mock(GenerateDataPackageFactory.class),
+        mockPasswordEncrypter,
+        mockEml2Rtf,
+        mockVocabulariesManager,
+        mockSimpleTextProvider,
+        mockRegistrationManagerDataCite,
+        mock(MetadataReader.class),
+        mock(ResourceMetadataInferringService.class));
 
     return Stream.of(
         Arguments.of(managerDataCite, DOIRegistrationAgency.DATACITE, DOIUtils.mintDOI(DOIRegistrationAgency.DATACITE, Constants.TEST_DOI_PREFIX), mockRegistrationManagerDataCite)
@@ -196,7 +221,7 @@ public class ResourceManagerImplIT {
     o.setKey(UUID.randomUUID().toString());
     resource.setOrganisation(o);
 
-    resource.setEmlVersion(Constants.INITIAL_RESOURCE_VERSION);
+    resource.setMetadataVersion(Constants.INITIAL_RESOURCE_VERSION);
     resource.setStatus(PublicationStatus.PUBLIC);
     assertNull(resource.getLastPublished());
   }
@@ -262,13 +287,13 @@ public class ResourceManagerImplIT {
     resource.addVersionHistory(history);
 
     // persist eml file for version 1.0
-    EmlWriter.writeEmlFile(TMP_EML_FILE, resource.getEml());
+    IptEmlWriter.writeEmlFile(TMP_EML_FILE, resource.getEml());
 
     // update DOI for next published version
     BigDecimal nextVersion = resource.getNextVersion();
-    resource.setEmlVersion(nextVersion);
+    resource.setMetadataVersion(nextVersion);
     assertEquals("1.1", resource.getEmlVersion().toPlainString());
-    assertEquals("1.0", resource.getReplacedEmlVersion().toPlainString());
+    assertEquals("1.0", resource.getReplacedMetadataVersion().toPlainString());
     manager.doUpdateDoi(resource);
     LOG.info("DOI was updated successfully, DOI=" + doi.getDoiName());
 
@@ -308,11 +333,11 @@ public class ResourceManagerImplIT {
     // replace DOI with new DOI, and publish version 2.0
     assertEquals(IdentifierStatus.PUBLIC_PENDING_PUBLICATION, resource.getIdentifierStatus());
     nextVersion = resource.getNextVersion(); // new major version
-    resource.setEmlVersion(nextVersion);
+    resource.setMetadataVersion(nextVersion);
     assertEquals("2.0", resource.getEmlVersion().toPlainString());
     assertNotNull(resource.getAssignedDoi());
-    assertEquals("1.1", resource.getReplacedEmlVersion().toPlainString());
-    manager.doReplaceDoi(resource, resource.getEmlVersion(), resource.getReplacedEmlVersion());
+    assertEquals("1.1", resource.getReplacedMetadataVersion().toPlainString());
+    manager.doReplaceDoi(resource, resource.getEmlVersion(), resource.getReplacedMetadataVersion());
 
     // check new DOI is registered now, and its target is equal to resource URI
     doiData = registrationManager.getDoiService().resolve(newDoi);

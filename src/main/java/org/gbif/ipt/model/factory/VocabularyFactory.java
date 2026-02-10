@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,13 +20,12 @@ import org.gbif.ipt.model.VocabularyTerm;
 import java.io.IOException;
 import java.io.InputStream;
 
+import javax.inject.Inject;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.commons.digester.Digester;
 import org.xml.sax.SAXException;
-
-import com.google.inject.Inject;
 
 /**
  * Class used to build Vocabularies from XML definitions.

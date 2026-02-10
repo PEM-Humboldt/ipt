@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +16,7 @@ package org.gbif.ipt.action.manage;
 import org.gbif.api.model.common.DOI;
 import org.gbif.doi.service.DoiService;
 import org.gbif.doi.service.datacite.RestJsonApiDataCiteService;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.config.DataDir;
@@ -30,6 +29,7 @@ import org.gbif.ipt.model.voc.IdentifierStatus;
 import org.gbif.ipt.model.voc.PublicationStatus;
 import org.gbif.ipt.service.AlreadyExistingException;
 import org.gbif.ipt.service.ImportException;
+import org.gbif.ipt.service.admin.DataPackageSchemaManager;
 import org.gbif.ipt.service.admin.ExtensionManager;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.admin.UserAccountManager;
@@ -37,11 +37,12 @@ import org.gbif.ipt.service.admin.VocabulariesManager;
 import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.service.registry.RegistryManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
+import org.gbif.ipt.task.GenerateDataPackageFactory;
 import org.gbif.ipt.task.GenerateDwcaFactory;
 import org.gbif.ipt.utils.DOIUtils;
-import org.gbif.metadata.eml.Citation;
-import org.gbif.metadata.eml.Eml;
-import org.gbif.metadata.eml.EmlWriter;
+import org.gbif.metadata.eml.ipt.IptEmlWriter;
+import org.gbif.metadata.eml.ipt.model.Citation;
+import org.gbif.metadata.eml.ipt.model.Eml;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,7 +68,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class OverviewActionTest {
+public class OverviewActionTest extends IptBaseTest {
 
   private OverviewAction action;
   private File emlFile;
@@ -91,8 +92,18 @@ public class OverviewActionTest {
 
     // mock action
     action =
-      new OverviewAction(mock(SimpleTextProvider.class), mockCfg, mock(RegistrationManager.class), mockResourceManager,
-        mock(UserAccountManager.class), mock(ExtensionManager.class), mock(GenerateDwcaFactory.class), mock(VocabulariesManager.class), mock(RegistryManager.class));
+      new OverviewAction(
+          mock(SimpleTextProvider.class),
+          mockCfg,
+          mock(RegistrationManager.class),
+          mockResourceManager,
+          mock(UserAccountManager.class),
+          mock(ExtensionManager.class),
+          mock(GenerateDwcaFactory.class),
+          mock(GenerateDataPackageFactory.class),
+          mock(VocabulariesManager.class),
+          mock(RegistryManager.class),
+          mock(DataPackageSchemaManager.class));
   }
 
   @Test
@@ -135,7 +146,7 @@ public class OverviewActionTest {
       "This work is licensed under <a href=\"http://creativecommons.org/publicdomain/zero/1.0/legalcode\">Creative Commons CCZero (CC0) 1.0 License</a>.");
     assertEquals("http://creativecommons.org/publicdomain/zero/1.0/legalcode", r.getEml().parseLicenseUrl());
     assertTrue(r.isAssignedGBIFSupportedLicense());
-    EmlWriter.writeEmlFile(emlFile, r.getEml());
+    IptEmlWriter.writeEmlFile(emlFile, r.getEml());
     User user = new User();
     user.setEmail("jsmith@gbif.org");
     VersionHistory vh = new VersionHistory(new BigDecimal("1.0"), new Date(), PublicationStatus.PRIVATE);
@@ -151,7 +162,7 @@ public class OverviewActionTest {
       "This work is licensed under <a href=\"http://creativecommons.org/publicdomain/zero/1.0/legalcode\">Creative Commons CCZero (CC0) 1.0 License</a>.");
     assertEquals("http://creativecommons.org/publicdomain/zero/1.0/legalcode", r.getEml().parseLicenseUrl());
     assertTrue(r.isAssignedGBIFSupportedLicense());
-    EmlWriter.writeEmlFile(emlFile, r.getEml());
+    IptEmlWriter.writeEmlFile(emlFile, r.getEml());
     User user = new User();
     user.setEmail("jsmith@gbif.org");
     VersionHistory vh = new VersionHistory(new BigDecimal("1.0"), new Date(), PublicationStatus.PRIVATE);
@@ -172,7 +183,7 @@ public class OverviewActionTest {
       "This work is licensed under a <a href=\"http://opendatacommons.org/licenses/odbl/1.0\">Open Data Commons Open Database License (ODbL) 1.0</a>");
     assertEquals("http://opendatacommons.org/licenses/odbl/1.0", r.getEml().parseLicenseUrl());
     assertFalse(r.isAssignedGBIFSupportedLicense());
-    EmlWriter.writeEmlFile(emlFile, r.getEml());
+    IptEmlWriter.writeEmlFile(emlFile, r.getEml());
     User user = new User();
     user.setEmail("jsmith@gbif.org");
     VersionHistory vh = new VersionHistory(new BigDecimal("1.0"), new Date(), PublicationStatus.PRIVATE);
@@ -322,9 +333,18 @@ public class OverviewActionTest {
     DoiService mockDataCiteService = mock(RestJsonApiDataCiteService.class);
     when(mockRegistrationManager.getDoiService()).thenReturn(mockDataCiteService);
     // mock action
-    action = new OverviewAction(mock(SimpleTextProvider.class), mock(AppConfig.class), mockRegistrationManager,
-      mock(ResourceManager.class), mock(UserAccountManager.class), mock(ExtensionManager.class), mock(GenerateDwcaFactory.class),
-            mock(VocabulariesManager.class), mock(RegistryManager.class));
+    action = new OverviewAction(
+        mock(SimpleTextProvider.class),
+        mock(AppConfig.class),
+        mockRegistrationManager,
+        mock(ResourceManager.class),
+        mock(UserAccountManager.class),
+        mock(ExtensionManager.class),
+        mock(GenerateDwcaFactory.class),
+        mock(GenerateDataPackageFactory.class),
+        mock(VocabulariesManager.class),
+        mock(RegistryManager.class),
+        mock(DataPackageSchemaManager.class));
     action.setResource(r);
     action.setUndelete("true");
     assertEquals("input", action.undelete());
@@ -362,9 +382,18 @@ public class OverviewActionTest {
     when(mockRegistrationManager.findPrimaryDoiAgencyAccount()).thenReturn(doiAccoutActivated);
 
     // mock action
-    action = new OverviewAction(mock(SimpleTextProvider.class), mock(AppConfig.class), mockRegistrationManager,
-      mock(ResourceManager.class), mock(UserAccountManager.class), mock(ExtensionManager.class), mock(GenerateDwcaFactory.class),
-            mock(VocabulariesManager.class), mock(RegistryManager.class));
+    action = new OverviewAction(
+        mock(SimpleTextProvider.class),
+        mock(AppConfig.class),
+        mockRegistrationManager,
+        mock(ResourceManager.class),
+        mock(UserAccountManager.class),
+        mock(ExtensionManager.class),
+        mock(GenerateDwcaFactory.class),
+        mock(GenerateDataPackageFactory.class),
+        mock(VocabulariesManager.class),
+        mock(RegistryManager.class),
+        mock(DataPackageSchemaManager.class));
     action.setResource(r);
     action.setUndelete("true");
     assertEquals("input", action.undelete());

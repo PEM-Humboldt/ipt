@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +22,7 @@ import org.gbif.ipt.model.User;
 import org.gbif.ipt.service.admin.RegistrationManager;
 import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
-import org.gbif.metadata.eml.Eml;
+import org.gbif.metadata.eml.ipt.model.Eml;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,8 +37,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Strings;
-import com.google.inject.Inject;
-import org.apache.commons.lang3.StringUtils;
+import javax.inject.Inject;
 
 /**
  * The Action responsible for serving datadir resource files.
@@ -58,21 +55,27 @@ public class ResourceFileAction extends PortalBaseAction {
   protected String filename;
 
   @Inject
-  public ResourceFileAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
-    DataDir dataDir, ResourceManager resourceManager) {
+  public ResourceFileAction(
+      SimpleTextProvider textProvider,
+      AppConfig cfg,
+      RegistrationManager registrationManager,
+      DataDir dataDir,
+      ResourceManager resourceManager) {
     super(textProvider, cfg, registrationManager, resourceManager);
     this.dataDir = dataDir;
   }
 
   /**
-   * Handles DwC-A file download request. The method checks if the request is a conditional get with If-Modified-Since
-   * header. If the If-Modified-Since date is greater than the last published date, the NOT_MODIFIED string is returned.
+   * Handles DwC-A or data package archive file download request.
+   * <p>
    * Specific versions can also be resolved depending on the optional parameter version "v". If no specific version is
-   * requested the latest published version is used.
+   *  requested, the latest published version is used.
+   * <p>
+   * Conditional (If-Modified-Since) requests are handled in execute().
    *
    * @return Struts2 result string
    */
-  public String dwca() {
+  public String archive() {
     if (resource == null) {
       return NOT_FOUND;
     }
@@ -129,12 +132,19 @@ public class ResourceFileAction extends PortalBaseAction {
       }
     }
 
-    // serve file
-    data = dataDir.resourceDwcaFile(resource.getShortname(), version);
-
+    boolean isDataPackageResource = resource.getDataPackageIdentifier() != null;
     // construct download filename
     StringBuilder sb = new StringBuilder();
-    sb.append("dwca-").append(resource.getShortname());
+
+    // serve file
+    if (isDataPackageResource) {
+      data = dataDir.resourceDataPackageFile(resource.getShortname(), version);
+      sb.append(Constants.DATA_PACKAGE_NAME + "-").append(resource.getShortname());
+    } else {
+      data = dataDir.resourceDwcaFile(resource.getShortname(), version);
+      sb.append(Constants.DWC_ARCHIVE_NAME + "-").append(resource.getShortname());
+    }
+
     if (version != null) {
       sb.append("-v").append(version.toPlainString());
     }
@@ -146,12 +156,12 @@ public class ResourceFileAction extends PortalBaseAction {
   }
 
   /**
-   * Handles EML file download request. Specific versions can also be resolved depending on the optional parameter
+   * Handles metadata file download request. Specific versions can also be resolved depending on the optional parameter
    * "version". If no specific version is requested the latest published version is used.
    *
    * @return Struts2 result string
    */
-  public String eml() {
+  public String metadata() {
     if (resource == null) {
       return NOT_FOUND;
     }
@@ -166,16 +176,39 @@ public class ResourceFileAction extends PortalBaseAction {
       }
     }
 
-    data = dataDir.resourceEmlFile(resource.getShortname(), version);
-    mimeType = "text/xml";
-
+    boolean isDataPackageResource = resource.getDataPackageIdentifier() != null;
     // construct download filename
     StringBuilder sb = new StringBuilder();
-    sb.append("eml-").append(resource.getShortname());
-    if (version != null) {
-      sb.append("-v").append(version.toPlainString());
+
+    // serve file
+    if (isDataPackageResource) {
+      if (Constants.COL_DP.equals(resource.getCoreType())) {
+        data = dataDir.resourceDatapackageMetadataFile(resource.getShortname(), resource.getCoreType(), version);
+        mimeType = "text/yaml";
+        sb.append("metadata-").append(resource.getShortname());
+        if (version != null) {
+          sb.append("-v").append(version.toPlainString());
+        }
+        sb.append(".yaml");
+      } else {
+        data = dataDir.resourceDatapackageMetadataFile(resource.getShortname(), resource.getCoreType(), version);
+        mimeType = "application/json";
+        sb.append("datapackage-").append(resource.getShortname());
+        if (version != null) {
+          sb.append("-v").append(version.toPlainString());
+        }
+        sb.append(".json");
+      }
+    } else {
+      data = dataDir.resourceEmlFile(resource.getShortname(), version);
+      mimeType = "text/xml";
+      sb.append("eml-").append(resource.getShortname());
+      if (version != null) {
+        sb.append("-v").append(version.toPlainString());
+      }
+      sb.append(".xml");
     }
-    sb.append(".xml");
+
     filename = sb.toString();
     return execute();
   }
@@ -190,6 +223,21 @@ public class ResourceFileAction extends PortalBaseAction {
     }
     try {
       inputStream = new FileInputStream(data);
+      // Set a Last-Modified header, even on 304 Not Modified responses.
+      // Round to the nearest second, as HTTP doesn't support milliseconds.
+      long lastModified = 1000 * ((data.lastModified() + 500) / 1000);
+      response.setDateHeader("Last-Modified", lastModified);
+
+      // see if we have a conditional get with If-Modified-Since header
+      try {
+        long since = req.getDateHeader("If-Modified-Since");
+        if (since >= lastModified) {
+          return NOT_MODIFIED;
+        }
+      } catch (IllegalArgumentException e) {
+        // headers might not be formed correctly, swallow
+        LOG.warn("Conditional get with If-Modified-Since header couldn't be interpreted", e);
+      }
     } catch (FileNotFoundException e) {
       LOG.warn("Data dir file not found", e);
       return NOT_FOUND;
@@ -282,16 +330,6 @@ public class ResourceFileAction extends PortalBaseAction {
   public String rtf() {
     if (resource == null) {
       return NOT_FOUND;
-    }
-
-    // if no specific version is requested, use the latest published version
-    if (version == null) {
-      BigDecimal latestVersion = resource.getLastPublishedVersionsVersion();
-      if (latestVersion == null) {
-        return NOT_FOUND;
-      } else {
-        version = latestVersion;
-      }
     }
 
     data = dataDir.resourceRtfFile(resource.getShortname(), version);

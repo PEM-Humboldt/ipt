@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +14,7 @@
 package org.gbif.ipt.validation;
 
 import org.gbif.datacite.rest.client.configuration.ClientConfiguration;
+import org.gbif.ipt.IptBaseTest;
 import org.gbif.ipt.action.admin.OrganisationsAction;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
@@ -35,6 +34,8 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class OrganisationSupportIT {
+public class OrganisationSupportIT extends IptBaseTest {
 
   private static final Logger LOG = LogManager.getLogger(OrganisationSupportIT.class);
 
@@ -54,8 +55,8 @@ public class OrganisationSupportIT {
       mock(AppConfig.class),
       mock(RegistrationManager.class),
       mock(OrganisationSupport.class),
-      mock(OrganisationsAction.RegisteredOrganisations.class),
-      mock(ResourceManager.class));
+      mock(ResourceManager.class),
+      mock(RegistryManager.class));
 
   private static AppConfig mockCfg;
   private static RegistryManager mockRegistryManager;
@@ -115,14 +116,15 @@ public class OrganisationSupportIT {
     o5.setDoiPrefix("10.9999"); // wrong
 
     return Stream.of(
-        Arguments.of(o1, true),
-        Arguments.of(o3, false),
-        Arguments.of(o5, false)
+        Arguments.of(Named.of("organisation with valid DataCite account", o1), true),
+        Arguments.of(Named.of("organisation with DataCite account that does not authenticate (wrong password)", o3), false),
+        Arguments.of(Named.of("organisation with DataCite account that does not authenticate (wrong prefix)", o5), false)
     );
   }
 
-  @ParameterizedTest
-  @MethodSource("data")
+  @ParameterizedTest(name = "[{index}] {0}")
+  @DisplayName("Validate the fields entered for a new or edited Organisation")
+  @MethodSource(value = "data")
   public void testValidate(Organisation organisation, boolean isValid) {
     LOG.info("Testing " + organisation.getDoiRegistrationAgency() + "...");
     OrganisationSupport organisationSupport = new OrganisationSupport(mockRegistryManager, mockCfg);

@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,10 +24,10 @@ public class Registration implements Serializable {
 
   private static final long serialVersionUID = 989864521100L;
 
-  // private List<Organisation> associatedOrganisations;
   private SortedMap<String, Organisation> associatedOrganisations = new TreeMap<>();
   private Organisation hostingOrganisation;
   private Ipt ipt;
+  private Network network;
 
   /**
    * @return the associatedOrganisations
@@ -87,4 +85,11 @@ public class Registration implements Serializable {
     this.ipt.setWsPassword(iptPassword);
   }
 
+  public Network getNetwork() {
+    return network;
+  }
+
+  public void setNetwork(Network network) {
+    this.network = network;
+  }
 }

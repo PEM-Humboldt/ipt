@@ -1,6 +1,4 @@
 /*
- * Copyright 2021 Global Biodiversity Information Facility (GBIF)
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -37,6 +35,8 @@ import org.gbif.ipt.validation.ExtensionMappingValidator;
 import org.gbif.ipt.validation.ExtensionMappingValidator.ValidationStatus;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -46,12 +46,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
+import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.inject.Inject;
+import com.opensymphony.xwork2.interceptor.ValidationErrorAware;
+
+import static org.gbif.ipt.config.Constants.CANCEL;
 
 /**
  * A rather complex action that deals with a single mapping configuration.
@@ -63,21 +66,28 @@ import com.google.inject.Inject;
  * Please don't add any action errors as this will trigger the validation interceptor and causes problems, use
  * {@link MappingAction#addActionWarning} instead.
  */
-public class MappingAction extends ManagerBaseAction {
+public class MappingAction extends ManagerBaseAction implements ValidationErrorAware {
 
   private static final long serialVersionUID = -831969146160030857L;
 
   // logging
   private static final Logger LOG = LogManager.getLogger(MappingAction.class);
 
-  private static final Pattern NORM_TERM = Pattern.compile("[\\W\\s_0-9]+");
+  private static final Pattern NORM_TERM = Pattern.compile("[^a-zA-Z0-9:]+");
+
+  public static final String DC_NAMESPACE = "http://purl.org/dc/elements/1.1";
+  public static final String DC_TERMS_NAMESPACE = "http://purl.org/dc/terms";
+  public static final String DWC_NAMESPACE = "https://dwc.tdwg.org/terms";
+  public static final String DC_PREFIX = "dc:";
+  public static final String DC_TERMS_PREFIX = "dcterms:";
+  public static final String DWC_PREFIX = "dwc:";
 
   private final ExtensionManager extensionManager;
   private final SourceManager sourceManager;
   private final VocabulariesManager vocabManager;
   // config
   private ExtensionMapping mapping;
-  private List<String> columns;
+  private List<String> columns = new ArrayList<>();
   private final Comparator[] comparators = Comparator.values();
   private List<String[]> peek;
   private List<PropertyMapping> fields;
@@ -91,9 +101,14 @@ public class MappingAction extends ManagerBaseAction {
   private boolean doiUsedForDatasetId;
 
   @Inject
-  public MappingAction(SimpleTextProvider textProvider, AppConfig cfg, RegistrationManager registrationManager,
-    ResourceManager resourceManager, ExtensionManager extensionManager, SourceManager sourceManager,
-    VocabulariesManager vocabManager) {
+  public MappingAction(
+      SimpleTextProvider textProvider,
+      AppConfig cfg,
+      RegistrationManager registrationManager,
+      ResourceManager resourceManager,
+      ExtensionManager extensionManager,
+      SourceManager sourceManager,
+      VocabulariesManager vocabManager) {
     super(textProvider, cfg, registrationManager, resourceManager);
     this.extensionManager = extensionManager;
     this.sourceManager = sourceManager;
@@ -141,8 +156,10 @@ public class MappingAction extends ManagerBaseAction {
     int idx1 = 0;
     for (String col : columns) {
       String normCol = normalizeColumnName(col);
-      if (normCol != null && TermFactory.normaliseTerm(mappingCoreid.getTerm().simpleName())
-        .equalsIgnoreCase(normCol)) {
+      if (normCol != null && (
+          termNormalizedPrefixedName(mappingCoreid.getTerm()).equalsIgnoreCase(normCol) ||
+              TermFactory.normaliseTerm(mappingCoreid.getTerm().simpleName()).equalsIgnoreCase(normCol)
+      )) {
         // mappingCoreId and mapping id column must both be set (and have the same index) to automap successfully.
         mappingCoreid.setIndex(idx1);
         mapping.setIdColumn(idx1);
@@ -158,7 +175,10 @@ public class MappingAction extends ManagerBaseAction {
       int idx2 = 0;
       for (String col : columns) {
         String normCol = normalizeColumnName(col);
-        if (normCol != null && TermFactory.normaliseTerm(f.getTerm().simpleName()).equalsIgnoreCase(normCol)) {
+        if (normCol != null && (
+            termNormalizedPrefixedName(f.getTerm()).equalsIgnoreCase(normCol) ||
+                TermFactory.normaliseTerm(f.getTerm().simpleName()).equalsIgnoreCase(normCol)
+        )) {
           f.setIndex(idx2);
           // we have automapped the term, so increment automapped counter and exit
           automapped++;
@@ -171,13 +191,15 @@ public class MappingAction extends ManagerBaseAction {
     return automapped;
   }
 
+  @Override
   public String cancel() {
-    resource.deleteMapping(mapping);
-    // set mappings modified date
-    resource.setMappingsModified(new Date());
-    // save resource
-    saveResource();
-    return SUCCESS;
+    // remove empty mapping on cancel
+    if (mapping != null && mapping.getSource() == null && mapping.getFields().isEmpty()) {
+      resource.deleteMapping(mapping);
+      // save resource
+      saveResource();
+    }
+    return CANCEL;
   }
 
   @Override
@@ -265,8 +287,10 @@ public class MappingAction extends ManagerBaseAction {
    */
   public List<String> getRedundantGroups() {
     List<String> redundantGroups = new ArrayList<>();
-    if (resource.getCoreRowType() != null && !resource.getCoreRowType()
-      .equalsIgnoreCase(mapping.getExtension().getRowType())) {
+    if (resource.getCoreRowType() != null
+        && mapping != null
+        && mapping.getExtension() != null
+        && !resource.getCoreRowType().equalsIgnoreCase(mapping.getExtension().getRowType())) {
       Extension core = extensionManager.get(resource.getCoreRowType());
       redundantGroups = extensionManager.getRedundantGroups(mapping.getExtension(), core);
     }
@@ -283,8 +307,7 @@ public class MappingAction extends ManagerBaseAction {
 
   /**
    * Normalizes an incoming column name so that it can later be compared against a ConceptTerm's simpleName.
-   * This method converts the incoming string to lower case, and will take the substring up to, but not including the
-   * first ":".
+   * This method converts the incoming string to lower case.
    *
    * @param col column name
    * @return the normalized column name, or null if the incoming name was null or empty
@@ -292,12 +315,30 @@ public class MappingAction extends ManagerBaseAction {
   String normalizeColumnName(String col) {
     if (StringUtils.isNotBlank(col)) {
       col = NORM_TERM.matcher(col.toLowerCase()).replaceAll("");
-      if (col.contains(":")) {
-        col = StringUtils.substringAfter(col, ":");
-      }
       return col;
     }
     return null;
+  }
+
+  /**
+   * Return term's prefixed with namespace name.
+   * If namespace does not match any then simple name is returned.
+   *
+   * @param term term
+   * @return term's normalized prefixed name
+   */
+  String termNormalizedPrefixedName(Term term) {
+    String termNamespace = term.namespace().toString();
+
+    if (termNamespace.startsWith(DC_NAMESPACE)) {
+      return DC_PREFIX + TermFactory.normaliseTerm(term.simpleName());
+    } else if (termNamespace.startsWith(DC_TERMS_NAMESPACE)) {
+      return DC_TERMS_PREFIX + TermFactory.normaliseTerm(term.simpleName());
+    } else if (termNamespace.startsWith(DWC_NAMESPACE)) {
+      return DWC_PREFIX + TermFactory.normaliseTerm(term.simpleName());
+    } else {
+      return TermFactory.normaliseTerm(term.simpleName());
+    }
   }
 
   @Override
@@ -330,14 +371,19 @@ public class MappingAction extends ManagerBaseAction {
       } else {
         List<ExtensionMapping> maps = resource.getMappings(id);
         mapping = maps.get(mid);
+
+        Extension ext = extensionManager.get(id);
+        if (!ext.isLatest()) {
+          addActionWarning(getText("manage.overview.mappings.extension.outdated"));
+        }
       }
     } else {
       // worst case, just redirect to resource not found page
       notFound = true;
     }
 
-
-    if (mapping != null && mapping.getExtension() != null) {
+    // skip if it's cancel request
+    if (!cancel && !delete && mapping != null && mapping.getExtension() != null) {
 
       // is source assigned yet?
       if (mapping.getSource() == null) {
@@ -393,11 +439,9 @@ public class MappingAction extends ManagerBaseAction {
           fields.add(pm);
 
           // also store PropertyMapping by group/class
-          String group = ep.getGroup();
-          if (group != null) {
-            fieldsByGroup.computeIfAbsent(group, k -> new ArrayList<>());
-            fieldsByGroup.get(group).add(pm);
-          }
+          String group = StringUtils.trimToEmpty(ep.getGroup());
+          fieldsByGroup.computeIfAbsent(group, k -> new ArrayList<>());
+          fieldsByGroup.get(group).add(pm);
 
           // for easy retrieval of PropertyMapping index by qualifiedName...
           fieldsTermIndices.put(ep.getQualname(), fields.lastIndexOf(pm));
@@ -451,17 +495,21 @@ public class MappingAction extends ManagerBaseAction {
     if (src == null) {
       columns = new ArrayList<>();
     } else {
-      peek = sourceManager.peek(src, 5);
-      // If user wants to import a source without a header lines, the columns are going to be numbered with the first
-      // non-null value as an example. Otherwise, read the file/database normally.
-      if ((src.isUrlSource() || src.isFileSource())
-          && ((SourceWithHeader) src).getIgnoreHeaderLines() == 0) {
-        columns = mapping.getColumns(peek);
-      } else {
-        columns = sourceManager.columns(src);
-      }
-      if (columns.isEmpty() && src.getName() != null) {
-        addActionWarning(getText("manage.mapping.source.no.columns", new String[] {src.getName()}));
+      try {
+        peek = sourceManager.peek(src, 5);
+        // If user wants to import a source without a header lines, the columns are going to be numbered with the first
+        // non-null value as an example. Otherwise, read the file/database normally.
+        if ((src.isUrlSource() || src.isFileSource())
+            && ((SourceWithHeader) src).getIgnoreHeaderLines() == 0) {
+          columns = mapping.getColumns(peek);
+        } else {
+          columns = sourceManager.columns(src);
+        }
+        if (columns.isEmpty() && src.getName() != null) {
+          addActionWarning(getText("manage.mapping.source.no.columns", new String[]{src.getName()}));
+        }
+      } catch (Exception e) {
+        addActionError(getText("manage.mapping.source.read.failed", new String[]{src.getName()}));
       }
     }
   }
@@ -507,7 +555,10 @@ public class MappingAction extends ManagerBaseAction {
     validateAndReport();
     LOG.debug("mapping saved..");
 
-    return defaultResult;
+    // encode id (rowType) before redirect (might be issues with '#' and other characters)
+    id = URLEncoder.encode(id, StandardCharsets.UTF_8.toString());
+
+    return "save";
   }
 
   public String saveSetSource() {
@@ -571,5 +622,12 @@ public class MappingAction extends ManagerBaseAction {
       return resource.getCoreRowType().equalsIgnoreCase(mapping.getExtension().getRowType());
     }
     return false;
+  }
+
+  // by default DefaultWorkflowInterceptor redirects to "input".
+  // "error" is necessary for this action
+  @Override
+  public String actionErrorOccurred(String currentResultName) {
+    return defaultResult;
   }
 }
