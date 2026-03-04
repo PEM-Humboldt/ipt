@@ -126,7 +126,7 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                     }
                 },
                 "aoColumns": [
-                    {"sTitle": "<@s.text name="portal.home.logo"/>", "bSearchable": false, "bSortable": false, "sClass": "desktop", "bVisible": <#if shownPublicly>true<#else>false</#if>},
+                    {"sTitle": "<@s.text name="portal.home.logo"/>", "bSearchable": false, "bSortable": false, "sClass": "desktop", "bVisible": false},
                     {"sTitle": "<@s.text name="manage.home.name"/>", "sClass": "all text-break"},
                     {"sTitle": "<@s.text name="manage.home.organisation"/>", "sClass": "desktop tablet-l"},
                     {"sTitle": "<@s.text name="manage.home.type"/>", "sClass": "desktop tablet-l tablet-p"},
@@ -134,7 +134,7 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                     {"sTitle": "<@s.text name="portal.home.records"/>", "bSearchable": false, "sType": "number", "sClass": "text-xl-end desktop"},
                     {"sTitle": "<@s.text name="manage.home.last.modified"/>", "bSearchable": false, "sClass": "text-xl-end desktop"},
                     {"sTitle": "<@s.text name="manage.home.last.publication" />", "bSearchable": false, orderSequence: ["desc", "asc"], "sClass": "text-xl-end desktop tablet-l tablet-p"},
-                    {"sTitle": "<@s.text name="manage.home.next.publication" />", "bSearchable": false, "sClass": "text-xl-end desktop"},
+                    {"sTitle": "<@s.text name="manage.home.next.publication" />", "bSearchable": false, "sClass": "text-xl-end desktop", "bVisible": false},
                     {"sTitle": "<@s.text name="manage.home.visible"/>", "bSearchable": false, "sClass": "desktop tablet-l", "bVisible": <#if shownPublicly>false<#else>true</#if>},
                     {"sTitle": "<@s.text name="portal.home.author"/>", "sClass": "desktop tablet-l", "bVisible": <#if shownPublicly>false<#else>true</#if>},
                     {"sTitle": "<@s.text name="resource.shortname"/>", "bVisible": false},
