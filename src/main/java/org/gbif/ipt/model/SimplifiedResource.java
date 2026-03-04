@@ -42,6 +42,7 @@ public class SimplifiedResource {
   private String subject;
 
   private String organisationAlias;
+  private String projectIdentifier;
   private boolean published;
   private boolean dataPackage;
 
@@ -125,6 +126,14 @@ public class SimplifiedResource {
     return organisationAlias != null ? organisationAlias : organisationName;
   }
 
+  public String getProjectIdentifier() {
+    return projectIdentifier;
+  }
+
+  public void setProjectIdentifier(String projectIdentifier) {
+    this.projectIdentifier = projectIdentifier;
+  }
+
   public String getCoreType() {
     return coreType;
   }
@@ -204,6 +213,7 @@ public class SimplifiedResource {
         && Objects.equals(organisationKey, that.organisationKey)
         && Objects.equals(organisationAlias, that.organisationAlias)
         && Objects.equals(organisationName, that.organisationName)
+        && Objects.equals(projectIdentifier, that.projectIdentifier)
         && Objects.equals(coreType, that.coreType)
         && Objects.equals(subtype, that.subtype)
         && Objects.equals(modified, that.modified)
@@ -216,7 +226,7 @@ public class SimplifiedResource {
   @Override
   public int hashCode() {
     return Objects.hash(shortname, title, status, recordsPublished, logoUrl, subject, organisationKey,
-            organisationAlias, organisationName, coreType, subtype, modified, published, lastPublished, nextPublished,
+            organisationAlias, organisationName, projectIdentifier, coreType, subtype, modified, published, lastPublished, nextPublished,
             creatorName, dataPackage);
   }
 
@@ -239,6 +249,7 @@ public class SimplifiedResource {
         .add("organisationKey='" + organisationKey + "'")
         .add("organisationAlias='" + organisationAlias + "'")
         .add("organisationAlias='" + organisationAlias + "'")
+        .add("projectIdentifier='" + projectIdentifier + "'")
         .add("published=" + published)
         .add("dataPackage=" + dataPackage)
         .toString();

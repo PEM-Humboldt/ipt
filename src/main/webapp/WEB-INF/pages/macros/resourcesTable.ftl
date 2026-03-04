@@ -62,7 +62,7 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
 
             var columnIndexName = {
                 1: "name",
-                2: "organisation",
+                2: "projectIdentifier",
                 3: "type",
                 4: "subtype",
                 5: "records",
@@ -74,7 +74,7 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
             };
             var columnNameIndex = {
                 "name": 1,
-                "organisation": 2,
+                "projectIdentifier": 2,
                 "type": 3,
                 "subtype": 4,
                 "records": 5,
@@ -128,7 +128,7 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
                 "aoColumns": [
                     {"sTitle": "<@s.text name="portal.home.logo"/>", "bSearchable": false, "bSortable": false, "sClass": "desktop", "bVisible": false},
                     {"sTitle": "<@s.text name="manage.home.name"/>", "sClass": "all text-break"},
-                    {"sTitle": "<@s.text name="manage.home.organisation"/>", "sClass": "desktop tablet-l"},
+                    {"sTitle": "<@s.text name="portal.home.project.identifier"/>", "sClass": "desktop tablet-l"},
                     {"sTitle": "<@s.text name="manage.home.type"/>", "sClass": "desktop tablet-l tablet-p"},
                     {"sTitle": "<@s.text name="manage.home.subtype"/>", "sClass": "desktop"},
                     {"sTitle": "<@s.text name="portal.home.records"/>", "bSearchable": false, "sType": "number", "sClass": "text-xl-end desktop"},
