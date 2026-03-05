@@ -183,19 +183,6 @@
                         <button type="button" class="button btn btn-outline-gbif-primary mt-1" onClick="$('#user\\.grantedAccessTo').multiSelect('select_all');"><@s.text name="admin.user.grantAccessToAll" /></button>
                         <button type="button" class="button btn btn-outline-gbif-danger mt-1" onClick="$('#user\\.grantedAccessTo').multiSelect('deselect_all');"><@s.text name="admin.user.removeAccessToAll" /></button>
                     </div>
-
-                    <div class="col-md-6">
-                        <@select name="user.role" tabindex=4 value=(user.role)! javaGetter=false options={"User":"user.roles.user", "Manager":"user.roles.manager", "Publisher":"user.roles.publisher", "Admin":"user.roles.admin"}/>
-                    </div>
-
-                    <#if newUserPage>
-                        <div class="col-md-6">
-                            <@input name="user.password" type="password" tabindex=5 />
-                        </div>
-                        <div class="col-md-6">
-                            <@input name="password2" i18nkey="user.password2" type="password" tabindex=6/>
-                        </div>
-                    </#if>
                 </div>
             </form>
         </div>
