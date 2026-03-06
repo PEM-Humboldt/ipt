@@ -98,7 +98,7 @@
         // remove phone/email/homepage/position/address from contact/creator/metadataProvider/associatedParty
         $(".removeSubEntity").click(function (event) {
             event.preventDefault();
-            copyI2DDetails(event, "associatedParty-item-");
+            removeSubEntityFromAgent(event);
             // copyPrimaryContactDetails(event, "associatedParty-item-");
         });
 
@@ -1333,6 +1333,8 @@
             event.preventDefault();
             var $target = $(event.target);
             var index = $target.attr("id").split("-")[2];
+            console.log("TARGET", $target);
+            console.log("TARGED ID", $target.attr("id"));
             // replace " with &quot; to prevent JS from failing
             $("#" + idPrefix + index + " [id$='firstName']").val("");
             $("#" + idPrefix + index + " [id$='lastName']").val("Infraestructura Institucional de Datos");
