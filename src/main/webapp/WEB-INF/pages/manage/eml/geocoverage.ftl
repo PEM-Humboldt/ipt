@@ -581,7 +581,11 @@
                                 </div>
                                 <div class="row g-3 mt-0">
                                     <div class="col-md-6">
+                                        <a tabindex="0" role="button" class="popover-link" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-html="true" data-bs-content="<@s.text name='eml.geospatialCoverages.boundingCoordinates.min.longitude.help'/>" data-bs-original-title="" title="">
+                                            <i class="bi bi-info-circle text-gbif-primary px-1"></i>
+                                        </a>
                                         <label class="form-label" for="eml.geospatialCoverages[0].boundingCoordinates.min.longitude">
+                                            <#include "/WEB-INF/pages/macros/help_icon.ftl">
                                             <@s.text name="eml.geospatialCoverages.boundingCoordinates.min.longitude"/>
                                             <span class="text-gbif-danger">&#42;</span>
                                         </label>
@@ -589,6 +593,9 @@
                                         <@s.fielderror id="field-error-eml.geospatialCoverages[0].boundingCoordinates.min.longitude" cssClass="invalid-feedback list-unstyled field-error my-1" fieldName="eml.geospatialCoverages[0].boundingCoordinates.min.longitude"/>
                                     </div>
                                     <div class="col-md-6">
+                                        <a tabindex="0" role="button" class="popover-link" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-html="true" data-bs-content="<@s.text name='eml.geospatialCoverages.boundingCoordinates.max.longitude.help'/>" data-bs-original-title="" title="">
+                                            <i class="bi bi-info-circle text-gbif-primary px-1"></i>
+                                        </a>
                                         <label class="form-label" for="eml.geospatialCoverages[0].boundingCoordinates.max.longitude">
                                             <@s.text name="eml.geospatialCoverages.boundingCoordinates.max.longitude"/>
                                             <span class="text-gbif-danger">&#42;</span>
@@ -597,7 +604,11 @@
                                         <@s.fielderror id="field-error-eml.geospatialCoverages[0].boundingCoordinates.max.longitude" cssClass="invalid-feedback list-unstyled field-error my-1" fieldName="eml.geospatialCoverages[0].boundingCoordinates.max.longitude"/>
                                     </div>
                                     <div class="col-md-6">
+                                        <a tabindex="0" role="button" class="popover-link" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-html="true" data-bs-content="<@s.text name='eml.geospatialCoverages.boundingCoordinates.min.latitude.help'/>" data-bs-original-title="" title="">
+                                            <i class="bi bi-info-circle text-gbif-primary px-1"></i>
+                                        </a>
                                         <label class="form-label" for="eml.geospatialCoverages[0].boundingCoordinates.min.latitude">
+                                            <#include "/WEB-INF/pages/macros/help_icon.ftl">
                                             <@s.text name="eml.geospatialCoverages.boundingCoordinates.min.latitude"/>
                                             <span class="text-gbif-danger">&#42;</span>
                                         </label>
@@ -605,24 +616,17 @@
                                         <@s.fielderror id="field-error-eml.geospatialCoverages[0].boundingCoordinates.min.latitude" cssClass="invalid-feedback list-unstyled field-error my-1" fieldName="eml.geospatialCoverages[0].boundingCoordinates.min.latitude"/>
                                     </div>
                                     <div class="col-md-6">
+                                        <a tabindex="0" role="button" class="popover-link" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-html="true" data-bs-content="<@s.text name='eml.geospatialCoverages.boundingCoordinates.max.latitude.help'/>" data-bs-original-title="" title="">
+                                            <i class="bi bi-info-circle text-gbif-primary px-1"></i>
+                                        </a>
                                         <label class="form-label" for="eml.geospatialCoverages[0].boundingCoordinates.max.latitude">
+                                            <#include "/WEB-INF/pages/macros/help_icon.ftl">
                                             <@s.text name="eml.geospatialCoverages.boundingCoordinates.max.latitude"/>
                                             <span class="text-gbif-danger">&#42;</span>
                                         </label>
                                         <input type="text" id="eml.geospatialCoverages[0].boundingCoordinates.max.latitude" name="eml.geospatialCoverages[0].boundingCoordinates.max.latitude" class="form-control" <#if (eml.geospatialCoverages[0].boundingCoordinates.max.latitude)?has_content>value="${(eml.geospatialCoverages[0].boundingCoordinates.max.latitude)?string["0.###"]}" <#else>value=""</#if> />
                                         <@s.fielderror id="field-error-eml.geospatialCoverages[0].boundingCoordinates.max.latitude" cssClass="invalid-feedback list-unstyled field-error my-1" fieldName="eml.geospatialCoverages[0].boundingCoordinates.max.latitude"/>
                                     </div>
-                                <div class="col-md-6">
-                                    <@input name="eml.geospatialCoverages[0].boundingCoordinates.min.longitude" value="${(eml.geospatialCoverages[0].boundingCoordinates.min.longitude?c)!}" help="i18n" i18nkey="eml.geospatialCoverages.boundingCoordinates.min.longitude" requiredField=true />
-                                </div>
-                                <div class="col-md-6">
-                                    <@input name="eml.geospatialCoverages[0].boundingCoordinates.max.longitude" value="${(eml.geospatialCoverages[0].boundingCoordinates.max.longitude?c)!}" help="i18n" i18nkey="eml.geospatialCoverages.boundingCoordinates.max.longitude" requiredField=true />
-                                </div>
-                                <div class="col-md-6">
-                                    <@input name="eml.geospatialCoverages[0].boundingCoordinates.min.latitude" value="${(eml.geospatialCoverages[0].boundingCoordinates.min.latitude?c)!}" help="i18n" i18nkey="eml.geospatialCoverages.boundingCoordinates.min.latitude" requiredField=true />
-                                </div>
-                                <div class="col-md-6">
-                                    <@input name="eml.geospatialCoverages[0].boundingCoordinates.max.latitude" value="${(eml.geospatialCoverages[0].boundingCoordinates.max.latitude?c)!}" help="i18n" i18nkey="eml.geospatialCoverages.boundingCoordinates.max.latitude" requiredField=true />
                                 </div>
                             </div>
                         </div>
