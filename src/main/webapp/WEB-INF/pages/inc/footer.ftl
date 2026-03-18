@@ -74,6 +74,14 @@
 
         // Track form changes
         const form = document.querySelector('.track-unsaved');
+
+        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                isIntentionalUnload = true;
+                hasUnsavedChanges = false;
+            });
+        });
+
         if (form) {
             // inputs
             form.addEventListener('input', () => {
@@ -101,17 +109,23 @@
 
         // Warn before browser unload (refresh, close tab)
         window.addEventListener('beforeunload', (e) => {
-            if (hasUnsavedChanges && !isIntentionalUnload) {
-                e.preventDefault();
-                e.returnValue = '';
+            if (!hasUnsavedChanges || isIntentionalUnload) {
+                return;
             }
+
+            e.preventDefault();
+            e.returnValue = '';
         });
 
         // Intercept internal link clicks
         document.querySelectorAll('a[href]').forEach(link => {
             link.addEventListener('click', (e) => {
                 // Skip links that should not trigger the unsaved-changes modal
-                if (link.id === 're-infer-link') return;
+                if (link.id === 're-infer-link') {
+                    isIntentionalUnload = true;
+                    hasUnsavedChanges = false;
+                    return;
+                }
 
                 const href = link.getAttribute('href');
 

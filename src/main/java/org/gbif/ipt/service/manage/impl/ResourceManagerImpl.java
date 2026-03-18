@@ -330,8 +330,10 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
             resource.findVersionHistory(v), versionMetadataFile, resource.getKey());
 
     SimplifiedResource result = new SimplifiedResource();
+  
     result.setShortname(publishedPublicVersion.getShortname());
     result.setTitle(publishedPublicVersion.getTitle());
+    result.setProjectIdentifier(publishedPublicVersion.getEml().getProject().getIdentifier());
     result.setStatus(publishedPublicVersion.getStatus());
     result.setRecordsPublished(publishedPublicVersion.getRecordsPublished());
     result.setLogoUrl(publishedPublicVersion.getLogoUrl());
@@ -370,6 +372,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     SimplifiedResource result = new SimplifiedResource();
     result.setShortname(resource.getShortname());
     result.setTitle(resource.getTitle());
+    result.setProjectIdentifier(resource.getEml().getProject().getIdentifier());
     result.setStatus(resource.getStatus());
     result.setRecordsPublished(resource.getRecordsPublished());
     result.setLogoUrl(resource.getLogoUrl());
@@ -1907,8 +1910,8 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
           Comparator.comparing(SimplifiedResource::getTitleOrShortname, nullSafeStringComparator);
     } else if (index == 2) {
       return isDescendingOrder ?
-          Comparator.comparing(SimplifiedResource::getOrganizationAliasOrName, nullSafeStringComparator).reversed() :
-          Comparator.comparing(SimplifiedResource::getOrganizationAliasOrName, nullSafeStringComparator);
+          Comparator.comparing(SimplifiedResource::getProjectIdentifier, nullSafeStringComparator).reversed() :
+          Comparator.comparing(SimplifiedResource::getProjectIdentifier, nullSafeStringComparator);
     } else if (index == 3) {
       return isDescendingOrder ?
           Comparator.comparing(SimplifiedResource::getCoreType, nullSafeStringComparator).reversed() :
@@ -1977,6 +1980,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
         || StringUtils.containsIgnoreCase(resource.getCoreType(), search)
         || StringUtils.containsIgnoreCase(resource.getSubtype(), search)
         || StringUtils.containsIgnoreCase(resource.getCreatorName(), search)
+        || StringUtils.containsIgnoreCase(resource.getProjectIdentifier(), search)
         || StringUtils.containsIgnoreCase(resource.getSubject(), search);
   }
 
@@ -1994,7 +1998,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     List<String> result = new ArrayList<>();
     result.add(toUiLogoUrl(resource.getLogoUrl()));
     result.add(toResourceHomeLink(resource));
-    result.add(toUiOrganization(resource));
+    result.add(resource.getProjectIdentifier());
     result.add(toTypeBadge(resource.getCoreType(), datasetTypes));
     result.add(toTypeBadge(resource.getSubtype(), datasetSubtypes));
     result.add(toUiRecordsPublished(resource, locale));
@@ -2023,7 +2027,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     List<String> result = new ArrayList<>();
     result.add(toUiLogoUrl(resource.getLogoUrl()));
     result.add(toResourceManageLink(resource));
-    result.add(toUiOrganization(resource));
+    result.add(resource.getProjectIdentifier());
     result.add(toTypeBadge(resource.getCoreType(), datasetTypes));
     result.add(toTypeBadge(resource.getSubtype(), datasetSubtypes));
     result.add(toUiRecordsPublished(resource, locale));

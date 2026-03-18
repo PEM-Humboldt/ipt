@@ -98,7 +98,7 @@
         // remove phone/email/homepage/position/address from contact/creator/metadataProvider/associatedParty
         $(".removeSubEntity").click(function (event) {
             event.preventDefault();
-            copyI2DDetails(event, "associatedParty-item-");
+            removeSubEntityFromAgent(event);
             // copyPrimaryContactDetails(event, "associatedParty-item-");
         });
 
@@ -1348,31 +1348,6 @@
             $("#" + idPrefix + index + " [id$='homepage']").val("http://www.humboldt.org.co");
             $("#" + idPrefix + index + " [id$='directory']").val("");
             $("#" + idPrefix + index + " [id$='identifier']").val("");
-        }
-
-        function setPersonnelItemIndex(item, index) {
-            item.attr("id","personnel-item-"+index);
-
-            $("#personnel-item-"+index+" [id^='personnel-removeLink']").attr("id", "personnel-removeLink-"+index);
-            $("#personnel-removeLink-"+index).click(function(event) {
-                removePersonnelItem(event);
-            });
-
-            $("#personnel-item-"+index+" [id^='personnel-copyDetails']").attr("id", "personnel-copyDetails-"+index);
-            $("#personnel-copyDetails-"+index).click(function(event) {
-                copyPrimaryContactDetails(event, "personnel-item-");
-            });
-
-            $("#personnel-item-"+index+" [id$='firstName']").attr("id", "eml.project.personnel["+index+"].firstName").attr("name", function() {return $(this).attr("id");});
-            $("#personnel-item-"+index+" [for$='firstName']").attr("for", "eml.project.personnel["+index+"].firstName");
-            $("#personnel-item-"+index+" [id$='lastName']").attr("id", "eml.project.personnel["+index+"].lastName").attr("name", function() {return $(this).attr("id");});
-            $("#personnel-item-"+index+" [for$='lastName']").attr("for", "eml.project.personnel["+index+"].lastName");
-            $("#personnel-item-"+index+" [id$='role']").attr("id", "eml.project.personnel["+index+"].role").attr("name", function() {return $(this).attr("id");});
-            $("#personnel-item-"+index+" [for$='role']").attr("for", "eml.project.personnel["+index+"].role");
-            $("#personnel-item-"+index+" [id$='directory']").attr("id", "eml.project.personnel["+index+"].userIds[0].directory").attr("name", function() {return $(this).attr("id");});
-            $("#personnel-item-"+index+" [for$='directory']").attr("for", "eml.project.personnel["+index+"].userIds[0].directory");
-            $("#personnel-item-"+index+" [id$='identifier']").attr("id", "eml.project.personnel["+index+"].userIds[0].identifier").attr("name", function() {return $(this).attr("id");});
-            $("#personnel-item-"+index+" [for$='identifier']").attr("for", "eml.project.personnel["+index+"].userIds[0].identifier");
         }
 
 });
