@@ -49,7 +49,7 @@
 
 <!-- The short form of the license for display in the versions table -->
 <#macro shortLicense licenseUrl="">
-    <#if licenseUrl == "https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d">
+    <#if licenseUrl?contains("https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d")>
         I2D
     <#elseif licenseUrl?contains("creativecommons.org/publicdomain/zero/1.0")>
         CC0 1.0
