@@ -432,7 +432,7 @@
                                             <#elseif eml.intellectualRights.contains("CC0")>
                                                 <@s.text name='eml.intellectualRights.licence.cczero'/>
                                             <#else>
-                                                ${eml.intellectualRights!}
+                                                <#noautoesc>${eml.intellectualRights}</#noautoesc>
                                             </#if>
                                         </#if>
                                     </div>
