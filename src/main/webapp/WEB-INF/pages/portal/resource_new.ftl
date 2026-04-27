@@ -573,35 +573,6 @@
                     <#assign coreExt = action.getExtensionManager().get(coreRowType)!/>
                     <#assign coreCount = recordsByExtensionOrdered.get(coreRowType)!recordsPublishedForVersion!0?c/>
 
-                                        <!-- rights section -->
-                    <#if eml.intellectualRights?has_content>
-                        <span class="anchor anchor-resource-page" id="anchor-rights"></span>
-                        <div id="rights" class="mt-5 section">
-                            <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fw-400">
-                                <@s.text name='eml.intellectualRights.simple'/>
-                            </h4>
-
-                            <p><@s.text name='portal.resource.rights.help'/>:</p>
-                            <@licenseLogoClass eml.intellectualRights!/>
-                            <p property="dc:license">
-                                <#if resource.organisation?? && action.getDefaultOrganisation()?? && resource.organisation.key.toString() != action.getDefaultOrganisation().key.toString()>
-                                    <@s.text name='portal.resource.rights.organisation'><@s.param>${resource.organisation.name}</@s.param></@s.text>
-                                </#if>
-                                <#if eml.intellectualRights.contains("CC-BY-NC")>
-                                    <a href="http://creativecommons.org/licenses/by-nc/4.0/legalcode" target="_blank">Libre a nivel interno y externo (Creative Commons Attribution Non Commercial (CC-BY-NC) 4.0)</a>
-                                <#elseif eml.intellectualRights.contains("Restringido temporalmente")>
-                                    <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Restringido temporalmente</a>
-                                <#elseif eml.intellectualRights.contains("Libre en nivel interno con notificación previa")>
-                                    <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Libre a nivel interno con notificación previa</a>
-                                <#elseif eml.intellectualRights.contains("Libre a nivel interno")>
-                                    <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">Libre a nivel interno</a>
-                                <#else>
-                                    ---
-                                </#if>
-                            </p>
-                        </div>
-                    </#if>
-
                     <#if metadataOnly != true && showDwCA>
                         <span class="anchor anchor-home-resource-page" id="anchor-dataRecords"></span>
                         <div id="dataRecords" class="pb-5 section">
@@ -768,7 +739,7 @@
                                 <#elseif eml.intellectualRights.contains("CC0")>
                                     <@s.text name='eml.intellectualRights.licence.cczero'/>
                                 <#else>
-                                    ${eml.intellectualRights!}
+                                    <#noautoesc>${eml.intellectualRights!}</#noautoesc>
                                 </#if>
                             </p>
                         </div>
