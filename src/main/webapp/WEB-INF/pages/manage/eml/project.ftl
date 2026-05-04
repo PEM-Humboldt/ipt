@@ -460,10 +460,10 @@
                                                     </a>
                                                 </div>
                                             </div>
-                                            <div class="col-lg-6">
+                                            <div class="col-lg-5">
                                                 <@input name="eml.project.personnel[${item_index}].firstName" help="i18n" i18nkey="eml.project.personnel.firstName"/>
                                             </div>
-                                            <div class="col-lg-6">
+                                            <div class="col-lg-5">
                                                 <@input name="eml.project.personnel[${item_index}].lastName" help="i18n" i18nkey="eml.project.personnel.lastName" requiredField=true/>
                                             </div>
                                             <div class="col-lg-2">
