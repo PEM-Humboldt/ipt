@@ -234,10 +234,9 @@
                                                 <a href="http://creativecommons.org/licenses/by/4.0/legalcode" target="_blank">CC-BY 4.0</a>
                                             <#elseif license.contains("CC0")>
                                                 <a href="http://creativecommons.org/publicdomain/zero/1.0/legalcode" target="_blank">CC0 1.0</a>
-                                            </#if>
                                             <#else>
                                                 <a href="https://sites.google.com/humboldt.org.co/i2dwiki/licencia-i2d" target="_blank">I2D</a>
-                                            </#else>
+                                            </#if>
                                         </dd>
                                     </div>
                                 </dl>
