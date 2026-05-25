@@ -35,25 +35,6 @@ resourcesTable macro: Generates a data table that has searching, pagination, and
             }
         }
 
-        /* resources list */
-        var aDataSet = [
-             <#list resources as r>
-            [
-                "<a href='${baseURL}<#if !shownPublicly>/manage</#if>/resource?r=${r.shortname}'><#if r.title?has_content>${r.title?replace("\'", "\\'")?replace("\"", '\\"')}<#else>${r.shortname}</#if></a>",
-                <#if r.eml.project.funding?has_content>'${r.eml.project.funding?replace("\n"," ")?replace("\"","")?replace("\'","")?replace("“","")?replace("”","")?replace("\r"," ")}'<#else>'${emptyString}'</#if>,
-                <#if r.coreType?has_content && types[r.coreType?lower_case]?has_content>'${types[r.coreType?lower_case]?replace("\'", "\\'")?replace("\"", '\\"')?cap_first!}'<#else>'${emptyString}'</#if>,
-                <#if r.subtype?has_content && datasetSubtypes[r.subtype?lower_case]?has_content >'${datasetSubtypes[r.subtype?lower_case]?replace("\'", "\\'")?replace("\"", '\\"')?cap_first!}'<#else>'${emptyString}'</#if>,
-                '<a target="_blank" href="${baseURL}/resource?r=${r.shortname}#anchor-dataRecords">${(r.recordsPublished?c)!0}</a>',
-                '${r.modified?date}',
-                <#if r.published>'${(r.lastPublished?date)!}'<#else>'<@s.text name="portal.home.not.published"/>'</#if>,
-                <#if r.status=='PRIVATE'>'<@s.text name="manage.home.visible.private"/>'<#elseif r.status=='DELETED'>'${deletedString}'<#else>'<@s.text name="manage.home.visible.public"/>'</#if>,
-                <#if r.creator??>'${r.creator.firstname?replace("\'", "\\'")?replace("\"", '\\"')!} ${r.creator.lastname?replace("\'", "\\'")?replace("\"", '\\"')!}'<#else>'${emptyString}'</#if>,
-                '${r.shortname}'
-            ]
-            <#if r_has_next>,</#if>
-            </#list>
-        ];
-
         $(document).ready(function () {
             const SEARCH_PARAM = "search";
             const SORT_PARAM = "sort";
