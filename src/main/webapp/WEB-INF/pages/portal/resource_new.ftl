@@ -431,7 +431,7 @@
                                 <#-- Archive, EML, and RTF download links include Google Analytics event tracking -->
                                 <#-- e.g. Archive event tracking includes components: _trackEvent method, category, action, label, (int) value -->
                                 <#-- EML and RTF versions can always be retrieved by version number but DWCA versions are only stored if IPT Archive Mode is on -->
-                                <#if metadataOnly == false>
+                                <#if metadataOnly == false && showDwCA>
                                     <tr>
                                         <th class="col-4 p-0">
                                             <#if resource.dataPackageIdentifier??>
@@ -630,55 +630,6 @@
                             </p>
                         </div>
                     </#if>
-
-                    <!-- downloads section -->
-                    <span class="anchor anchor-home-resource-page" id="anchor-downloads"></span>
-                    <div id="downloads" class="mt-5 section">
-                        <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fw-400">
-                            <@s.text name='portal.resource.downloads'/>
-                        </h4>
-
-                        <#if metadataOnly == true>
-                            <p><@s.text name='portal.resource.downloads.metadataOnly.verbose'/></p>
-                        <#else>
-                            <p><@s.text name='portal.resource.downloads.verbose'/></p>
-                        </#if>
-
-                        <div class="table-responsive">
-                            <table class="downloads text-smaller table table-sm table-borderless">
-                                <#-- Archive, EML, and RTF download links include Google Analytics event tracking -->
-                                <#-- e.g. Archive event tracking includes components: _trackEvent method, category, action, label, (int) value -->
-                                <#-- EML and RTF versions can always be retrieved by version number but DWCA versions are only stored if IPT Archive Mode is on -->
-                                <#if metadataOnly == false && showDwCA>
-                                    <tr>
-                                        <th class="col-4"><@s.text name='portal.resource.dwca.verbose'/></th>
-                                        <#if version?? && version.toPlainString() != resource.emlVersion.toPlainString() && recordsPublishedForVersion??>
-                                            <td><a href="${download_dwca_url}" onClick="_gaq.push(['_trackEvent', 'Archive', 'Download', '${resource.shortname}', ${recordsPublishedForVersion!0?c} ]);"><@s.text name='portal.resource.download'/></a>
-                                                ${recordsPublishedForVersion!0?c} <@s.text name='portal.resource.records'/>&nbsp;<#if eml.language?has_content && languages[eml.language]?has_content><@s.text name='eml.language.available'><@s.param>${languages[eml.language]?cap_first!}</@s.param></@s.text></#if> (${dwcaSizeForVersion!}) <#if eml.updateFrequency?has_content && eml.updateFrequency.identifier?has_content && frequencies[eml.updateFrequency.identifier]?has_content>&nbsp;-&nbsp;${updateFrequencyTitle?lower_case?cap_first}:&nbsp;${frequencies[eml.updateFrequency.identifier]?lower_case}</#if>
-                                            </td>
-                                        <#else>
-                                            <td><a href="${download_dwca_url}" onClick="_gaq.push(['_trackEvent', 'Archive', 'Download', '${resource.shortname}', ${resource.recordsPublished!0?c} ]);"><@s.text name='portal.resource.download'/></a>
-                                                ${resource.recordsPublished!0?c} <@s.text name='portal.resource.records'/>&nbsp;<#if eml.language?has_content && languages[eml.language]?has_content><@s.text name='eml.language.available'><@s.param>${languages[eml.language]?cap_first!}</@s.param></@s.text></#if> (${dwcaSizeForVersion!})<#if eml.updateFrequency?has_content && eml.updateFrequency.identifier?has_content && frequencies[eml.updateFrequency.identifier]?has_content>&nbsp;-&nbsp;${updateFrequencyTitle?lower_case?cap_first}:&nbsp;${frequencies[eml.updateFrequency.identifier]?lower_case}</#if>
-                                            </td>
-                                        </#if>
-                                    </tr>
-                                </#if>
-                                <tr>
-                                    <th><@s.text name='portal.resource.metadata.verbose'/></th>
-                                    <td><a href="${download_eml_url}" onClick="_gaq.push(['_trackEvent', 'EML', 'Download', '${resource.shortname}']);" download><@s.text name='portal.resource.download'/></a>
-                                        <#if eml.metadataLanguage?has_content && languages[eml.metadataLanguage]?has_content><@s.text name='eml.language.available'><@s.param>${languages[eml.metadataLanguage]?cap_first!}</@s.param></@s.text></#if> (${emlSizeForVersion})
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <th><@s.text name='portal.resource.rtf.verbose'/></th>
-                                    <td><a href="${download_rtf_url}" onClick="_gaq.push(['_trackEvent', 'RTF', 'Download', '${resource.shortname}']);"><@s.text name='portal.resource.download'/></a>
-                                        <#if eml.metadataLanguage?has_content && languages[eml.metadataLanguage]?has_content><@s.text name='eml.language.available'><@s.param>${languages[eml.metadataLanguage]?cap_first!}</@s.param></@s.text></#if> (${rtfSizeForVersion})
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
 
                     <!-- versions section -->
                     <#if resource.versionHistory??>
