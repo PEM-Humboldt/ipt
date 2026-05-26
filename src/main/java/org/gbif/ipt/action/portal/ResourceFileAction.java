@@ -88,7 +88,7 @@ public class ResourceFileAction extends PortalBaseAction {
       getText("eml.intellectualRights.license.text.internalNotification")
     );
 
-    if (intellectualRightsList.contains(eml.getIntellectualRights())) {
+    if (eml != null && intellectualRightsList.contains(eml.getIntellectualRights())) {
       User user = (User) session.get(Constants.SESSION_USER);
       if (user == null) {
         return NOT_ALLOWED;
