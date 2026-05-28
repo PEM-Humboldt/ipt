@@ -333,7 +333,6 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
   
     result.setShortname(publishedPublicVersion.getShortname());
     result.setTitle(publishedPublicVersion.getTitle());
-    result.setProjectIdentifier(publishedPublicVersion.getEml().getProject().getIdentifier());
     result.setStatus(publishedPublicVersion.getStatus());
     result.setRecordsPublished(publishedPublicVersion.getRecordsPublished());
     result.setLogoUrl(publishedPublicVersion.getLogoUrl());
@@ -372,7 +371,6 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     SimplifiedResource result = new SimplifiedResource();
     result.setShortname(resource.getShortname());
     result.setTitle(resource.getTitle());
-    result.setProjectIdentifier(resource.getEml().getProject().getIdentifier());
     result.setStatus(resource.getStatus());
     result.setRecordsPublished(resource.getRecordsPublished());
     result.setLogoUrl(resource.getLogoUrl());
