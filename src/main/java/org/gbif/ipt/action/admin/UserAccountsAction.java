@@ -59,30 +59,30 @@ public class UserAccountsAction extends POSTAction {
           .selectFrom(PASSWORD_ALLOWED_CHARS.toCharArray())
           .build();
   private static final String EMAIL_NEW_ACCOUNT = "<a href=\"mailto:%s" +
-          "?subject=IPT account" +
+          "?subject=Cuenta Ceiba - Instituto Alexander von Humboldt" +
           "&amp;body=Dear %s," +
-          "%%0d%%0dWe would like to inform you that we have created an IPT account for you." +
-          "%%0d%%0dAccount information:" +
+          "%%0d%%0dQueremos informarle que hemos creado una cuenta para usted en Ceiba." +
+          "%%0d%%0dDatos de su cuenta:" +
           "%%0d%%0dIPT: %s" +
-          "%%0dEmail: %s" +
-          "%%0dPassword: %s" +
-          "%%0dRole: %s" +
-          "%%0d%%0dThank you for your attention.\">" +
-          "Click here" +
+          "%%0dCorreo: %s" +
+          "%%0dContraseña: %s" +
+          "%%0dRol: %s" +
+          "%%0d%%0dGracias por su atención.\">" +
+          "Haga click aquí" +
           "</a> " +
-          "to share the credentials with the user";
+          "para compartir las credenciales con el usuario";
   private static final String EMAIL_PASSWORD_CHANGE = "<a href=\"mailto:%s" +
-          "?subject=IPT password change" +
-          "&amp;body=Dear %s," +
-          "%%0d%%0dWe would like to inform you that your IPT account's password has been successfully changed." +
-          "%%0d%%0dAccount information:" +
+          "?subject=Ceiba cambio de contraseña" +
+          "&amp;body=%s," +
+          "%%0d%%0dQueremos informarle que su contraseña de Ceiba ha sido cambiada exitosamente." +
+          "%%0d%%0dDatos de su cuenta:" +
           "%%0d%%0dIPT: %s" +
-          "%%0dEmail: %s" +
-          "%%0dPassword: %s" +
-          "%%0d%%0dThank you for your attention.\">" +
-          "Click here" +
+          "%%0dCorreo: %s" +
+          "%%0dContraseña: %s" +
+          "%%0d%%0dGracias por su atención.\">" +
+          "Haga click aquí" +
           "</a> " +
-          "to share the new password with the user";
+          "para compartir las credenciales con el usuario";
 
   private final UserAccountManager userManager;
   private final ResourceManager resourceManager;
