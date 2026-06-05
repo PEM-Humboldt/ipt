@@ -1815,10 +1815,12 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     List<Resource> result = new ArrayList<Resource>();
     for (Resource r : resources.values()) {
       Eml eml = r.getEml();
-      for (String intellectualRights : intellectualRightsList) {
-        if (Objects.equals(eml.getIntellectualRights(), intellectualRights)) {
-          result.add(r);
-          break;
+      if (eml != null){
+        for (String intellectualRights : intellectualRightsList) {
+          if (Objects.equals(eml.getIntellectualRights(), intellectualRights)) {
+            result.add(r);
+            break;
+          }
         }
       }
     }
