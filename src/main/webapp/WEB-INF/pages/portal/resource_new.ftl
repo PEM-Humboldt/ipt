@@ -691,6 +691,8 @@
                                     <@s.text name='eml.intellectualRights.licence.cczero'/>
                                 <#elseif eml.intellectualRights.contains("interno")>
                                     <@s.text name='eml.intellectualRights.licence.liiavh'/>
+                                <#elseif eml.intellectualRights.contains("Restringido")>
+                                    <@s.text name='eml.intellectualRights.licence.rt'/>
                                 <#else>
                                     <#noautoesc>${eml.intellectualRights!}</#noautoesc>
                                 </#if>
