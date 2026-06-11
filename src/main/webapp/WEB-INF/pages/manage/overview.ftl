@@ -1550,7 +1550,8 @@
                                 </#if>
                             </div>
                         </div>
-
+                        
+                        <div>
                             <div class="d-flex justify-content-end">
                                 <#if resource.status=="PRIVATE">
                                     <#assign actionMethod>makePublic</#assign>
@@ -1584,29 +1585,29 @@
                                     </button>
                                 </#if>
                             </div>
-                        </div>
 
-                        <div class="mt-4">
-                            <p class="mb-0">
-                                <#if resource.status=="PRIVATE">
-                                    <#if resource.makePublicDate?has_content>
-                                        <@s.text name="manage.resource.status.intro.private.public.scheduled">
-                                            <@s.param>${resource.makePublicDate?datetime?string.long_short}</@s.param>
-                                        </@s.text>
-                                    <#else>
-                                        <@s.text name="manage.resource.status.intro.private"/>
+                            <div class="mt-2">
+                                <p class="mb-0">
+                                    <#if resource.status=="PRIVATE">
+                                        <#if resource.makePublicDate?has_content>
+                                            <@s.text name="manage.resource.status.intro.private.public.scheduled">
+                                                <@s.param>${resource.makePublicDate?datetime?string.long_short}</@s.param>
+                                            </@s.text>
+                                        <#else>
+                                            <@s.text name="manage.resource.status.intro.private"/>
+                                        </#if>
+                                    <#elseif resource.status=="PUBLIC">
+                                        <@s.text name="manage.resource.status.intro.public"/>
+                                    <#elseif resource.status=="REGISTERED">
+                                        <@s.text name="manage.resource.status.intro.registered"/>
+                                    <#elseif resource.status=="DELETED">
+                                        <@s.text name="manage.resource.status.intro.deleted"/>
                                     </#if>
-                                <#elseif resource.status=="PUBLIC">
-                                    <@s.text name="manage.resource.status.intro.public"/>
-                                <#elseif resource.status=="REGISTERED">
-                                    <@s.text name="manage.resource.status.intro.registered"/>
-                                <#elseif resource.status=="DELETED">
-                                    <@s.text name="manage.resource.status.intro.deleted"/>
-                                </#if>
-                            </p>
+                                </p>
+                            </div>
                         </div>
                     </div>
-
+                    
                     <span class="anchor anchor-overview-page" id="anchor-publish"></span>
                     <div class="py-5 border-bottom section" id="publish">
                         <div class="d-flex justify-content-between">
