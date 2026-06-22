@@ -154,19 +154,12 @@
 </#function>
 
 <#-- ...Testing... -->
-<#assign showDwCA=false/>
+<#assign showDwCA=false/> 
 <#if eml.intellectualRights?has_content>
     <#if eml.intellectualRights.contains("Libre a nivel interno y externo") >
         <#assign showDwCA=true/>
-    <#elseif elemInArray('Libre a nivel interno, Libre en nivel interno con notificación previa, Restringido temporalmente', eml.intellectualRights, ", ")>
-        <#if (Session.curr_user)??>
-            <#if adminRights>
-                <#assign showDwCA=true/>
-            </#if>
-        <#else>
-            <#assign showDwCA=false/>
-        </#if>
     <#else>
+        <!-- If is: Libre a nivel interno, Libre en nivel interno con notificación previa, Restringido temporalmente', eml.intellectualRights or ", "
         <#assign showDwCA=false/>
     </#if>
 </#if>
