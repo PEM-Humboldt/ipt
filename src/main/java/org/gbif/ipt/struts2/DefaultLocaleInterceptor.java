@@ -31,13 +31,6 @@ public class DefaultLocaleInterceptor extends AbstractInterceptor {
   @Serial
   private static final long serialVersionUID = -5106569324133156303L;
 
-    @Override
-    public String intercept(ActionInvocation invocation) throws Exception {
-        Locale locale = Optional.ofNullable(cfg.getDefaultLocale())
-                .filter(StringUtils::isNotEmpty)
-                .map(Locale::new)
-                .filter(cfg::isSupportedLocale)
-                .orElse(new Locale("es"));
   private AppConfig cfg;
 
   @Override
@@ -46,7 +39,7 @@ public class DefaultLocaleInterceptor extends AbstractInterceptor {
         .filter(StringUtils::isNotEmpty)
         .map(Locale::new)
         .filter(cfg::isSupportedLocale)
-        .orElse(Locale.UK);
+        .orElse(new Locale("es"));
 
     invocation.getInvocationContext().withLocale(locale);
 
