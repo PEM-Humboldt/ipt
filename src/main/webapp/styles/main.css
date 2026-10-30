@@ -281,6 +281,20 @@ body {
     background: url('../images/bg.png') top left;
 }
 
+.mode-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+.mode-badge-test {
+    background: tomato;
+    color: #fff;
+}
+
 table {
     color: #575757 !important;
 }
@@ -417,11 +431,17 @@ table {
 }
 
 .bg-gbif-main-navbar {
-    background: #ebe5de;
-    border-top: 2px solid #d9d9d9;
-    border-bottom: 2px solid #d9d9d9;
-    padding: 0 15px 10px;
-    margin: 1px 0 20px;
+    background-image: linear-gradient(to bottom, rgba(var(--navbar-color), 1), rgba(var(--navbar-color), 0.85));
+}
+
+.bg-gbif-main-navbar-test {
+    background: repeating-linear-gradient(
+            45deg,
+            rgba(var(--navbar-color), 0.65),
+            rgba(var(--navbar-color), 0.65) 10px,
+            rgba(var(--navbar-color), 1) 10px,
+            rgba(var(--navbar-color), 1) 20px
+    );
 }
 
 .logo-iavh {
@@ -2345,32 +2365,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     display: none;
 }
 
-/* Test mode banner */
-span.test-mode-banner {
-    background: tomato;
-    color: white;
-    padding: 0 3px;
-    font-size: 10px;
-    font-weight: bolder;
-    position: absolute;
-    top: 45px;
-    left: 10px;
-    border-radius: 3px;
-}
-
-header.shrink span.test-mode-banner {
-    position: absolute;
-    top: 35px;
-    left: 15px;
-}
-
 @media (max-width: 1199px) {
-    span.test-mode-banner {
-        position: absolute;
-        top: 35px;
-        left: 15px;
-    }
-
     body {
         padding-top: 80px;
     }

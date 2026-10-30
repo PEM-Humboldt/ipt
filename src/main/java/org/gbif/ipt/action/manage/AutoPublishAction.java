@@ -13,6 +13,7 @@
  */
 package org.gbif.ipt.action.manage;
 
+import lombok.Getter;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.model.BiMonthEnum;
@@ -24,13 +25,21 @@ import org.gbif.ipt.service.admin.VocabulariesManager;
 import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 import org.gbif.ipt.utils.MapUtils;
+import org.gbif.ipt.utils.PublicationFailureEmailUtils;
 import org.gbif.metadata.eml.ipt.model.MaintenanceUpdateFrequency;
 
+import jakarta.inject.Inject;
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
-import javax.inject.Inject;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -38,20 +47,30 @@ import org.apache.logging.log4j.Logger;
 
 public class AutoPublishAction extends ManagerBaseAction {
 
-  // logging
+  @Serial
+  private static final long serialVersionUID = -1212620671839313545L;
+
   private static final Logger LOG = LogManager.getLogger(AutoPublishAction.class);
 
   private static final String OFF_FREQUENCY = "off";
   private static final String COLON = ":";
   private static final String DEFAULT_TIME = "12:00";
   private static final String DEFAULT_THRESHOLD = "10";
+  private static final String EMAIL_SEPARATOR = ",";
+  private static final Pattern EMAIL_PATTERN =
+      Pattern.compile("^[\\w.+-]+@[\\w-]+\\.[a-zA-Z]{2,}$");
 
   private final VocabulariesManager vocabManager;
 
+  @Getter
   private Map<String, String> frequencies;
+  @Getter
   private Map<String, String> months;
+  @Getter
   private Map<String, String> biMonths;
+  @Getter
   private Map<Integer, String> days;
+  @Getter
   private Map<String, String> daysOfWeek;
 
   @Inject
@@ -95,11 +114,29 @@ public class AutoPublishAction extends ManagerBaseAction {
     // auto-publication options
     boolean skipUnchanged = Boolean.parseBoolean(req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_SKIP_UNCHANGED));
     boolean skipDrop = Boolean.parseBoolean(req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_SKIP_DROP));
+    boolean notifyFailure = Boolean.parseBoolean(req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_NOTIFY_FAILURE));
 
     String recordsDropThresholdRaw = Optional.ofNullable(req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_DROP_THRESHOLD))
         .map(StringUtils::trimToNull)
         .orElse(DEFAULT_THRESHOLD);
     int recordsDropThreshold = Integer.parseInt(recordsDropThresholdRaw);
+
+    String failureEmailsRaw = req.getParameter(Constants.REQ_PARAM_AUTO_PUBLISH_FAILURE_EMAILS);
+    List<String> failureEmails = parseFailureEmails(failureEmailsRaw);
+
+    if (notifyFailure && failureEmails.isEmpty()) {
+      addActionError(getText("manage.autopublish.options.notifyFailure.emails.required"));
+      return INPUT;
+    }
+
+    List<String> invalidEmails = failureEmails.stream()
+        .filter(email -> !EMAIL_PATTERN.matcher(email).matches())
+        .collect(Collectors.toList());
+    if (notifyFailure && !invalidEmails.isEmpty()) {
+      addActionError(getText("manage.autopublish.options.notifyFailure.emails.invalid",
+          new String[]{String.join(", ", invalidEmails)}));
+      return INPUT;
+    }
 
     if (OFF_FREQUENCY.equals(updateFrequency)) {
       addActionMessage(getText("manage.autopublish.message.off"));
@@ -109,26 +146,32 @@ public class AutoPublishAction extends ManagerBaseAction {
     } else if (MaintenanceUpdateFrequency.findByIdentifier(updateFrequency) != null) {
       addActionMessage(getText("manage.autopublish.message.on", new String[]{updateFrequency}));
       LOG.debug("Updating auto-publishing for [{}] to: {}", resource.getShortname(),
-        updateFrequency);
+          updateFrequency);
       resource.setPublicationMode(PublicationMode.AUTO_PUBLISH_ON);
       resource.setAutoPublishingFrequency(
-        updateFrequency,
-        updateFrequencyMonth,
-        updateFrequencyBiMonth,
-        updateFrequencyDay,
-        updateFrequencyDayOfWeek,
-        updateFrequencyHour,
-        updateFrequencyMinute);
+          updateFrequency,
+          updateFrequencyMonth,
+          updateFrequencyBiMonth,
+          updateFrequencyDay,
+          updateFrequencyDayOfWeek,
+          updateFrequencyHour,
+          updateFrequencyMinute);
     } else {
       addActionError(getText("manage.autopublish.message.error"));
       LOG.error("Cannot update auto-publishing setting for [{}]. Unknown frequency: {}",
-        resource.getShortname(), updateFrequency);
+          resource.getShortname(), updateFrequency);
       return ERROR;
     }
 
     resource.setSkipPublicationIfNotChanged(skipUnchanged);
     resource.setSkipPublicationIfRecordsDrop(skipDrop);
+    resource.setNotifyPublicationFailure(notifyFailure);
     resource.setRecordsDropThreshold(recordsDropThreshold);
+    resource.setPublicationFailureEmails(notifyFailure ? failureEmails : new ArrayList<>());
+
+    if (notifyFailure && !isPublicationFailureEmailConfigured()) {
+      addActionWarning(getText("manage.autopublish.options.notifyFailure.notConfigured"));
+    }
 
     // update next published date
     resourceManager.updatePublicationMode(resource);
@@ -139,26 +182,6 @@ public class AutoPublishAction extends ManagerBaseAction {
     LOG.debug("Resource [{}] saved with new auto-publishing setting", resource.getShortname());
 
     return SUCCESS;
-  }
-
-  public Map<String, String> getFrequencies() {
-    return frequencies;
-  }
-
-  public Map<String, String> getMonths() {
-    return months;
-  }
-
-  public Map<String, String> getBiMonths() {
-    return biMonths;
-  }
-
-  public Map<Integer, String> getDays() {
-    return days;
-  }
-
-  public Map<String, String> getDaysOfWeek() {
-    return daysOfWeek;
   }
 
   /**
@@ -172,7 +195,7 @@ public class AutoPublishAction extends ManagerBaseAction {
 
     // update frequencies list, that qualify for auto-publishing
     Map<String, String> filteredFrequencies =
-      vocabManager.getI18nVocab(Constants.VOCAB_URI_UPDATE_FREQUENCIES, getLocaleLanguage(), false);
+        vocabManager.getI18nVocab(Constants.VOCAB_URI_UPDATE_FREQUENCIES, getLocaleLanguage(), false);
     MapUtils.removeNonMatchingKeys(filteredFrequencies, MaintenanceUpdateFrequency.NON_ZERO_DAYS_UPDATE_PERIODS);
     frequencies.putAll(filteredFrequencies);
   }
@@ -206,6 +229,20 @@ public class AutoPublishAction extends ManagerBaseAction {
     }
   }
 
+  /**
+   * Parses a raw comma-separated string of email addresses into a trimmed, de-duplicated, non-blank list.
+   */
+  private List<String> parseFailureEmails(String raw) {
+    if (StringUtils.isBlank(raw)) {
+      return Collections.emptyList();
+    }
+    return Arrays.stream(raw.split(EMAIL_SEPARATOR))
+        .map(StringUtils::trimToNull)
+        .filter(StringUtils::isNotBlank)
+        .distinct()
+        .collect(Collectors.toList());
+  }
+
   private void setServerTimeZone() {
     req.setAttribute("serverTimeZone", TimeZone.getDefault().getDisplayName(false, TimeZone.SHORT));
   }
@@ -226,6 +263,20 @@ public class AutoPublishAction extends ManagerBaseAction {
 
   public boolean isSkipDrop() {
     return resource.isSkipPublicationIfRecordsDrop();
+  }
+
+  public boolean isNotifyFailure() {
+    return resource.isNotifyPublicationFailure();
+  }
+
+  public boolean isPublicationFailureEmailConfigured() {
+    return PublicationFailureEmailUtils.isConfigured(cfg);
+  }
+
+  public String getFailureEmails() {
+    return resource.getPublicationFailureEmails() == null
+        ? ""
+        : String.join(", ", resource.getPublicationFailureEmails());
   }
 
   public int getRecordsDropThreshold() {

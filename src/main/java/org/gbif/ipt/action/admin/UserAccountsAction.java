@@ -28,30 +28,37 @@ import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.struts2.SimpleTextProvider;
 import org.gbif.ipt.validation.UserValidator;
 
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.io.Serial;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.RandomStringGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.struts2.interceptor.parameter.StrutsParameter;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
+
+import lombok.Getter;
 
 /**
  * The Action responsible for all user input relating to the user accounts in the IPT.
  */
 public class UserAccountsAction extends POSTAction {
 
-  // logging
+  @Serial
+  private static final long serialVersionUID = 8892204508303815998L;
+
   private static final Logger LOG = LogManager.getLogger(UserAccountsAction.class);
 
-  private static final long serialVersionUID = 8892204508303815998L;
   private static final int PASSWORD_LENGTH = 8;
   private static final String PASSWORD_ALLOWED_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
   private static final RandomStringGenerator PASSWORD_GENERATOR =
@@ -88,10 +95,13 @@ public class UserAccountsAction extends POSTAction {
   private final ResourceManager resourceManager;
   private final UserValidator validator = new UserValidator();
 
+  // Getters / Setters follow
   private User user;
+  @Getter
   private String password2;
   private boolean resetPassword;
   private boolean newUser;
+  @Getter
   private List<User> users;
   private List<Resource> restrictedResourcesForAllButIAvHUsers;
   private List<Resource> restrictedResourcesForIAvHUsers;
@@ -189,21 +199,17 @@ public class UserAccountsAction extends POSTAction {
         if (Reason.LAST_ADMIN == e.getReason()) {
           addActionError(getText("admin.user.deleted.lastadmin"));
         } else if (Reason.LAST_RESOURCE_MANAGER == e.getReason()) {
-          addActionError(getText("admin.user.deleted.lastmanager", new String[] {e.getMessage()}));
+          addActionError(getText("admin.user.deleted.lastmanager", new String[]{e.getMessage()}));
         } else if (Reason.IS_RESOURCE_CREATOR == e.getReason()) {
-          addActionError(getText("admin.user.deleted.error.creator", new String[] {e.getMessage()}));
+          addActionError(getText("admin.user.deleted.error.creator", new String[]{e.getMessage()}));
         } else {
           addActionError(getText("admin.user.deleted.error"));
         }
       } catch (IOException e) {
-        addActionError(getText("admin.user.cantSave", new String[] {e.getMessage()}));
+        addActionError(getText("admin.user.cantSave", new String[]{e.getMessage()}));
       }
     }
     return INPUT;
-  }
-
-  public String getPassword2() {
-    return password2;
   }
 
   public String getNewUser() {
@@ -254,7 +260,7 @@ public class UserAccountsAction extends POSTAction {
       notFound = true;
     }
 
-    // if no id is submitted we want to create a new account
+    // if no id is submitted, we want to create a new account
     if (user == null) {
       // reset id
       id = null;
@@ -265,7 +271,7 @@ public class UserAccountsAction extends POSTAction {
       try {
         user = (User) user.clone();
       } catch (CloneNotSupportedException e) {
-        LOG.error("An exception occurred while retrieving user: " + e.getMessage(), e);
+        LOG.error("An exception occurred while retrieving user: {}", e.getMessage(), e);
       }
     }
     List<String> intellectualRightsListForIAvHUsers = Arrays.asList(getText("eml.intellectualRights.license.text.temporalRestriction"), getText("eml.intellectualRights.license.text.internalNotification"));
@@ -306,20 +312,36 @@ public class UserAccountsAction extends POSTAction {
         String passwordBeforeSaving = user.getPassword();
         userManager.create(user);
 
-        String emailLink = String.format(EMAIL_NEW_ACCOUNT, user.getEmail(), user.getFirstname(), cfg.getBaseUrl(), user.getEmail(), passwordBeforeSaving, user.getRole());
+        String encodedPassword = URLEncoder.encode(passwordBeforeSaving, StandardCharsets.UTF_8);
+
+        String emailLink = String.format(
+            EMAIL_NEW_ACCOUNT,
+            user.getEmail(),
+            user.getFirstname(),
+            cfg.getBaseUrl(),
+            user.getEmail(),
+            encodedPassword,
+            user.getRole());
 
         LOG.info("User {} has been created by {}", id, currentUser.getEmail());
-        addActionMessage(getText("admin.user.added", new String[] {emailLink}));
+        addActionMessage(getText("admin.user.added", new String[]{emailLink}));
       } else if (resetPassword) {
         String newPassword = PASSWORD_GENERATOR.generate(PASSWORD_LENGTH);
+        String newPasswordEncoded = URLEncoder.encode(newPassword, StandardCharsets.UTF_8);
         String hash = BCrypt.withDefaults().hashToString(12, newPassword.toCharArray());
         user.setPassword(hash);
         userManager.save(user);
 
-        String emailLink = String.format(EMAIL_PASSWORD_CHANGE, user.getEmail(), user.getFirstname(), cfg.getBaseUrl(), user.getEmail(), newPassword);
+        String emailLink = String.format(
+            EMAIL_PASSWORD_CHANGE,
+            user.getEmail(),
+            user.getFirstname(),
+            cfg.getBaseUrl(),
+            user.getEmail(),
+            newPasswordEncoded);
 
         LOG.info("User {} password has been changed by {}", user.getEmail(), currentUser.getEmail());
-        addActionMessage(getText("admin.user.passwordChanged", new String[] {user.getEmail(), newPassword, emailLink}));
+        addActionMessage(getText("admin.user.passwordChanged", new String[]{user.getEmail(), newPassword, emailLink}));
       } else {
         User currentStateUser = userManager.get(user.getEmail());
 
@@ -350,31 +372,35 @@ public class UserAccountsAction extends POSTAction {
       }
       return SUCCESS;
     } catch (IOException e) {
-      LOG.error("User change couldn't be saved: " + e.getMessage(), e);
+      LOG.error("User change couldn't be saved: {}", e.getMessage(), e);
       addActionError(getText("admin.user.saveError"));
       addActionError(e.getMessage());
       return INPUT;
     } catch (AlreadyExistingException e) {
       LOG.error("User with the email address {} already exists", user.getEmail(), e);
-      addActionError(getText("admin.user.exists", new String[] {user.getEmail()}));
+      addActionError(getText("admin.user.exists", new String[]{user.getEmail()}));
       // resetting user
       user = new User();
       return INPUT;
     }
   }
 
+  @StrutsParameter
   public void setPassword2(String password2) {
     this.password2 = password2;
   }
 
+  @StrutsParameter
   public void setResetPassword(String pass) {
     this.resetPassword = StringUtils.trimToNull(pass) != null;
   }
 
-  public void setUser(User user) {
-    this.user = user;
+  @StrutsParameter(depth = 1)
+  public User getUser() {
+    return user;
   }
 
+  @StrutsParameter
   public void setUsers(List<User> users) {
     this.users = users;
   }
@@ -394,6 +420,5 @@ public class UserAccountsAction extends POSTAction {
       password2 = null;
       user.setPassword(null);
     }
-
   }
 }
