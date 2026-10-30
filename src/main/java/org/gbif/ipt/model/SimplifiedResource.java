@@ -12,7 +12,8 @@
  * limitations under the License.
  */
 package org.gbif.ipt.model;
-
+import java.util.Objects;
+import java.util.StringJoiner;
 import org.gbif.ipt.model.voc.PublicationStatus;
 
 import java.util.Date;
