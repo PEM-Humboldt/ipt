@@ -99,6 +99,25 @@
                     $('#recordsDropThreshold').val('');
                 }
             });
+
+            function toggleFailureEmails() {
+                const notifyChecked = $('#notifyPublicationFailure').is(':checked');
+
+                if (notifyChecked) {
+                    $('#failureEmailsContainer').show();
+                } else {
+                    $('#failureEmailsContainer').hide();
+                }
+            }
+
+            toggleFailureEmails();
+
+            $('#notifyPublicationFailure').on('change', function () {
+                toggleFailureEmails();
+                if (!this.checked) {
+                    $('#failureEmails').val('');
+                }
+            });
         });
 
     </script>
@@ -288,9 +307,9 @@
                 <div id="options" class="mt-5">
                     <h5 class="text-gbif-header-2 fw-400 mb-3"><@s.text name="manage.autopublish.options"/></h5>
 
-                    <@checkbox name="skipUnchanged" i18nkey="manage.autopublish.options.skipUnchanged"/>
+                    <@checkbox name="skipUnchanged" value=skipUnchanged i18nkey="manage.autopublish.options.skipUnchanged"/>
 
-                    <@checkbox name="skipDrop" i18nkey="manage.autopublish.options.skipDrop"/>
+                    <@checkbox name="skipDrop" value=skipDrop i18nkey="manage.autopublish.options.skipDrop"/>
 
                     <div id="dropThresholdContainer" class="mt-2" style="display: none;">
                         <div class="row">
@@ -300,6 +319,23 @@
                             </div>
                         </div>
                     </div>
+
+                    <@checkbox name="notifyPublicationFailure" value=notifyFailure i18nkey="manage.autopublish.options.notifyFailure"/>
+                    <#if !publicationFailureEmailConfigured>
+                        <div class="callout callout-warning text-smaller mt-2">
+                            <@s.text name="manage.autopublish.options.notifyFailure.notConfigured"/>
+                        </div>
+                    </#if>
+
+                    <div id="failureEmailsContainer" class="mt-2" style="display: none;">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <label for="failureEmails" class="form-label"><@s.text name="manage.autopublish.options.notifyFailure.emails"/></label>
+                                <input type="text" class="form-control" name="failureEmails" id="failureEmails" placeholder="email1@example.org, email2@example.org" value="${failureEmails!}">
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </form>
 

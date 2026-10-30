@@ -41,8 +41,8 @@
 [#assign resourceSubtypeLowerCase = (resource.subtype?lower_case)!""]
 
 <header>
-    <nav class="navbar navbar-expand-xl navbar-light bg-gbif-main-navbar fixed-top py-1 [#if !(auxTopNavbar!false)]shadow-sm[/#if]">
-        <div class="container">
+    <nav class="main-nav navbar navbar-expand-xl navbar-dark bg-gbif-main-navbar shadow-sm fixed-top py-0 border-bottom">
+        <div class="container-fluid">
             <a href="${baseURL}/" rel="home" title="CEIBA IPT" class="navbar-brand" >
                 <img src="${baseURL}/images/logo-CEIBA.png" alt="CEIBA IPT" class="logo-ceiba"/>
             </a>

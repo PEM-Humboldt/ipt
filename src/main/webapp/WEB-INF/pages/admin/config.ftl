@@ -87,15 +87,15 @@
             </h4>
             <div class="row g-3 mb-5">
                 <div class="col-lg-6">
-                    <@input name="baseUrl" i18nkey="admin.config.baseUrl" help="i18n" size=80/>
+                    <@input name="baseUrl" value=baseUrl! i18nkey="admin.config.baseUrl" help="i18n" size=80/>
                 </div>
 
                 <div class="col-lg-6">
-                    <@input name="proxy" i18nkey="admin.config.proxy" help="i18n" size=80/>
+                    <@input name="proxy" value=proxy! i18nkey="admin.config.proxy" help="i18n" size=80/>
                 </div>
 
                 <div class="col-lg-6">
-                    <@input name="logoRedirectUrl" i18nkey="admin.config.logoUrl" help="i18n" size=80/>
+                    <@input name="logoRedirectUrl" value=logoRedirectUrl! i18nkey="admin.config.logoUrl" help="i18n" size=80/>
                 </div>
             </div>
 
@@ -106,10 +106,10 @@
                 <div class="col-sm-6">
                     <div class="row g-3">
                         <div class="col-12">
-                            <@input name="latitude" i18nkey="admin.config.server.latitude" help="i18n" />
+                            <@input name="latitude" value=latitude! i18nkey="admin.config.server.latitude" help="i18n" />
                         </div>
                         <div class="col-12">
-                            <@input name="longitude" i18nkey="admin.config.server.longitude" help="i18n" />
+                            <@input name="longitude" value=longitude! i18nkey="admin.config.server.longitude" help="i18n" />
                         </div>
                     </div>
                 </div>
@@ -131,7 +131,32 @@
             </h4>
             <div class="row g-3 mb-5">
                 <div class="col-lg-6">
-                    <@input name="adminEmail" i18nkey="admin.config.adminEmail" help="i18n" size=80/>
+                    <@input name="adminEmail" value=adminEmail! i18nkey="admin.config.adminEmail" help="i18n" size=80/>
+                </div>
+            </div>
+
+            <h4 class="pb-2 mb-2 pt-2 text-gbif-header-2 fs-5 fw-400">
+                <@s.text name="admin.config.section.email"/>
+            </h4>
+            <div class="row g-3 mb-5">
+                <div class="col-lg-6">
+                    <@input name="mailSmtpHost" value=mailSmtpHost! i18nkey="admin.config.mailSmtpHost" help="i18n" size=80/>
+                </div>
+
+                <div class="col-lg-6">
+                    <@input name="mailSmtpPort" value=mailSmtpPort! i18nkey="admin.config.mailSmtpPort" help="i18n" size=80/>
+                </div>
+
+                <div class="col-lg-6">
+                    <@input name="mailSmtpUsername" value=mailSmtpUsername! i18nkey="admin.config.mailSmtpUsername" help="i18n" size=80/>
+                </div>
+
+                <div class="col-lg-6">
+                    <@input name="mailSmtpPassword" i18nkey="admin.config.mailSmtpPassword" help="i18n" size=80 type="password"/>
+                </div>
+
+                <div class="col-12">
+                    <@checkbox name="mailSmtpStartTlsEnable" value=mailSmtpStartTlsEnable i18nkey="admin.config.mailSmtpStartTlsEnable" help="i18n"/>
                 </div>
             </div>
 
@@ -149,7 +174,7 @@
             </h4>
             <div class="row g-3 mb-5">
                 <div class="col-lg-6">
-                    <@input name="analyticsKey" i18nkey="admin.config.analyticsKey" help="i18n" size=80/>
+                    <@input name="analyticsKey" value=analyticsKey! i18nkey="admin.config.analyticsKey" help="i18n" size=80/>
                 </div>
             </div>
 
@@ -158,11 +183,11 @@
             </h4>
             <div class="row g-3 mb-5">
                 <div class="col-12">
-                    <@checkbox name="archivalMode" i18nkey="admin.config.archivalMode" help="i18n"/>
+                    <@checkbox name="archivalMode" value=archivalMode i18nkey="admin.config.archivalMode" help="i18n"/>
                 </div>
 
                 <div class="col-lg-6">
-                    <@input name="archivalLimit" i18nkey="admin.config.archivalLimit" help="i18n" type="number"/>
+                    <@input name="archivalLimit" value=archivalLimit! i18nkey="admin.config.archivalLimit" help="i18n" type="number"/>
                 </div>
             </div>
 
@@ -171,7 +196,7 @@
             </h4>
             <div class="row g-3 mb-5">
                 <div class="col-12">
-                    <@checkbox name="debug" i18nkey="admin.config.debug" help="i18n"/>
+                    <@checkbox name="debug" value=debug i18nkey="admin.config.debug" help="i18n"/>
                 </div>
             </div>
 
