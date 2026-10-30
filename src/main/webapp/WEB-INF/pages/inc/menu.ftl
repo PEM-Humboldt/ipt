@@ -39,23 +39,13 @@
 [#assign currentLocale = .vars["locale"]!"en"/]
 [#assign resourceTypeLowerCase = (resource.coreType?lower_case)!"other"]
 [#assign resourceSubtypeLowerCase = (resource.subtype?lower_case)!""]
-[#if !cfg.devMode() && cfg.getRegistryType()?has_content && cfg.getRegistryType()=='PRODUCTION']
-    [#assign navbarClass = "bg-gbif-main-navbar"/]
-    [#assign isTest = false/]
-[#else]
-    [#assign navbarClass = "bg-gbif-main-navbar-test"/]
-    [#assign isTest = true/]
-[/#if]
 
 <header>
-    <nav class="main-nav navbar navbar-expand-xl navbar-dark ${navbarClass} fixed-top py-0 border-bottom">
+    <nav class="main-nav navbar navbar-expand-xl navbar-dark bg-gbif-main-navbar shadow-sm fixed-top py-0 border-bottom">
         <div class="container-fluid">
             <a href="${baseURL}/" rel="home" title="CEIBA IPT" class="navbar-brand" >
                 <img src="${baseURL}/images/logo-CEIBA.png" alt="CEIBA IPT" class="logo-ceiba"/>
             </a>
-            [#if isTest]
-            <span class="mode-badge mode-badge-test">TEST MODE</span>
-            [/#if]
             <button class="navbar-toggler my-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                 <svg class="navbar-toggler-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path stroke="rgba(var(--navbar-link-color), 0.75)" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"/></svg>
             </button>
