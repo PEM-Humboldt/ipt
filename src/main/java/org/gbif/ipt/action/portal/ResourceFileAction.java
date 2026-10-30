@@ -40,7 +40,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Strings;
-import javax.inject.Inject;
 import lombok.Getter;
 
 /**
