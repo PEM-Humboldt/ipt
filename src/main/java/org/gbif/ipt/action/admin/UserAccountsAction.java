@@ -216,11 +216,6 @@ public class UserAccountsAction extends POSTAction {
     return newUser ? "yes" : "no";
   }
 
-  // Getters / Setters follow
-  public User getUser() {
-    return user;
-  }
-
   public List<User> getUsers() {
     return users;
   }
