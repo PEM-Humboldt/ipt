@@ -13,6 +13,7 @@
  */
 package org.gbif.ipt.action.manage;
 
+import org.apache.tika.Tika;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
 import org.gbif.ipt.config.DataDir;
@@ -63,6 +64,8 @@ public class SourceAction extends ManagerBaseAction implements UploadedFilesAwar
   private static final long serialVersionUID = 3324051864626106131L;
 
   private static final Logger LOG = LogManager.getLogger(SourceAction.class);
+
+  private static final Tika TIKA = new Tika();
 
   private SourceManager sourceManager;
   private JdbcSupport jdbcSupport;
@@ -197,7 +200,7 @@ public class SourceAction extends ManagerBaseAction implements UploadedFilesAwar
 
       // uploaded a new file. Is it compressed?
       // application/zip, application/x-gzip
-      if (Strings.CS.endsWithAny(contentType.toLowerCase(), "zip", "gzip", "compressed")) {
+      if (isCompressed(content, contentType, originalName)) {
         try {
           File tmpDir = dataDir.tmpDir();
           // override auto-generated name
@@ -210,6 +213,11 @@ public class SourceAction extends ManagerBaseAction implements UploadedFilesAwar
 
           // import each file from the archive
           for (File f : files) {
+            if (isXmlFile(f)) {
+              LOG.debug("Skipping XML file {}", f.getName());
+              continue;
+            }
+
             String created = addDataFileAndReturnSourceName(f, f.getName());
             if (created != null) {
               createdSourceNames.add(created);
@@ -272,6 +280,47 @@ public class SourceAction extends ManagerBaseAction implements UploadedFilesAwar
     return SUCCESS;
   }
 
+  private boolean isCompressed(File content, String contentType, String originalName) {
+    // Office Open XML formats (.xlsx, .xlsm, .docx, etc.) are zip containers,
+    // and Tika can misidentify minimally structured ones (e.g., produced by
+    // lightweight writer libraries lacking a theme part) as plain zip/gzip.
+    // Trust the extension for known spreadsheet formats before falling back
+    // to content sniffing.
+    if (originalName != null) {
+      String lower = originalName.toLowerCase();
+      if (lower.endsWith(".xlsx") || lower.endsWith(".xlsm") || lower.endsWith(".xls")) {
+        return false;
+      }
+    }
+
+    boolean compressed;
+    try {
+      String realType = TIKA.detect(content);
+      compressed = realType.contains("zip") || realType.contains("gzip") || realType.contains("tar");
+    } catch (IOException e) {
+      LOG.error("Failed to detect content type of file {}, inferring it from an extension.", content.getName(), e);
+      compressed = looksCompressed(contentType, originalName);
+    }
+    return compressed;
+  }
+
+  private boolean looksCompressed(String contentType, String originalName) {
+    if (Strings.CS.endsWithAny(contentType, "zip", "gzip", "compressed", "x-tar", "x-7z-compressed")) {
+      return true;
+    }
+    if (originalName != null) {
+      String lower = originalName.toLowerCase();
+      return lower.endsWith(".zip") || lower.endsWith(".gz") || lower.endsWith(".tgz")
+          || lower.endsWith(".tar") || lower.endsWith(".tar.gz") || lower.endsWith(".7z")
+          || lower.endsWith(".rar");
+    }
+    return false;
+  }
+
+  private boolean isXmlFile(File f) {
+    return f.getName().toLowerCase().endsWith(".xml");
+  }
+
   private String addDataFileAndReturnSourceName(File f, String filename) throws InvalidFilenameException {
     Source existingSource = resource.getSource(filename);
     boolean replaced = existingSource != null;
@@ -290,6 +339,7 @@ public class SourceAction extends ManagerBaseAction implements UploadedFilesAwar
       } else {
         addActionMessage(getText("manage.source.added.new", new String[]{source.getName()}));
       }
+      alertEmbeddedLineBreaksRemoved(source);
 
       return source.getName();
 
@@ -358,9 +408,34 @@ public class SourceAction extends ManagerBaseAction implements UploadedFilesAwar
   }
 
   /**
-   * Alert user if the number of columns changed, when the existing source has already been mapped.
+   * Alert the publisher if quoted embedded line breaks were found and stripped out of their file on
+   * upload, since those would otherwise silently misalign columns without any visible error.
+   * <p>
+   * Sets both an action warning (for any classic, non-AJAX form submission) and an
+   * {@code X-Warning-Message} response header, mirroring the existing {@code X-Error-Message} header
+   * set in {@link #addErrorHeader(String)}. The header exists because the upload widget
+   * in overview.ftl talks to this action over a raw XHR and reconstructs its own success banner from
+   * sessionStorage after a client-driven reload, so it never sees the action's actionWarnings/messages -
+   * reading a response header off the XHR itself is the only reliable way to get this message to it.
    *
-   * @param sourceIsMapped true if source is mapped, false otherwise
+   * @param source the just-added/replaced source
+   */
+  protected void alertEmbeddedLineBreaksRemoved(Source source) {
+    if (source instanceof TextFileSource) {
+      int removed = ((TextFileSource) source).getLinesWithEmbeddedBreaksRemoved();
+      if (removed > 0) {
+        String msg = getText("manage.source.lineBreaksRemoved",
+          new String[] {source.getName(), String.valueOf(removed)});
+        addActionWarning(msg);
+        response.setHeader("X-Warning-Message", msg);
+      }
+    }
+  }
+
+  /**
+   * Alert the user if the number of columns changed when the existing source has already been mapped.
+   *
+   * @param sourceIsMapped true if the source is mapped, false otherwise
    * @param number         current number of columns in source
    * @param originalNumber original number of columns in source
    *
@@ -390,6 +465,7 @@ public class SourceAction extends ManagerBaseAction implements UploadedFilesAwar
     return SUCCESS;
   }
 
+  @StrutsParameter(depth = 2)
   public TextFileSource getFileSource() {
     if (source instanceof TextFileSource) {
       return (TextFileSource) source;

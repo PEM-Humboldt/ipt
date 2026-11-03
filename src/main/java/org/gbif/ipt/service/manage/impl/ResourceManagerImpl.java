@@ -28,6 +28,7 @@ import org.gbif.dwc.terms.DwcTerm;
 import org.gbif.dwc.terms.Term;
 import org.gbif.dwc.terms.TermFactory;
 import org.gbif.ipt.action.BaseAction;
+import org.gbif.ipt.action.manage.MetadataAction;
 import org.gbif.ipt.action.portal.OrganizedTaxonomicKeywords;
 import org.gbif.ipt.config.AppConfig;
 import org.gbif.ipt.config.Constants;
@@ -171,6 +172,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -201,6 +203,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
+import org.apache.commons.text.StringEscapeUtils;
+import org.jsoup.Jsoup;
 import org.xml.sax.SAXException;
 
 import com.lowagie.text.Document;
@@ -241,8 +245,8 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
   @Getter
   private GenerateDwcaFactory dwcaFactory;
   private GenerateDataPackageFactory dataPackageFactory;
-  private Map<String, Future<Map<String, Integer>>> processFutures = new HashMap<>();
-  private ListValuedMap<String, Date> processFailures = new ArrayListValuedHashMap<>();
+  private Map<String, Future<Map<String, Integer>>> processFutures = new ConcurrentHashMap<>();
+  private Map<String, List<Date>> processFailures = new ConcurrentHashMap<>();
   private Map<String, LocalDate> lastLoggedFailures = new ConcurrentHashMap<>();
   private Map<String, StatusReport> processReports = new ConcurrentHashMap<>();
   private List<String> resourcesToSkip = new CopyOnWriteArrayList<>();
@@ -360,7 +364,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     result.setModified(resource.getModified());
     result.setPublished(true);
     result.setLastPublished(publishedPublicVersion.getLastPublished());
-    result.setNextPublished(resource.getNextPublished());
+    result.setNextPublished(effectiveNextPublished(resource));
     result.setCreatorName(resource.getCreatorName());
     result.setDataPackage(resource.isDataPackage());
 
@@ -399,11 +403,23 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     result.setModified(resource.getModified());
     result.setPublished(resource.getLastPublished() != null);
     result.setLastPublished(resource.getLastPublished());
-    result.setNextPublished(resource.getNextPublished());
+    result.setNextPublished(effectiveNextPublished(resource));
     result.setCreatorName(resource.getCreatorName());
     result.setDataPackage(resource.isDataPackage());
 
     return result;
+  }
+
+  /**
+   * Returns the resource's next scheduled publication date, or null when auto-publishing is disabled
+   * instance-wide. Mirrors the overview page and {@code PublishingMonitor}, which both ignore existing
+   * schedules while the global switch is off, so the manage home table does not display misleading dates.
+   *
+   * @param resource resource
+   * @return next scheduled publication date, or null when auto-publishing is disabled instance-wide
+   */
+  private Date effectiveNextPublished(Resource resource) {
+    return cfg.isAutoPublishingEnabled() ? resource.getNextPublished() : null;
   }
 
   @Override
@@ -1724,7 +1740,10 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
             // do not count "data not changed" as an actual failure
             if (!failedDueToDataNotChanged) {
               // keep track of how many failures on auto publication have happened
-              processFailures.put(resource.getShortname(), new Date());
+              processFailures
+                  .computeIfAbsent(resource.getShortname(), k -> new CopyOnWriteArrayList<>())
+                  .add(new Date());
+
               sendPublicationFailureEmail(resource, version, reasonFailed);
             }
 
@@ -1942,9 +1961,11 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
           Comparator.comparing(SimplifiedResource::getSubtype, nullSafeStringComparator).reversed() :
           Comparator.comparing(SimplifiedResource::getSubtype, nullSafeStringComparator);
     } else if (index == 5) {
-      return isDescendingOrder ?
-          Comparator.comparingInt(SimplifiedResource::getRecordsPublished).reversed() :
-          Comparator.comparingInt(SimplifiedResource::getRecordsPublished);
+      Comparator<SimplifiedResource> byRecords = Comparator.comparingInt(SimplifiedResource::getRecordsPublished);
+      Comparator<SimplifiedResource> tieBreak = Comparator.comparing(SimplifiedResource::getLastPublished, nullSafeDateComparator);
+      return isDescendingOrder
+          ? byRecords.reversed().thenComparing(tieBreak)
+          : byRecords.thenComparing(tieBreak);
     } else if (index == 6) {
       return isDescendingOrder ?
           Comparator.comparing(SimplifiedResource::getModified, nullSafeDateComparator).reversed() :
@@ -2026,9 +2047,9 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     result.add(toUiDateTime(resource.getLastPublished()));
     result.add(toUiNextPublished(resource.getNextPublished()));
     result.add(toUiStatus(resource.getStatus(), resource.getPendingStatus(), locale));
-    result.add(resource.getCreatorName());
+    result.add(escapeHtml(resource.getCreatorName()));
     result.add(resource.getShortname());
-    result.add(resource.getSubject() != null ? resource.getSubject() : "");
+    result.add(resource.getSubject() != null ? escapeHtml(resource.getSubject()) : "");
 
     return result;
   }
@@ -2055,11 +2076,15 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     result.add(toUiDateTime(resource.getLastPublished()));
     result.add(toUiNextPublished(resource.getNextPublished()));
     result.add(toUiStatus(resource.getStatus(), resource.getPendingStatus(), locale));
-    result.add(resource.getCreatorName());
+    result.add(escapeHtml(resource.getCreatorName()));
     result.add(resource.getShortname());
-    result.add(resource.getSubject() != null ? resource.getSubject() : "");
+    result.add(resource.getSubject() != null ? escapeHtml(resource.getSubject()) : "");
 
     return result;
+  }
+
+  private String escapeHtml(String name) {
+    return StringEscapeUtils.escapeHtml4(name);
   }
 
   /**
@@ -2121,7 +2146,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
    */
   private String toUiOrganization(SimplifiedResource resource) {
     String result = resource.getOrganizationAliasOrName();
-    return result != null && !"No organization".equals(result) ? result : "--";
+    return result != null && !"No organization".equals(result) ? escapeHtml(result) : "--";
   }
 
   /**
@@ -2134,6 +2159,11 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
    */
   private String toUiRecordsPublished(SimplifiedResource resource, Locale locale) {
     NumberFormat format = NumberFormat.getInstance(locale);
+
+    if (resource.getLastPublished() == null && resource.getRecordsPublished() == 0) {
+      return "<span>--</span>";
+    }
+
     return "<a class=\"resource-table-link\" href='" + cfg.getBaseUrl() + "/resource?r=" + resource.getShortname() + "#anchor-dataRecords'>" + format.format(resource.getRecordsPublished()) + "</a>";
   }
 
@@ -2161,7 +2191,8 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
    */
   private String toResourceHomeLink(SimplifiedResource resource) {
     String resourceName = StringUtils.defaultIfEmpty(resource.getTitle(), resource.getShortname());
-    return "<a class=\"resource-table-link\" href='" + cfg.getBaseUrl() + "/resource?r=" + resource.getShortname() + "'>" + resourceName + "</a>";
+    String resourceNameEscaped = escapeHtml(resourceName);
+    return "<a class=\"resource-table-link\" href='" + cfg.getBaseUrl() + "/resource?r=" + resource.getShortname() + "'>" + resourceNameEscaped + "</a>";
   }
 
   /**
@@ -2173,14 +2204,15 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
    */
   private String toResourceManageLink(SimplifiedResource resource) {
     String resourceName = StringUtils.defaultIfEmpty(resource.getTitle(), resource.getShortname());
-    return "<a class=\"resource-table-link\" href='" + cfg.getBaseUrl() + "/manage/resource?r=" + resource.getShortname() + "'>" + resourceName + "</a>";
+    String resourceNameEscaped = escapeHtml(resourceName);
+    return "<a class=\"resource-table-link\" href='" + cfg.getBaseUrl() + "/manage/resource?r=" + resource.getShortname() + "'>" + resourceNameEscaped + "</a>";
   }
 
   /**
    * Converts raw data to UI format.
    * Wraps lower case status into span to make it badge on UI.
    *
-   * @param status publication status
+   * @param status        publication status
    * @param pendingStatus pending publication status
    * @return wrapped publication status (badge)
    */
@@ -2334,7 +2366,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     } else if (COL_DP.equals(resource.getCoreType())) {
       metadata = new ColMetadata();
     } else {
-      metadata = new FrictionlessMetadata();
+      metadata = new FrictionlessMetadata<>();
     }
 
     File metadataFile = dataDir.resourceDatapackageMetadataFile(resource.getShortname(), resource.getCoreType());
@@ -2348,7 +2380,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
       }
     } else {
       if (metadata instanceof FrictionlessMetadata) {
-        ((FrictionlessMetadata) metadata).setName(resource.getShortname());
+        ((FrictionlessMetadata<?, ?, ?>) metadata).setName(resource.getShortname());
       }
     }
 
@@ -2521,6 +2553,12 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
 
           // update EML with the latest resource basics (version and GUID)
           syncEmlWithResource(resource);
+
+          // IPT 3.3.5 resources: restore license link stripped by the HTML sanitizer (#3175)
+          if (restoreStrippedLicenseLink(resource.getEml())) {
+            EmlUtils.writeWithLocale(dataDir.resourceEmlFile(shortname), resource, Locale.US);
+            LOG.info("Restored license link in intellectual rights of resource {}", shortname);
+          }
         }
 
         LOG.debug("Read resource configuration for {}", shortname);
@@ -2644,6 +2682,42 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
       return vh;
     }
     return null;
+  }
+
+  /**
+   * In IPT 3.3.5 the HTML sanitizer treated the intellectual rights as plain text, stripping the license anchor
+   * (e.g. "This work is licensed under a Creative Commons Attribution (CC-BY) 4.0 License:
+   * http://creativecommons.org/licenses/by/4.0") so the license could no longer be recognized. If the intellectual
+   * rights have no license anchor, but mention the URL or the name of one of the supported licenses, they are
+   * replaced with that license's full text (including the anchor).
+   *
+   * @param eml EML
+   * @return true if the intellectual rights were restored, false otherwise
+   */
+  boolean restoreStrippedLicenseLink(Eml eml) {
+    if (eml == null || StringUtils.isBlank(eml.getIntellectualRights()) || eml.parseLicenseUrl() != null) {
+      return false;
+    }
+
+    // can be old-fashioned license, with version outside parenthesis
+    String rightsText = StringUtils.normalizeSpace(Jsoup.parse(eml.getIntellectualRights()).text())
+        .replace(") 4.0", " 4.0)");
+    Properties licenseProperties = MetadataAction.licenseProperties();
+
+    // URL first, as it is the most specific
+    for (String prefix : new String[] {"license.url.", "license.name."}) {
+      for (String key : licenseProperties.stringPropertyNames()) {
+        String value = licenseProperties.getProperty(key);
+        if (key.startsWith(prefix) && StringUtils.isNotBlank(value) && rightsText.contains(value)) {
+          String licenseText = licenseProperties.getProperty("license.text." + key.substring(prefix.length()));
+          if (StringUtils.isNotBlank(licenseText)) {
+            eml.setIntellectualRights(licenseText);
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   /**
@@ -4358,7 +4432,7 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
   }
 
   @Override
-  public ListValuedMap<String, Date> getProcessFailures() {
+  public Map<String, List<Date>> getProcessFailures() {
     return processFailures;
   }
 
@@ -4373,28 +4447,35 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
   }
 
   @Override
-  public boolean hasMaxProcessFailures(Resource resource) {
+  public boolean hasMaxProcessFailures(Resource resource, boolean logInfo) {
     String resourceShortname = resource.getShortname();
 
     if (processFailures.containsKey(resourceShortname)) {
       List<Date> failures = processFailures.get(resourceShortname);
       int count = failures.size();
 
-      LocalDate today = LocalDate.now();
-      LocalDate last = lastLoggedFailures.get(resourceShortname);
+      if (logInfo) {
+        LocalDate today = LocalDate.now();
+        LocalDate last = lastLoggedFailures.get(resourceShortname);
 
-      if (count < MAX_PROCESS_FAILURES) { // always log if count is below max
-        LOG.debug("Publication has failed {} time(s) for resource: {}",
-            count, resource.getTitleAndShortname());
-      } else if (last == null || !last.equals(today)) { // once the limit is reached, only log once per day
-        LOG.debug("Publication has failed {} time(s) for resource: {} (max amount of failures)",
-            count, resource.getTitleAndShortname());
-        lastLoggedFailures.put(resourceShortname, today);
+        if (count < MAX_PROCESS_FAILURES) { // always log if count is below max
+          LOG.debug("Publication has failed {} time(s) for resource: {}",
+              count, resource.getTitleAndShortname());
+        } else if (last == null || !last.equals(today)) { // once the limit is reached, only log once per day
+          LOG.debug("Publication has failed {} time(s) for resource: {} (max amount of failures)",
+              count, resource.getTitleAndShortname());
+          lastLoggedFailures.put(resourceShortname, today);
+        }
       }
 
       return count >= MAX_PROCESS_FAILURES;
     }
     return false;
+  }
+
+  @Override
+  public boolean hasMaxProcessFailures(Resource resource) {
+    return hasMaxProcessFailures(resource, true);
   }
 
   /**
