@@ -349,15 +349,6 @@
                                 </div>
                             </#if>
 
-                            <#if resource.organisation??>
-                                <div>
-                                    <dt><@s.text name='portal.resource.publishedBy'/>:</dt>
-                                    <dd>
-                                        <a href="${cfg.portalUrl}/publisher/${resource.organisation.key}" target="_blank">${resource.organisation.name!"Organisation"}</a>
-                                    </dd>
-                                </div>
-                            </#if>
-
                             <#if eml.intellectualRights?has_content>
                                 <div>
                                     <dt><@s.text name='portal.resource.license'/>:</dt>
