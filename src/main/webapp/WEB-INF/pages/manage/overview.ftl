@@ -2886,10 +2886,10 @@
                 </div>
                 <div class="modal-footer justify-content-center">
                     <#if isDataPackage>
-                        <input type="submit" form="upload-metadata-form" value="Replace" id="datapackageMetadataReplace" name="datapackageMetadataReplace" class="btn btn-sm btn-outline-gbif-primary confirmDatapackageMetadataReplace" style="">
+                        <input type="submit" form="upload-metadata-form" value="${action.getText('button.replace')}" id="datapackageMetadataReplace" name="datapackageMetadataReplace" class="btn btn-sm btn-outline-gbif-primary confirmDatapackageMetadataReplace" style="">
                         <button id="datapackageMetadataCancel" type="button" class="btn btn-sm btn-outline-secondary " data-bs-dismiss="modal"><@s.text name="button.cancel"/></button>
                     <#else>
-                        <input type="submit" form="upload-metadata-form" value="Replace" id="emlReplace" name="emlReplace" class="btn btn-sm btn-outline-gbif-primary confirmEmlReplace" style="display:none;">
+                        <input type="submit" form="upload-metadata-form" value="${action.getText('button.replace')}" id="emlReplace" name="emlReplace" class="btn btn-sm btn-outline-gbif-primary confirmEmlReplace" style="display:none;">
                         <button id="emlCancel" type="button" class="btn btn-sm btn-outline-secondary " data-bs-dismiss="modal"><@s.text name="button.cancel"/></button>
                     </#if>
                 </div>
