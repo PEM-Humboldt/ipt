@@ -131,14 +131,8 @@
                         <@input tabindex=2 name="user.lastname" value=user.lastname! />
                     </div>
 
-                    <#if !id?has_content>
-                        <div class="col-md-6">
-                            <@input tabindex=3 name="user.email" value=user.email! disabled=id?has_content/>
-                        </div>
-                    </#if>
-
                     <div class="col-md-6">
-                        <@input name="user.email" disabled=id?has_content/>
+                        <@input name="user.email" value=user.email! disabled=id?has_content/>
                     </div>
 
                     <div class="col-md-6">
