@@ -1520,7 +1520,7 @@
                         <#if isStatusPending>
                             <div class="mt-2">
                                 <span class="fs-smaller-2 text-discreet">
-                                    <@s.text name="manage.overview.changed.publication.status.description"/>: <b class="text-gbif-${pendingStatusColor}">${resource.pendingStatus}</b>. <@s.text name="manage.overview.changed.publication.status.republication"/>
+                                    <@s.text name="manage.overview.changed.publication.status.description"/>: <b class="text-gbif-${pendingStatusColor}"><@s.text name="manage.home.visible.pending.${resource.pendingStatus!?lower_case}"/></b>. <@s.text name="manage.overview.changed.publication.status.republication"/>
                                 </span>
                             </div>
                         </#if>
@@ -2580,7 +2580,7 @@
                         <form id="cancel-visibility-change-modal-form" action="resource-cancelVisibilityChange.do" method="post">
                             <input name="r" type="hidden" value="${resource.shortname}"/>
                         </form>
-                        <@s.text name="manage.overview.visibility.confirm.cancel.change"><@s.param>${resource.status!}</@s.param><@s.param>${resource.pendingStatus!}</@s.param></@s.text>
+                        <@s.text name="manage.overview.visibility.confirm.cancel.change"><@s.param><@s.text name="manage.home.visible.${resource.status!?lower_case}"/></@s.param><@s.param><@s.text name="manage.home.visible.pending.${resource.pendingStatus!?lower_case}"/></@s.param></@s.text>
                     </div>
                 </div>
 

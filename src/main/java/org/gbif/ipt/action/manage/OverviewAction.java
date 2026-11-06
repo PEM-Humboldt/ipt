@@ -838,10 +838,22 @@ public class OverviewAction extends ManagerBaseAction implements ReportHandler, 
         try {
           resourceManager.visibilityToPrivate(resource, this);
           if (resource.getPendingStatus() != null) {
-            addActionMessage(
+            if (resource.getPendingStatus().toString() == "PUBLIC") {
+              addActionMessage(
+                getText("manage.overview.changed.publication.status", new String[]{"Público"})
+                    + " "
+                    + getText("manage.overview.changed.publication.status.republication"));
+            } else if (resource.getPendingStatus().toString() == "PRIVATE") {
+              addActionMessage(
+                getText("manage.overview.changed.publication.status", new String[]{"Privado"})
+                    + " "
+                    + getText("manage.overview.changed.publication.status.republication"));
+            } else {
+              addActionMessage(
                 getText("manage.overview.changed.publication.status", new String[]{resource.getPendingStatus().toString()})
                     + " "
                     + getText("manage.overview.changed.publication.status.republication"));
+            }
           }
         } catch (InvalidConfigException e) {
           LOG.error("Cant unpublish resource {}", resource, e);
@@ -902,8 +914,14 @@ public class OverviewAction extends ManagerBaseAction implements ReportHandler, 
     resource.setPendingStatus(null);
     resource.setMakePublicDate(null);
     saveResource();
-    addActionMessage(getText("manage.overview.changed.publication.status", new String[]{resource.getStatus()
-        .toString()}));
+    if (resource.getStatus().toString() == "PUBLIC"){
+      addActionMessage(getText("manage.overview.changed.publication.status", new String[]{"Público"}));
+    } else if (resource.getStatus().toString() == "PRIVATE"){
+      addActionMessage(getText("manage.overview.changed.publication.status", new String[]{"Privado"}));
+    } else {
+      addActionMessage(getText("manage.overview.changed.publication.status", new String[]{resource.getStatus().toString()}));
+    }
+    
 
     return execute();
   }
