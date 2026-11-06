@@ -12,18 +12,20 @@
  * limitations under the License.
  */
 package org.gbif.ipt.model;
-
+import java.util.Objects;
+import java.util.StringJoiner;
 import org.gbif.ipt.model.voc.PublicationStatus;
 
 import java.util.Date;
-import java.util.Objects;
-import java.util.StringJoiner;
 import java.util.UUID;
+
+import lombok.Data;
 
 /**
  * Simplified IPT resource view for main and manage pages.
  * A resource can be identified by its short name which has to be unique within an IPT instance.
  */
+@Data
 public class SimplifiedResource {
 
   private String logoUrl;
@@ -37,6 +39,7 @@ public class SimplifiedResource {
   private Date lastPublished;
   private Date nextPublished;
   private PublicationStatus status;
+  private PublicationStatus pendingStatus;
   private String creatorName;
   private String shortname;
   private String subject;
@@ -46,80 +49,8 @@ public class SimplifiedResource {
   private boolean published;
   private boolean dataPackage;
 
-  public String getShortname() {
-    return shortname;
-  }
-
-  public void setShortname(String shortname) {
-    this.shortname = shortname;
-  }
-
-  public String getTitle() {
-    return title;
-  }
-
-  public void setTitle(String title) {
-    this.title = title;
-  }
-
   public String getTitleOrShortname() {
     return title != null ? title : shortname;
-  }
-
-  public PublicationStatus getStatus() {
-    return status;
-  }
-
-  public void setStatus(PublicationStatus status) {
-    this.status = status;
-  }
-
-  public int getRecordsPublished() {
-    return recordsPublished;
-  }
-
-  public void setRecordsPublished(int recordsPublished) {
-    this.recordsPublished = recordsPublished;
-  }
-
-  public String getLogoUrl() {
-    return logoUrl;
-  }
-
-  public void setLogoUrl(String logoUrl) {
-    this.logoUrl = logoUrl;
-  }
-
-  public String getSubject() {
-    return subject;
-  }
-
-  public void setSubject(String subject) {
-    this.subject = subject;
-  }
-
-  public UUID getOrganisationKey() {
-    return organisationKey;
-  }
-
-  public void setOrganisationKey(UUID organisationKey) {
-    this.organisationKey = organisationKey;
-  }
-
-  public String getOrganisationAlias() {
-    return organisationAlias;
-  }
-
-  public void setOrganisationAlias(String organisationAlias) {
-    this.organisationAlias = organisationAlias;
-  }
-
-  public String getOrganisationName() {
-    return organisationName;
-  }
-
-  public void setOrganisationName(String organisationName) {
-    this.organisationName = organisationName;
   }
 
   public String getOrganizationAliasOrName() {

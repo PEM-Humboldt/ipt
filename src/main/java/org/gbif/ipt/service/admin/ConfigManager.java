@@ -124,6 +124,13 @@ public interface ConfigManager {
   void setAdminEmail(String adminEmail);
 
   /**
+   * Simple wrapper around AppConfig to set SMTP settings used for publication failure email notifications.
+   * The modified AppConfig is not immediately persisted - remember to call save() at some point!
+   */
+  void setMailSettings(String smtpHost, String smtpPort, String smtpUsername, String smtpPassword,
+                       Boolean smtpStartTlsEnable);
+
+  /**
    * Sets default IPT language.
    */
   void setDefaultLocale(String defaultLanguage);
@@ -132,4 +139,9 @@ public interface ConfigManager {
    * Sets logo redirect URL (by default public URL of the IPT).
    */
   void setLogoRedirectUrl(String logoRedirectUrl);
+
+  /**
+   * Sets the auto-publishing settings.
+   */
+  void setAutoPublishingSettings(boolean enabled, boolean adminOnly) throws InvalidConfigException;
 }

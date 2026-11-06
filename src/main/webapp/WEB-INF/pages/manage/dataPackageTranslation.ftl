@@ -12,7 +12,8 @@
                 titleQuestion: "<@s.text name="basic.confirm"/>",
                 yesAnswer: "<@s.text name="basic.yes"/>",
                 cancelAnswer: "<@s.text name="basic.no"/>",
-                buttonType: "danger"
+                buttonType: "danger",
+                baseUrl: "${baseURL}"
             });
             $("table input").focus(function () {
                 $(this).parent().parent().addClass("highlight");
@@ -497,6 +498,7 @@
         <div class="my-3 p-3">
             <form id="translation-form" class="translation-form" action="dataPackageFieldTranslation.do" method="post">
                 <input type="hidden" name="r" value="${resource.shortname}"/>
+                <input type="hidden" name="id" value="${(mapping.dataPackageSchema.identifier)!}"/>
                 <input type="hidden" name="mid" value="${mid}"/>
                 <input type="hidden" name="field" value="${field.name}"/>
 

@@ -95,13 +95,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import javax.xml.parsers.SAXParserFactory;
 
-import org.apache.commons.collections4.ListValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AssertionFailureBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -1487,12 +1487,22 @@ public class ResourceManagerImplTest extends IptBaseTest {
   public void testHasMaxProcessFailures() throws Exception {
     ResourceManagerImpl resourceManager = getResourceManagerImpl();
 
-    ListValuedMap<String, Date> processFailures = new ArrayListValuedHashMap<>();
-    processFailures.put("res1", new Date());
-    processFailures.put("res1", new Date());
-    processFailures.put("res2", new Date());
-    processFailures.put("res2", new Date());
-    processFailures.put("res2", new Date());
+    Map<String, List<Date>> processFailures = new ConcurrentHashMap<>();
+    processFailures
+        .computeIfAbsent("res1", k -> new CopyOnWriteArrayList<>())
+        .add(new Date());
+    processFailures
+        .computeIfAbsent("res1", k -> new CopyOnWriteArrayList<>())
+        .add(new Date());
+    processFailures
+        .computeIfAbsent("res2", k -> new CopyOnWriteArrayList<>())
+        .add(new Date());
+    processFailures
+        .computeIfAbsent("res2", k -> new CopyOnWriteArrayList<>())
+        .add(new Date());
+    processFailures
+        .computeIfAbsent("res2", k -> new CopyOnWriteArrayList<>())
+        .add(new Date());
     resourceManager.getProcessFailures().putAll(processFailures);
 
     Resource resource = new Resource();
@@ -2129,5 +2139,49 @@ public class ResourceManagerImplTest extends IptBaseTest {
     Set<String> mySet = new HashSet<>(Arrays.asList(fileNames));
     assertTrue(mySet.contains("res1"), "res1");
     assertTrue(mySet.contains("res5"), "res5");
+  }
+
+  @Test
+  public void testRestoreStrippedLicenseLink() throws Exception {
+    ResourceManagerImpl resourceManager = getResourceManagerImpl();
+    String ccBy = "This work is licensed under a <a href=\"http://creativecommons.org/licenses/by/4.0/legalcode\">"
+        + "Creative Commons Attribution (CC-BY 4.0) License</a>.";
+
+    // license anchor stripped by the sanitizer (IPT 3.3.5)
+    Eml eml = new Eml();
+    eml.setIntellectualRights("This work is licensed under a Creative Commons Attribution (CC-BY 4.0) License.");
+    assertTrue(resourceManager.restoreStrippedLicenseLink(eml));
+    assertEquals(ccBy, eml.getIntellectualRights());
+    assertEquals("http://creativecommons.org/licenses/by/4.0/legalcode", eml.parseLicenseUrl());
+
+    // old-fashioned license name, with the URL as text
+    eml.setIntellectualRights("This work is licensed under a Creative Commons Attribution (CC-BY) 4.0 License: "
+        + "http://creativecommons.org/licenses/by/4.0\".");
+    assertTrue(resourceManager.restoreStrippedLicenseLink(eml));
+    assertEquals(ccBy, eml.getIntellectualRights());
+
+    // URL only
+    eml.setIntellectualRights("Licensed under https://creativecommons.org/licenses/by-nc/4.0/legalcode");
+    assertTrue(resourceManager.restoreStrippedLicenseLink(eml));
+    assertEquals("http://creativecommons.org/licenses/by-nc/4.0/legalcode", eml.parseLicenseUrl());
+
+    // CC0, name only
+    eml.setIntellectualRights("To the extent possible under law, the publisher has waived all rights to these data "
+        + "and has dedicated them to the Public Domain (CC0 1.0).");
+    assertTrue(resourceManager.restoreStrippedLicenseLink(eml));
+    assertEquals("http://creativecommons.org/publicdomain/zero/1.0/legalcode", eml.parseLicenseUrl());
+
+    // intact license is left alone
+    eml.setIntellectualRights(ccBy);
+    assertFalse(resourceManager.restoreStrippedLicenseLink(eml));
+    assertEquals(ccBy, eml.getIntellectualRights());
+
+    // custom rights statement is left alone
+    eml.setIntellectualRights("All rights reserved.");
+    assertFalse(resourceManager.restoreStrippedLicenseLink(eml));
+    assertEquals("All rights reserved.", eml.getIntellectualRights());
+
+    // missing rights
+    assertFalse(resourceManager.restoreStrippedLicenseLink(new Eml()));
   }
 }

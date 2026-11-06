@@ -23,7 +23,8 @@ import org.gbif.ipt.struts2.SimpleTextProvider;
 import org.gbif.ipt.utils.MapUtils;
 import org.gbif.metadata.eml.ipt.model.MaintenanceUpdateFrequency;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
+import java.io.Serial;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,9 @@ import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
 
 public class PublicationSettingsAction extends ManagerBaseAction {
+
+  @Serial
+  private static final long serialVersionUID = 7675406287200699071L;
 
   private final VocabulariesManager vocabManager;
 
@@ -110,6 +114,32 @@ public class PublicationSettingsAction extends ManagerBaseAction {
     return SUCCESS;
   }
 
+  /** Can the current user enable or change auto-publication? */
+  public boolean isAutoPublishingConfigurable() {
+    if (!cfg.isAutoPublishingEnabled()) {
+      return false;
+    }
+    return !cfg.isAutoPublishingAdminOnly()
+        || (getCurrentUser() != null && getCurrentUser().hasAdminRights());
+  }
+
+  /** Admin-only mode, non-admin user, schedule already exists: they may only turn it off. */
+  public boolean isAutoPublishingDisableOnly() {
+    return cfg.isAutoPublishingEnabled()
+        && cfg.isAutoPublishingAdminOnly()
+        && !isAutoPublishingConfigurable()
+        && resource.usesAutoPublishing();
+  }
+
+  /**
+   * Auto-publishing is off instance-wide, but this resource still has a schedule: it may only be turned off,
+   * so it does not resume unexpectedly once an administrator re-enables auto-publishing instance-wide.
+   */
+  public boolean isAutoPublishingTurnOffWhileDisabled() {
+    return !cfg.isAutoPublishingEnabled()
+        && resource.usesAutoPublishing();
+  }
+
   /**
    * Populate organisations dropdown options/list, with placeholder option, followed by list of organisations able to
    * host resources. There must be more than the default organisation "No organisation" in order to include the
@@ -134,5 +164,9 @@ public class PublicationSettingsAction extends ManagerBaseAction {
         }
       }
     }
+  }
+
+  public boolean hasMaxProcessFailures() {
+    return resourceManager.hasMaxProcessFailures(resource, false);
   }
 }

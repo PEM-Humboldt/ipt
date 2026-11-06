@@ -28,24 +28,26 @@ import org.gbif.ipt.struts2.SimpleTextProvider;
 import org.gbif.ipt.validation.DataPackageMetadataValidator;
 import org.gbif.ipt.validation.EmlValidator;
 
+import jakarta.inject.Inject;
+import java.io.Serial;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.struts2.interceptor.parameter.StrutsParameter;
 
 import lombok.Getter;
-import lombok.Setter;
 
 public class PublishAllResourcesAction extends BaseAction {
 
-  // logging
-  private static final Logger LOG = LogManager.getLogger(PublishAllResourcesAction.class);
-
+  @Serial
   private static final long serialVersionUID = -2717994514136947049L;
+
+  private static final Logger LOG = LogManager.getLogger(PublishAllResourcesAction.class);
 
   protected ResourceManager resourceManager;
   protected RegistryManager registryManager;
@@ -53,11 +55,8 @@ public class PublishAllResourcesAction extends BaseAction {
   private final DataPackageMetadataValidator dpMetadataValidator;
   @Getter
   private List<Resource> resources;
-  @Setter
   private List<String> selectedResources;
-  @Setter
   private List<String> excludedResources;
-  @Setter
   private BulkPublicationType publishMode;
 
   @Inject
@@ -130,28 +129,22 @@ public class PublishAllResourcesAction extends BaseAction {
       // next version number - the version of newly published eml/rtf/archive
       BigDecimal nextVersion = new BigDecimal(resource.getNextVersion().toPlainString());
       try {
-        if (!resourceManager.hasMaxProcessFailures(resource)) {
-          boolean isValidMetadata;
+        // manual bulk publish is an explicit admin action, so don't skip resources that hit the
+        // max failures limit for auto-publishing; give them a fresh start instead
+        resourceManager.getProcessFailures().remove(resource.getShortname());
 
-          if (resource.isDataPackage()) {
-            isValidMetadata = dpMetadataValidator.isValid(resource);
-          } else {
-            isValidMetadata = emlValidator.isValid(resource, null);
-          }
+        boolean isValidMetadata = resource.isDataPackage()
+            ? dpMetadataValidator.isValid(resource)
+            : emlValidator.isValid(resource, null);
 
-          if (isValidMetadata) {
-            // publish a new version of the resource - dwca gets published asynchronously
-            resourceManager.publish(resource, nextVersion, this, skipIfNotChanged);
-          } else {
-            // alert user publication failed
-            addActionError(getText("publishing.failed",
-                new String[]{nextVersion.toPlainString(), resource.getShortname(),
-                    getText("manage.overview.published.missing.metadata")}));
-          }
-        } else {
-          addActionError(getText("publishing.skipping",
-              new String[]{String.valueOf(resource.getNextVersion()), resource.getTitleAndShortname()}));
+        if (!isValidMetadata) {
+          addActionWarning(getText("publishing.failed",
+              new String[]{nextVersion.toPlainString(), resource.getShortname(),
+                  getText("manage.overview.published.missing.metadata")}));
         }
+
+        // publish a new version of the resource - dwca gets published asynchronously
+        resourceManager.publish(resource, nextVersion, this, skipIfNotChanged);
       } catch (PublicationException e) {
         if (PublicationException.TYPE.LOCKED == e.getType()) {
           addActionError(
@@ -163,7 +156,9 @@ public class PublishAllResourcesAction extends BaseAction {
           // restore the previous version since publication was unsuccessful
           resourceManager.restoreVersion(resource, nextVersion, this);
           // keep track of how many failures on auto publication have happened
-          resourceManager.getProcessFailures().put(resource.getShortname(), new Date());
+          resourceManager.getProcessFailures()
+              .computeIfAbsent(resource.getShortname(), k -> new CopyOnWriteArrayList<>())
+              .add(new Date());
         }
       } catch (InvalidConfigException e) {
         // with this type of error, the version cannot be rolled back - just alert user publication failed
@@ -205,6 +200,21 @@ public class PublishAllResourcesAction extends BaseAction {
       }
       LOG.info("Resource registrations updated successfully!");
     }
+  }
+
+  @StrutsParameter
+  public void setSelectedResources(List<String> selectedResources) {
+    this.selectedResources = selectedResources;
+  }
+
+  @StrutsParameter
+  public void setExcludedResources(List<String> excludedResources) {
+    this.excludedResources = excludedResources;
+  }
+
+  @StrutsParameter
+  public void setPublishMode(BulkPublicationType publishMode) {
+    this.publishMode = publishMode;
   }
 
   public enum BulkPublicationType {

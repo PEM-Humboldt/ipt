@@ -133,7 +133,13 @@
                 hideFields();
             }
 
-            $('.confirm').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>", buttonType: "danger"});
+            $('.confirm').jConfirmAction({
+                titleQuestion: "<@s.text name="basic.confirm"/>",
+                yesAnswer: "<@s.text name="basic.yes"/>",
+                cancelAnswer: "<@s.text name="basic.no"/>",
+                buttonType: "danger",
+                baseUrl: "${baseURL}"
+            });
 
             $("#idColumn").select2({
                 placeholder: '<@s.text name="manage.mapping.noid"/>',
@@ -402,7 +408,7 @@
                                         <a id="toggleFields" class="button btn btn-sm btn-outline-secondary w-100 dropdown-button"><@s.text name='manage.mapping.hideEmpty'/></a>
                                     </li>
                                     <li>
-                                        <@s.submit cssClass="confirm btn btn-sm btn-outline-gbif-danger w-100 dropdown-button" name="delete" key="button.delete"/>
+                                        <@s.submit cssClass="confirm btn btn-sm btn-outline-gbif-danger w-100 dropdown-button" name="deleteFlag" key="button.delete"/>
                                     </li>
                                 </ul>
                             </div>

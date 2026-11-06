@@ -206,7 +206,7 @@
                 theme: 'bootstrap4'
             });
 
-            var docBookDescription = `${eml.description!}`;
+            var docBookDescription = "${eml.description!?js_string}";
             var htmlDescription = convertToHtml(docBookDescription);
 
             const descriptionEditor = $('#description-editor');
@@ -377,14 +377,23 @@
 
                         <div class="row g-3">
                             <div class="col-12">
-                                <@input name="eml.title" requiredField=true help="i18n"/>
+                                <@input name="eml.title" value=eml.title! help="i18n" requiredField=true />
                             </div>
                         </div>
 
                         <div class="row g-3 mt-0">
                             <div class="col-lg-6">
-                                <@input name="eml.shortName" help="i18n" />
+                                <@input name="eml.shortName" value=eml.shortName! help="i18n" />
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="my-0 px-3 py-0">
+                        <div class="callout callout-info text-smaller">
+                            <@s.text name="manage.metadata.basic.organisation.moved"/>
+                            <a href="${baseURL}/manage/publication-settings.do?r=${resource.shortname}" target="_blank">
+                                <@s.text name="manage.publicationSettings.title"/>
+                            </a>.
                         </div>
                     </div>
 
@@ -488,6 +497,13 @@
                         <div class="row g-3 mt-2">
                             <div class="col-lg-6">
                                 <@select name="eml.updateFrequency" i18nkey="eml.updateFrequency" help="i18n" options=frequencies value="${eml.updateFrequency.identifier!'unknown'}" requiredField=true />
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-0">
+                            <div class="col-12">
+                                <!-- Maintenance Update Frequency -->
+                                <@text name="eml.updateFrequencyDescription" value=eml.updateFrequencyDescription! i18nkey="eml.updateFrequencyDescription" help="i18n" />
                             </div>
                         </div>
                     </div>
