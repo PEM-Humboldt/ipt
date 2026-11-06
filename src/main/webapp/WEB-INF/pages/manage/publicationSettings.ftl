@@ -62,8 +62,8 @@
                 </div>
 
                 <div class="mt-2">
-                    <input type="submit" value="Save" id="save" name="save" class="btn btn-sm btn-outline-gbif-primary top-button" form="publication-form">
-                    <input type="submit" value="Cancel" id="cancel" name="cancel" class="btn btn-sm btn-outline-secondary top-button" form="publication-form">
+                    <input type="submit" value="<@s.text name="button.save"/>" id="save" name="save" class="btn btn-sm btn-outline-gbif-primary top-button" form="publication-form">
+                    <input type="submit" value="<@s.text name="button.cancel"/>" id="cancel" name="cancel" class="btn btn-sm btn-outline-secondary top-button" form="publication-form">
                 </div>
             </div>
         </div>
