@@ -891,10 +891,23 @@ public class OverviewAction extends ManagerBaseAction implements ReportHandler, 
         try {
           resourceManager.visibilityToPublic(resource, this);
           if (resource.getPendingStatus() != null) {
-            addActionMessage(
+            if (resource.getPendingStatus().toString() == "PUBLIC") {
+              addActionMessage(
+                getText("manage.overview.changed.publication.status", new String[]{"Público"})
+                    + " "
+                    + getText("manage.overview.changed.publication.status.republication"));
+            } else if (resource.getPendingStatus().toString() == "PRIVATE") {
+              addActionMessage(
+                getText("manage.overview.changed.publication.status", new String[]{"Privado"})
+                    + " "
+                    + getText("manage.overview.changed.publication.status.republication"));
+            } else {
+              addActionMessage(
                 getText("manage.overview.changed.publication.status", new String[]{resource.getPendingStatus().toString()})
                     + " "
                     + getText("manage.overview.changed.publication.status.republication"));
+            }
+            
           }
         } catch (InvalidConfigException e) {
           LOG.error("Can't publish resource {}", resource, e);
