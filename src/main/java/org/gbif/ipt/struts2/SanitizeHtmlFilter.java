@@ -216,6 +216,10 @@ public class SanitizeHtmlFilter implements Filter {
         return null;
       }
 
+      if ("password".equals(parameter) || "currentPassword".equals(parameter)) {
+        return value;
+      }
+
       if (RICH_TEXT_PARAMETERS.contains(parameter)) {
         return sanitizeRichText(parameter, value);
       }
