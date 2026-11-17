@@ -2,7 +2,7 @@ https://builds.gbif.org/job/ipt/lastBuild/console[image:https://builds.gbif.org/
 
 # Catálogo de Información Biológica - Ceiba
 
-This is a customized version of ipt Gbif version 3.3.7 for the Alexander von Humboldt Institute's Biological Data Catalog tool.
+3.3.7-ceiba-3.3.7 is a customized version of ipt Gbif version 3.3.7 for the Alexander von Humboldt Institute's Biological Data Catalog tool. 
 
 Visi the website of Ceiba (http://i2d.humboldt.org.co/ceiba/). In this catalogue you will find the metadata of the datasets with information of biological records, checklists and species cards.
 
