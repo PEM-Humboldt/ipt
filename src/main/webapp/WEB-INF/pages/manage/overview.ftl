@@ -88,41 +88,48 @@
             console.log("Failed to initialize tooltips")
         }
 
-        $(".source-item-link").click(function (e) {
+        $(".source-item").click(function (e) {
+            // Ignore clicks on actions or anything inside them
+            if ($(e.target).closest(".source-item-actions, .delete-source").length) {
+                return;
+            }
+
             e.preventDefault();
+            displayProcessing();
             openSourceDetails(e);
         });
 
         function openSourceDetails(e) {
-            var resource = e.currentTarget.attributes["data-ipt-resource"].nodeValue;
-            var source = e.currentTarget.attributes["data-ipt-source"].nodeValue;
+            const $item = $(e.currentTarget).find(".source-item-link");
+            const resource = $item.data("ipt-resource");
+            const source = $item.data("ipt-source");
             location.href = 'source.do?r=' + resource + '&id=' + source;
         }
 
-        $(".mapping-item-link").click(function (e) {
+        $(".mapping-item").click(function (e) {
+            // Ignore clicks on actions or anything inside them
+            if ($(e.target).closest(".mapping-item-actions, .delete-mapping").length) {
+                return;
+            }
+
             e.preventDefault();
             displayProcessing();
             openMappingDetails(e);
         });
 
         function openMappingDetails(e) {
-            var resource = e.currentTarget.attributes["data-ipt-resource"].nodeValue;
-            var extension = e.currentTarget.attributes["data-ipt-extension"].nodeValue;
-            var mapping = e.currentTarget.attributes["data-ipt-mapping"].nodeValue;
-            location.href = 'mapping.do?r=' + resource + '&id=' + extension + '&mid=' + mapping;
-        }
+            const $row = $(e.currentTarget);
+            const isSchemaMapping = $row.hasClass("schema-mapping-item");
 
-        $(".schema-mapping-item-link").click(function (e) {
-            e.preventDefault();
-            displayProcessing();
-            openSchemaMappingDetails(e);
-        });
+            const linkSelector = isSchemaMapping ? ".schema-mapping-item-link" : ".mapping-item-link";
+            const $item = $row.find(linkSelector).first();
 
-        function openSchemaMappingDetails(e) {
-            var resource = e.currentTarget.attributes["data-ipt-resource"].nodeValue;
-            var extension = e.currentTarget.attributes["data-ipt-extension"].nodeValue;
-            var mapping = e.currentTarget.attributes["data-ipt-mapping"].nodeValue;
-            location.href = 'dataPackageMapping.do?r=' + resource + '&id=' + extension + '&mid=' + mapping;
+            const resource = $item.data("ipt-resource");
+            const extension = $item.data("ipt-extension");
+            const mapping = $item.data("ipt-mapping");
+
+            const target = isSchemaMapping ? "dataPackageMapping.do" : "mapping.do";
+            location.href = target + "?r=" + resource + "&id=" + extension + "&mid=" + mapping;
         }
 
         $(".network-item-link").click(function (e) {
@@ -164,37 +171,37 @@
             location.href = '${baseURL}/resource/preview?r=${resource.shortname}';
         }
 
-        <#if resource.status=="PRIVATE">
+        <#if action.isNextVisibilityPrivate()>
             <#assign resourceVisibility="private" />
-        <#elseif resource.status=="PUBLIC" || resource.status=="REGISTERED" || resource.status=="DELETED">
+        <#elseif action.isNextVisibilityPublic() || resource.status=="DELETED">
             <#assign resourceVisibility="public" />
         </#if>
 
-        $('.confirm').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", buttonType: "primary"});
-        $('.confirmRegistration').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.visibility.confirm.registration'/> <@s.text name='manage.resource.delete.confirm.registered'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", checkboxText: "<@s.text name='manage.overview.visibility.confirm.agreement'/>", buttonType: "primary", processing: true});
-        $('.confirmMakePrivate').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.visibility.confirm.make.private'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", buttonType: "primary"});
-        $('.confirmEmlReplace').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.metadata.replace.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", buttonType: "primary"});
-        $('.confirmDatapackageMetadataReplace').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.metadata.replace.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", buttonType: "primary"});
-        $('.confirmDeletionFromIptAndGbif').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<#if resource.isAlreadyAssignedDoi()><@s.text name='manage.resource.delete.confirm.doi'/></br></br></#if><#if resource.status=='REGISTERED'><@s.text name='manage.resource.delete.fromIptAndGbif.confirm.registered'/></br></br></#if><@s.text name='manage.resource.delete.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>"});
-        $('.confirmDeletionFromIptOnly').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<#if resource.isAlreadyAssignedDoi()><@s.text name='manage.resource.delete.confirm.doi'/></br></br></#if><#if resource.status=='REGISTERED'><@s.text name='manage.resource.delete.fromIptOnly.confirm.registered'/></br></br></#if><@s.text name='manage.resource.delete.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>"});
-        $('.confirmUndeletion').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.resource.undoDelete.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", buttonType: "primary"});
+        $('.confirm').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", buttonType: "primary", baseUrl: "${baseURL}", logo: "success"});
+        $('.confirmRegistration').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.visibility.confirm.registration'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", checkboxText: "<@s.text name='manage.overview.visibility.confirm.agreement'/>", buttonType: "primary", processing: true, baseUrl: "${baseURL}"});
+        $('.confirmEmlReplace').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.metadata.replace.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", buttonType: "primary", baseUrl: "${baseURL}", logo: "success"});
+        $('.confirmDatapackageMetadataReplace').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.metadata.replace.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", buttonType: "primary", baseUrl: "${baseURL}"});
+        $('.confirmDeletionFromIptAndGbif').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<#if resource.isAlreadyAssignedDoi()><@s.text name='manage.resource.delete.confirm.doi'/></br></br></#if><#if resource.status=='REGISTERED'><@s.text name='manage.resource.delete.fromIptAndGbif.confirm.registered'/></br></br></#if><@s.text name='manage.resource.delete.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", baseUrl: "${baseURL}"});
+        $('.confirmDeletionFromIptOnly').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<#if resource.isAlreadyAssignedDoi()><@s.text name='manage.resource.delete.confirm.doi'/></br></br></#if><#if resource.status=='REGISTERED'><@s.text name='manage.resource.delete.fromIptOnly.confirm.registered'/></br></br></#if><@s.text name='manage.resource.delete.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", baseUrl: "${baseURL}"});
+        $('.confirmUndeletion').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.resource.undoDelete.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", buttonType: "primary", baseUrl: "${baseURL}", logo: "success"});
 
-        $('.confirmReserveDoi').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.doi.reserve.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", buttonType: "primary"});
-        $('.confirmDeleteDoi').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.doi.delete.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>"});
+        $('.confirmReserveDoi').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.doi.reserve.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", buttonType: "primary", baseUrl: "${baseURL}", logo: "success"});
+        $('.confirmDeleteDoi').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.doi.delete.confirm'/>", yesAnswer : "<@s.text name='basic.yes'/>", cancelAnswer : "<@s.text name='basic.no'/>", baseUrl: "${baseURL}"});
         <#if !outdatedExtensions>
-        $('.confirmPublish').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", buttonType: "primary"});
+        $('.confirmPublish').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", buttonType: "primary", baseUrl: "${baseURL}", logo: "success"});
         $('.confirmPublishMinorVersion').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.doi.minorVersion.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", buttonType: "primary", baseUrl: "${baseURL}", logo: "success"});
-        $('.confirmPublishMajorVersion').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.doi.majorVersion.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", checkboxText: "<@s.text name='manage.overview.publishing.doi.register.agreement'/>", buttonType: "primary"});
-        $('.confirmPublishMajorVersionWithoutDOI').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.withoutDoi.majorVersion.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", buttonType: "primary"});
+        $('.confirmPublishMajorVersion').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.doi.majorVersion.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", checkboxText: "<@s.text name='manage.overview.publishing.doi.register.agreement'/>", buttonType: "primary", baseUrl: "${baseURL}", logo: "success"});
+        $('.confirmPublishMajorVersionWithoutDOI').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.withoutDoi.majorVersion.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", buttonType: "primary", baseUrl: "${baseURL}", logo: "success"});
         <#else>
-        $('.confirmPublish').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.outdatedExtensions'/><br><br><@s.text name='manage.overview.publishing.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", buttonType: "primary"});
-        $('.confirmPublishMinorVersion').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.outdatedExtensions'/><br><br><@s.text name='manage.overview.publishing.doi.minorVersion.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", buttonType: "primary"});
-        $('.confirmPublishMajorVersion').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.outdatedExtensions'/><br><br><@s.text name='manage.overview.publishing.doi.majorVersion.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", checkboxText: "<@s.text name='manage.overview.publishing.doi.register.agreement'/>", buttonType: "primary"});
-        $('.confirmPublishMajorVersionWithoutDOI').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.outdatedExtensions'/><br><br><@s.text name='manage.overview.publishing.withoutDoi.majorVersion.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", buttonType: "primary"});
+        $('.confirmPublish').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.outdatedExtensions'/><br><br><@s.text name='manage.overview.publishing.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", buttonType: "primary", baseUrl: "${baseURL}", logo: "success"});
+        $('.confirmPublishMinorVersion').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.outdatedExtensions'/><br><br><@s.text name='manage.overview.publishing.doi.minorVersion.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", buttonType: "primary", baseUrl: "${baseURL}", logo: "success"});
+        $('.confirmPublishMajorVersion').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.outdatedExtensions'/><br><br><@s.text name='manage.overview.publishing.doi.majorVersion.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", checkboxText: "<@s.text name='manage.overview.publishing.doi.register.agreement'/>", buttonType: "primary", baseUrl: "${baseURL}", logo: "success"});
+        $('.confirmPublishMajorVersionWithoutDOI').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name='manage.overview.publishing.outdatedExtensions'/><br><br><@s.text name='manage.overview.publishing.withoutDoi.majorVersion.confirm'><@s.param>${resourceVisibility}</@s.param><@s.param>${resourceVisibility}</@s.param></@s.text>", yesAnswer : "<@s.text name='button.publish'/>", summary : "<@s.text name='manage.overview.publishing.doi.summary.placeholder'/>", cancelAnswer : "<@s.text name='button.cancel'/>", buttonType: "primary", baseUrl: "${baseURL}", logo: "success"});
         </#if>
 
-        $('.delete-source').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name="manage.source.confirmation.message"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>", buttonType: "danger"});
-        $('.delete-mapping').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name ="manage.mapping.confirmation.message"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>", buttonType: "danger"});
+        $('.delete-source').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name="manage.source.confirmation.message"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>", buttonType: "danger", baseUrl: "${baseURL}"});
+        $('.delete-mapping').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name ="manage.mapping.confirmation.message"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>", buttonType: "danger", baseUrl: "${baseURL}"});
+        $('.delete-core-mapping').jConfirmAction({titleQuestion : "<@s.text name="basic.confirm"/>", question : "<@s.text name ="manage.mapping.confirmation.message"/><br><br><@s.text name ="manage.mapping.confirmation.message.core"/>", yesAnswer : "<@s.text name="basic.yes"/>", cancelAnswer : "<@s.text name="basic.no"/>", buttonType: "danger", baseUrl: "${baseURL}"});
 
         // spy scroll and manage sidebar menu
         $(window).scroll(function () {
@@ -244,6 +251,12 @@
             $(this).click(function() {
                 $(this).parent('form').submit();
             });
+        });
+
+        $('#metadata-modal').on('show.bs.modal', function() {
+            $("#emlReplace").hide();
+            $("#eml-validate").hide();
+            $("#emlFile").prop("value", "");
         });
 
         $("#emlFile").change(function() {
@@ -572,6 +585,16 @@
             showMakePublicModal();
         });
 
+        $('#makePrivate').click(function (e) {
+            e.preventDefault();
+            showMakePrivateModal();
+        });
+
+        $('#cancelVisibilityChange').click(function (e) {
+            e.preventDefault();
+            showCancelVisibilityChangeModal();
+        });
+
         // make public modal window
         function showMakePublicModal() {
             var dialogWindow = $("#make-public-modal");
@@ -587,6 +610,17 @@
                 $("#makePublicDateTimeWrapper").show();
                 $("#makePublicDateTime").show();
             }
+        }
+
+        // make public modal window
+        function showMakePrivateModal() {
+            var dialogWindow = $("#make-private-modal");
+            dialogWindow.modal('show');
+        }
+
+        function showCancelVisibilityChangeModal() {
+            var dialogWindow = $("#cancel-visibility-change-modal");
+            dialogWindow.modal('show');
         }
 
         // hide/show input on radio change
@@ -611,6 +645,11 @@
                 $("#makePublicDateTime").val("");
             }
 
+            $(this).submit();
+        });
+
+        $("#make-private-modal-form").one('submit', function (e) {
+            e.preventDefault();
             $(this).submit();
         });
 
@@ -756,10 +795,49 @@
 
         if (uploadStatus === "success") {
             showSourceCreatedSuccessfullyInfoWindow();
+            showCarriedOverUploadWarnings();
             sessionStorage.removeItem("uploadStatus");
         } else if (uploadStatus === "fail") {
             console.log("upload failed");
             sessionStorage.removeItem("uploadStatus");
+        }
+
+        // Warnings picked up from the final response document of an XHR-driven source upload (see
+        // uploadFile() below) don't otherwise survive the widget's own window.location.reload(), since
+        // by the time that reload's request reaches the server, RedirectMessageInterceptor has already
+        // handed them off (and cleared them from the session) to the page the XHR silently followed.
+        function showCarriedOverUploadWarnings() {
+            var raw = sessionStorage.getItem("uploadWarnings");
+            sessionStorage.removeItem("uploadWarnings");
+            if (!raw) {
+                return;
+            }
+
+            var warnings;
+            try {
+                warnings = JSON.parse(raw);
+            } catch (e) {
+                return;
+            }
+
+            var container = document.getElementById("action-alerts");
+            if (!container || !warnings || !warnings.length) {
+                return;
+            }
+
+            warnings.forEach(function (text) {
+                var alertDiv = document.createElement("div");
+                alertDiv.className = "alert alert-warning alert-dismissible fade show d-flex";
+                alertDiv.setAttribute("role", "alert");
+                alertDiv.innerHTML =
+                    '<div class="me-3"><i class="bi bi-exclamation-triangle alert-orange-2 fs-bigger-2 me-2"></i></div>' +
+                    '<div class="overflow-x-hidden pt-1"><span></span></div>' +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                alertDiv.querySelector("span").textContent = text;
+                container.appendChild(alertDiv);
+            });
+
+            window.scrollTo({ top: 0, behavior: "smooth" });
         }
 
         function showSourceCreatedSuccessfullyInfoWindow() {
@@ -784,12 +862,13 @@
 
         var selectedFiles = [];
 
-        document.getElementById("chooseFilesButton").addEventListener("click", function () {
-            document.getElementById("fileInput").click();
+        $("#chooseFilesButton").on("click", function (e) {
+            e.preventDefault();
+            $("#fileInput").click();
         });
 
-        document.getElementById("fileInput").addEventListener("change", function () {
-            var newlySelectedFiles = Array.from(document.getElementById("fileInput").files);
+        $("#fileInput").on("change", function () {
+            var newlySelectedFiles = Array.from(this.files);
             selectedFiles = selectedFiles.concat(newlySelectedFiles);
             refreshFileList();
 
@@ -800,10 +879,9 @@
             }
         });
 
-        document.getElementById("sendButton").addEventListener("click", async function () {
-            var uploadButton = $("#sendButton");
-            uploadButton.addClass("clicked")
-            uploadButton.hide();
+        $("#sendButton").on("click", async function () {
+            $(this).addClass("clicked");
+            $(this).hide();
 
             var fileItems = document.querySelectorAll(".fileItem");
             var promises = [];
@@ -828,9 +906,14 @@
             }
 
             try {
-                await Promise.all(promises);
+                var results = await Promise.all(promises);
+                var allWarnings = results.flat().filter(Boolean);
+
                 sessionStorage.setItem("uploadStatus", "success");
                 sessionStorage.setItem("uploadedFiles", fileNamesConcatenated);
+                if (allWarnings.length > 0) {
+                    sessionStorage.setItem("uploadWarnings", JSON.stringify(allWarnings));
+                }
                 closeModal();
                 window.location.reload();
             } catch (error) {
@@ -1051,7 +1134,27 @@
                             return;
                         }
 
-                        resolve(); // Resolve on success
+                        // The XHR silently followed the addsource -> ... -> resource.do redirect chain,
+                        // so xhr.response is the final page's parsed document. Any action warnings that
+                        // survived that chain (e.g. "embedded line breaks removed") are rendered into it
+                        // by action_alerts.ftl - grab them now, because they'll be gone from the session
+                        // by the time our own window.location.reload() below asks for the page again.
+                        var fileWarnings = [];
+                        try {
+                            var finalDoc = xhr.response;
+                            if (finalDoc && typeof finalDoc.querySelectorAll === "function") {
+                                finalDoc.querySelectorAll("#action-alerts .alert-warning .overflow-x-hidden").forEach(function (el) {
+                                    var text = el.textContent.trim();
+                                    if (text) {
+                                        fileWarnings.push(text);
+                                    }
+                                });
+                            }
+                        } catch (e) {
+                            console.warn("Could not read warnings from upload response:", e);
+                        }
+
+                        resolve(fileWarnings); // Resolve on success, carrying any warnings found
                     }
                 };
 
@@ -1144,59 +1247,61 @@
         // Spy confirm overwrite warnings and enable/disable submit button
         const fileListDiv = document.getElementById('fileList');
 
-        const observer = new MutationObserver(function() {
-            var fileErrors = $(".fileError");
-            var fileOutOfSpaceCallout = $("#callout-not-enough-space");
-            var fileItems = $(".fileItem");
+        if (fileListDiv) {
+            const observer = new MutationObserver(function () {
+                var fileErrors = $(".fileError");
+                var fileOutOfSpaceCallout = $("#callout-not-enough-space");
+                var fileItems = $(".fileItem");
 
-            if (totalFreeSpace - totalFilesSize < 0) {
-                fileOutOfSpaceCallout.show();
-            } else {
-                fileOutOfSpaceCallout.hide();
-            }
+                if (totalFreeSpace - totalFilesSize < 0) {
+                    fileOutOfSpaceCallout.show();
+                } else {
+                    fileOutOfSpaceCallout.hide();
+                }
 
-            var outOfSpaceDisplayed = fileOutOfSpaceCallout.css("display") !== "none";
+                var outOfSpaceDisplayed = fileOutOfSpaceCallout.css("display") !== "none";
 
-            if (fileErrors.length > 0 || outOfSpaceDisplayed) {
-                sendButton.hide();
-            } else if (!sendButton.hasClass("clicked")) {
-                sendButton.show();
-            }
+                if (fileErrors.length > 0 || outOfSpaceDisplayed) {
+                    sendButton.hide();
+                } else if (!sendButton.hasClass("clicked")) {
+                    sendButton.show();
+                }
 
-            if (fileItems.length === 0) {
-                sendButton.hide();
-            }
-        });
-
-        const config = { attributes: true, childList: true, subtree: true };
-
-        observer.observe(fileListDiv, config);
-
-        // remove error classes/icons if confirmed
-        $('#fileList').on('click', '.confirmOverwriteSourceFileLink', function() {
-            var fileIndex = $(this).data('index');
-
-            var fileItemElement = $('.fileItem[data-file-index="' + fileIndex + '"]');
-            fileItemElement.find('.fileError').remove();
-
-            var fileNameWithExtension = fileItemElement.find('.fileName').text();
-            var fileNameWithoutExtension = fileNameWithExtension.substring(0, fileNameWithExtension.lastIndexOf('.')).replace(/\s/g, "");
-
-            confirmedFiles.push(fileNameWithoutExtension);
-
-            var fileWarningIconElement = fileItemElement.find('.fileWarningIcon');
-            var fileDoneIconElement = fileItemElement.find('.fileDoneIcon');
-
-            fileWarningIconElement.css({
-                'display': 'none',
-                'visibility': 'hidden'
+                if (fileItems.length === 0) {
+                    sendButton.hide();
+                }
             });
 
-            fileDoneIconElement.css({'display': 'block'});
+            const config = {attributes: true, childList: true, subtree: true};
 
-            // Prevent the default link behavior
-            return false;
-        });
+            observer.observe(fileListDiv, config);
+
+            // remove error classes/icons if confirmed
+            $('#fileList').on('click', '.confirmOverwriteSourceFileLink', function () {
+                var fileIndex = $(this).data('index');
+
+                var fileItemElement = $('.fileItem[data-file-index="' + fileIndex + '"]');
+                fileItemElement.find('.fileError').remove();
+
+                var fileNameWithExtension = fileItemElement.find('.fileName').text();
+                var fileNameWithoutExtension = fileNameWithExtension.substring(0, fileNameWithExtension.lastIndexOf('.')).replace(/\s/g, "");
+
+                confirmedFiles.push(fileNameWithoutExtension);
+
+                var fileWarningIconElement = fileItemElement.find('.fileWarningIcon');
+                var fileDoneIconElement = fileItemElement.find('.fileDoneIcon');
+
+                fileWarningIconElement.css({
+                    'display': 'none',
+                    'visibility': 'hidden'
+                });
+
+                fileDoneIconElement.css({'display': 'block'});
+
+                // Prevent the default link behavior
+                return false;
+            });
+        }
 
         $("#rowType").select2({
             placeholder: '',
@@ -1380,12 +1485,29 @@
 
                     <div>
                         <div class="my-auto me-3">
-                            <span class="fs-smaller-2 text-nowrap dt-content-link dt-content-pill type-${resourceTypeLowerCase} me-1"><@s.text name="portal.resource.type.${resourceTypeLowerCase}"/></span>
+                            <span class="fs-smaller-2 text-nowrap type-pill dt-content-link dt-content-pill type-${resourceTypeLowerCase} me-1"><@s.text name="portal.resource.type.${resourceTypeLowerCase}"/></span>
                             <#if resourceSubtypeLowerCase?has_content>
-                                <span class="fs-smaller-2 text-nowrap dt-content-link dt-content-pill type-${resourceSubtypeLowerCase} me-1"><@s.text name="portal.resource.subtype.${resourceSubtypeLowerCase}"/></span>
+                                <span class="fs-smaller-2 text-nowrap subtype-pill dt-content-link dt-content-pill type-${resourceSubtypeLowerCase} me-1"><@s.text name="portal.resource.subtype.${resourceSubtypeLowerCase}"/></span>
                             </#if>
-                            <#if resource.status??>
-                                <span class="text-nowrap text-discreet fs-smaller-2 status-pill status-${resource.status!?lower_case}">
+                            <#assign isStatusPending = resource.pendingStatus?has_content && resource.status != resource.pendingStatus>
+                            <#if isStatusPending>
+                                <#if resource.pendingStatus == "PUBLIC">
+                                    <#assign pendingStatusColor = "primary"/>
+                                <#else>
+                                    <#assign pendingStatusColor = "text"/>
+                                </#if>
+                            </#if>
+                            <#if isStatusPending>
+                                <span class="text-nowrap text-discreet fs-smaller-2 status-pill main-status-pill status-${resource.pendingStatus!?lower_case}">
+                                    <#if  resource.pendingStatus == "PUBLIC" || resource.pendingStatus == "PRIVATE">
+                                        <i class="bi bi-circle fs-smaller-2"></i>
+                                    <#else>
+                                        <i class="bi bi-circle-fill fs-smaller-2"></i>
+                                    </#if>
+                                    <span><@s.text name="manage.home.visible.pending.${resource.pendingStatus!?lower_case}"/></span>
+                                </span>
+                            <#elseif resource.status?has_content>
+                                <span class="text-nowrap text-discreet fs-smaller-2 status-pill main-status-pill status-${resource.status!?lower_case}">
                                     <#if  resource.status == "PUBLIC" || resource.status == "PRIVATE">
                                         <i class="bi bi-circle fs-smaller-2"></i>
                                     <#else>
@@ -1395,6 +1517,13 @@
                                 </span>
                             </#if>
                         </div>
+                        <#if isStatusPending>
+                            <div class="mt-2">
+                                <span class="fs-smaller-2 text-discreet">
+                                    <@s.text name="manage.overview.changed.publication.status.description"/>: <b class="text-gbif-${pendingStatusColor}"><@s.text name="manage.home.visible.pending.${resource.pendingStatus!?lower_case}"/></b>. <@s.text name="manage.overview.changed.publication.status.republication"/>
+                                </span>
+                            </div>
+                        </#if>
                         <div class="mt-2">
                             <span class="fs-smaller-2 text-discreet"><@s.text name="basic.createdByOn"><@s.param>${(resource.creator.name)!}</@s.param><@s.param>${resource.created?date?string("MMM d, yyyy")}</@s.param></@s.text></span>
                         </div>
@@ -1421,22 +1550,22 @@
                                 <#if resource.key?? && resource.status == "REGISTERED">
                                     <form action="resource-delete.do" method='post' style="display: none;">
                                         <input name="r" type="hidden" value="${resource.shortname}" />
-                                        <@s.submit cssClass="btn btn-sm btn-outline-gbif-danger confirmDeletion confirmDeletionFromIptAndGbif w-100 dropdown-button" cssStyle="text-transform: unset !important" name="delete" key="button.delete.fromIptAndGbif"/>
+                                        <@s.submit cssClass="btn btn-sm btn-outline-gbif-danger confirmDeletion confirmDeletionFromIptAndGbif w-100 dropdown-button" cssStyle="text-transform: unset !important" name="deleteFlag" key="button.delete.fromIptAndGbif"/>
                                     </form>
                                     <form action="resource-deleteFromIpt.do" method='post' style="display: none;">
                                         <input name="r" type="hidden" value="${resource.shortname}" />
-                                        <@s.submit cssClass="btn btn-sm btn-outline-gbif-danger confirmDeletion confirmDeletionFromIptOnly w-100 dropdown-button" cssStyle="text-transform: unset !important" name="delete" key="button.delete.fromIpt"/>
+                                        <@s.submit cssClass="btn btn-sm btn-outline-gbif-danger confirmDeletion confirmDeletionFromIptOnly w-100 dropdown-button" cssStyle="text-transform: unset !important" name="deleteFlag" key="button.delete.fromIpt"/>
                                     </form>
-                                    <button class="btn btn-sm btn-outline-gbif-danger top-button button-show-delete-resource-modal" name="delete"><@s.text name="button.delete"/></button>
+                                    <button class="btn btn-sm btn-outline-gbif-danger top-button button-show-delete-resource-modal" name="deleteFlag"><@s.text name="button.delete"/></button>
                                 <#else>
                                     <form action="resource-deleteFromIpt.do" method='post' style="display: none;">
                                         <input name="r" type="hidden" value="${resource.shortname}" />
-                                        <@s.submit cssClass="btn btn-sm btn-outline-gbif-danger confirmDeletion confirmDeletionFromIptOnly top-button" name="delete" key="button.delete.fromIpt"/>
+                                        <@s.submit cssClass="btn btn-sm btn-outline-gbif-danger confirmDeletion confirmDeletionFromIptOnly top-button" name="deleteFlag" key="button.delete.fromIpt"/>
                                     </form>
-                                    <button class="btn btn-sm btn-outline-gbif-danger top-button proxy-button-delete-from-ipt" name="delete"><@s.text name="button.delete"/></button>
+                                    <button class="btn btn-sm btn-outline-gbif-danger top-button proxy-button-delete-from-ipt" name="deleteFlag"><@s.text name="button.delete"/></button>
                                 </#if>
                             <#else>
-                                <button class="btn btn-sm btn-outline-gbif-danger button-show-delete-resource-disabled-modal top-button" name="delete"><@s.text name="button.delete"/></button>
+                                <button class="btn btn-sm btn-outline-gbif-danger button-show-delete-resource-disabled-modal top-button" name="deleteFlag"><@s.text name="button.delete"/></button>
                             </#if>
                         </#if>
 
@@ -1553,7 +1682,7 @@
                         
                         <div>
                             <div class="d-flex justify-content-end">
-                                <#if resource.status=="PRIVATE">
+                                <#if action.canBeMadePublic()>
                                     <#assign actionMethod>makePublic</#assign>
                                     <form action='resource-${actionMethod}.do' method='post'>
                                         <input name="r" type="hidden" value="${resource.shortname}"/>
@@ -1564,18 +1693,25 @@
                                             <@s.text name='button.change'/>
                                         </button>
                                     </form>
-                                <#elseif resource.status=="PUBLIC" && (resource.identifierStatus=="PUBLIC_PENDING_PUBLICATION" || resource.identifierStatus == "UNRESERVED")>
+                                <#elseif action.canBeMadePrivate()>
                                     <#assign actionMethod>makePrivate</#assign>
                                     <form action='resource-${actionMethod}.do' method='post'>
                                         <input name="r" type="hidden" value="${resource.shortname}"/>
                                         <input name="unpublish" type="hidden" value="Change"/>
-                                        <button class="confirmMakePrivate text-gbif-header-2 icon-button icon-material-actions overview-action-button" type="submit">
+                                        <button id="makePrivate" class="text-gbif-header-2 icon-button icon-material-actions overview-action-button" type="submit">
                                             <svg viewBox="0 0 24 24" class="overview-action-button-icon">
                                                 <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path>
                                             </svg>
                                             <@s.text name='button.change'/>
                                         </button>
                                     </form>
+                                <#elseif resource.pendingStatus?has_content>
+                                    <button id="cancelVisibilityChange" class="text-gbif-header-2 icon-button icon-material-actions overview-action-button" type="submit">
+                                        <svg viewBox="0 0 24 24" class="overview-action-button-icon">
+                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path>
+                                        </svg>
+                                        <@s.text name='button.change'/>
+                                    </button>
                                 <#else>
                                     <button id="show-visibility-disabled-modal" class="text-gbif-header-2 icon-button icon-material-actions overview-action-button" type="button">
                                         <svg viewBox="0 0 24 24" class="overview-action-button-icon">
@@ -1586,25 +1722,36 @@
                                 </#if>
                             </div>
 
-                            <div class="mt-2">
-                                <p class="mb-0">
-                                    <#if resource.status=="PRIVATE">
-                                        <#if resource.makePublicDate?has_content>
-                                            <@s.text name="manage.resource.status.intro.private.public.scheduled">
-                                                <@s.param>${resource.makePublicDate?datetime?string.long_short}</@s.param>
-                                            </@s.text>
-                                        <#else>
-                                            <@s.text name="manage.resource.status.intro.private"/>
-                                        </#if>
-                                    <#elseif resource.status=="PUBLIC">
-                                        <@s.text name="manage.resource.status.intro.public"/>
-                                    <#elseif resource.status=="REGISTERED">
-                                        <@s.text name="manage.resource.status.intro.registered"/>
-                                    <#elseif resource.status=="DELETED">
-                                        <@s.text name="manage.resource.status.intro.deleted"/>
+                        <div class="mt-4">
+                            <#if isStatusPending>
+                                <#if resource.pendingStatus=="PRIVATE">
+                                    <p>
+                                        <@s.text name="manage.resource.status.intro.pending.private"/> <@s.text name="manage.overview.changed.publication.status.republication"/>
+                                    </p>
+                                <#elseif resource.pendingStatus=="PUBLIC">
+                                    <p>
+                                        <@s.text name="manage.resource.status.intro.pending.public"/> <@s.text name="manage.overview.changed.publication.status.republication"/>
+                                    </p>
+                                </#if>
+                            <#else>
+                            <p class="mb-0">
+                                <#if resource.status=="PRIVATE">
+                                    <#if resource.makePublicDate?has_content>
+                                        <@s.text name="manage.resource.status.intro.private.public.scheduled">
+                                            <@s.param>${resource.makePublicDate?datetime?string.long_short}</@s.param>
+                                        </@s.text>
+                                    <#else>
+                                        <@s.text name="manage.resource.status.intro.private"/>
                                     </#if>
-                                </p>
-                            </div>
+                                <#elseif resource.status=="PUBLIC">
+                                    <@s.text name="manage.resource.status.intro.public"/>
+                                <#elseif resource.status=="REGISTERED">
+                                    <@s.text name="manage.resource.status.intro.registered"/>
+                                <#elseif resource.status=="DELETED">
+                                    <@s.text name="manage.resource.status.intro.deleted"/>
+                                </#if>
+                            </p>
+                            </#if>
                         </div>
                     </div>
                     
@@ -1666,13 +1813,25 @@
                             </div>
                         </div>
 
+                        <#assign autoPublicationSuspendedForThisResource = action.hasMaxProcessFailures()>
+                        <#assign autoPublicationEnabledForIPT = cfg.autoPublishingEnabled/>
+
                         <div class="mt-4">
                             <p class="mb-2">
-                                <#if resource.usesAutoPublishing()>
-                                    <span class="fs-smaller-2 text-nowrap dt-content-link dt-content-pill autopublish-enabled">
-                                        <@s.text name="manage.overview.autopublish.enabled"/>: ${autoPublishFrequencies.get(resource.updateFrequency.identifier)}
-                                    </span>
-                                    <@s.text name="manage.overview.autopublish.intro.activated"/>
+                                <#if resource.usesAutoPublishing() && autoPublicationEnabledForIPT>
+                                    <#if autoPublicationSuspendedForThisResource>
+                                        <span class="fs-smaller-2 text-nowrap dt-content-link dt-content-pill autopublish-suspended">
+                                            <@s.text name="manage.overview.autopublish.suspended"/>
+                                        </span>
+                                        <span class="text-gbif-danger fst-italic">
+                                            <@s.text name="manage.overview.autopublish.intro.suspended"/>
+                                        </span>
+                                    <#else>
+                                        <span class="fs-smaller-2 text-nowrap dt-content-link dt-content-pill autopublish-enabled">
+                                            <@s.text name="manage.overview.autopublish.enabled"/>: ${autoPublishFrequencies.get(resource.updateFrequency.identifier)}
+                                        </span>
+                                        <@s.text name="manage.overview.autopublish.intro.activated"/>
+                                    </#if>
                                 </#if>
                             </p>
 
@@ -1694,6 +1853,8 @@
                                 <#assign versionTitle><@s.text name="manage.overview.published.version"/></#assign>
                                 <#assign releasedTitle><@s.text name="manage.overview.published.released"/></#assign>
                                 <#assign releasedTitle = releasedTitle?markup_string>
+                                <#assign nextPublicationDate><@s.text name="manage.overview.published.next.date"/></#assign>
+                                <#assign nextPublicationDate = nextPublicationDate?markup_string>
                                 <#assign pubLogTitle><@s.text name="portal.publication.log"/></#assign>
                                 <#assign pubLogTitle = pubLogTitle?markup_string>
                                 <#assign pubRepTitle><@s.text name="manage.overview.published.report.show"/></#assign>
@@ -1832,7 +1993,12 @@
                                     </#if>
 
                                     <div class="col-xl-6" style="height: 100%">
-                                        <#assign nextVersionStatus>${resource.status?lower_case}</#assign>
+                                        <#if resource.pendingStatus?has_content>
+                                            <#assign nextVersionStatus>${resource.pendingStatus?lower_case}</#assign>
+                                        <#else>
+                                            <#assign nextVersionStatus>${resource.status?lower_case}</#assign>
+                                        </#if>
+
                                         <#assign nextVersionStatus = nextVersionStatus?markup_string>
 
                                         <div class="d-flex justify-content-between border rounded-2 mx-1 p-1 py-2 version-item text-smaller">
@@ -1853,8 +2019,8 @@
                                                 </span><br>
                                                 <span class="fs-smaller-2">
                                                     <small>
-                                                        <#if resource.nextPublished??>
-                                                            ${releasedTitle?cap_first} ${resource.nextPublished?datetime?string.medium}
+                                                        <#if resource.nextPublished?? && !autoPublicationSuspendedForThisResource && autoPublicationEnabledForIPT>
+                                                            ${nextPublicationDate?cap_first} ${resource.nextPublished?datetime?string.medium}
                                                         <#else>
                                                             <@s.text name="manage.overview.published.date.not.set"/>
                                                         </#if>
@@ -2302,7 +2468,25 @@
                 </div>
                 <div class="modal-body">
                     <h5 class="modal-title w-100" id="make-public-modal-title"><@s.text name="manage.overview.visibility.change.public"/></h5>
-                    <div class="pt-2">
+
+                    <div class="border rounded px-3 py-1 mt-3">
+                        <div class="simpleCallout">
+                            <div class="simpleCallout-inner">
+                                <div class="simpleCalloutInfo simpleCalloutInfo-message">
+                                    <div class="simpleCalloutIcon" style="visibility: visible; display: block;">
+                                        <i class="bi bi-info-circle text-gbif-primary"></i>
+                                    </div>
+                                    <div class="simpleCalloutMeta">
+                                        <div class="simpleCalloutMessage">
+                                            <@s.text name="manage.overview.visibility.change.republish"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-3">
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" name="makePublicOptions" id="makePublicImmediately" value="makePublicImmediately" <#if !resource.makePublicDate?has_content>checked</#if> >
                             <label class="form-check-label" for="inlineRadio1"><@s.text name="manage.overview.visibility.change.public.immediately"/></label>
@@ -2323,7 +2507,7 @@
                                     <input id="makePublicDateTime" name="makePublicDateTime" class="form-control form-control-sm" type="datetime-local" value="${makePublicDateTime!}" />
                                 </#if>
                             </form>
-                            <form id="cancel-make-public" action="resource-cancelMakePublic.do" method="post">
+                            <form id="cancel-make-public" action="resource-cancelVisibilityChange.do" method="post">
                                 <input name="r" type="hidden" value="${resource.shortname}"/>
                             </form>
                         </div>
@@ -2335,6 +2519,74 @@
                     <#if resource.makePublicDate?has_content>
                         <button id="cancelMakePublic" type="submit" form="cancel-make-public" class="btn btn-sm btn-outline-gbif-danger"><@s.text name="button.reset"/></button>
                     </#if>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="make-private-modal" class="modal fade" tabindex="-1" aria-labelledby="make-private-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-confirm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header flex-column">
+                    <img src="${baseURL}/images/logo-modal-warning.png" alt="Warning" class="modal-image" />
+                </div>
+                <div class="modal-body">
+                    <h5 class="modal-title w-100" id="make-private-modal-title"><@s.text name="manage.overview.visibility.change.private"/></h5>
+
+                    <div class="border rounded px-3 py-1 mt-3">
+                        <div class="simpleCallout">
+                            <div class="simpleCallout-inner">
+                                <div class="simpleCalloutInfo simpleCalloutInfo-warning">
+                                    <div class="simpleCalloutIcon" style="visibility: visible; display: block;">
+                                        <i class="bi bi-info-circle text-gbif-danger"></i>
+                                    </div>
+                                    <div class="simpleCalloutMeta">
+                                        <div class="simpleCalloutMessage">
+                                            <@s.text name="manage.overview.visibility.change.republish"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <form id="make-private-modal-form" action="resource-makePrivate.do" method="post">
+                            <input name="r" type="hidden" value="${resource.shortname}"/>
+                            <input name="unpublish" type="hidden" value="Change"/>
+                        </form>
+                        <@s.text name="manage.overview.visibility.confirm.make.private"/>
+                    </div>
+                </div>
+
+                <div class="modal-footer justify-content-center">
+                    <button id="cancel-button" type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal"><@s.text name="button.cancel"/></button>
+                    <button id="changeStateSubmit" type="submit" form="make-private-modal-form" class="btn btn-sm btn-outline-gbif-danger"><@s.text name="button.submit"/></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="cancel-visibility-change-modal" class="modal fade" tabindex="-1" aria-labelledby="cancel-visibility-change-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-confirm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header flex-column">
+                    <img src="${baseURL}/images/logo-modal-warning.png" alt="Warning" class="modal-image" />
+                </div>
+                <div class="modal-body">
+                    <h5 class="modal-title w-100" id="cancel-visibility-change-modal-title"><@s.text name="manage.overview.visibility.change.cancel"/></h5>
+
+                    <div class="mt-3">
+                        <form id="cancel-visibility-change-modal-form" action="resource-cancelVisibilityChange.do" method="post">
+                            <input name="r" type="hidden" value="${resource.shortname}"/>
+                        </form>
+                        <@s.text name="manage.overview.visibility.confirm.cancel.change"><@s.param><@s.text name="manage.home.visible.${resource.status!?lower_case}"/></@s.param><@s.param><@s.text name="manage.home.visible.pending.${resource.pendingStatus!?lower_case}"/></@s.param></@s.text>
+                    </div>
+                </div>
+
+                <div class="modal-footer justify-content-center">
+                    <button id="cancel-button" type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal"><@s.text name="button.cancel"/></button>
+                    <button id="changeStateSubmit" type="submit" form="cancel-visibility-change-modal-form" class="btn btn-sm btn-outline-gbif-danger"><@s.text name="button.submit"/></button>
                 </div>
             </div>
         </div>
@@ -2634,10 +2886,10 @@
                 </div>
                 <div class="modal-footer justify-content-center">
                     <#if isDataPackage>
-                        <input type="submit" form="upload-metadata-form" value="Replace" id="datapackageMetadataReplace" name="datapackageMetadataReplace" class="btn btn-sm btn-outline-gbif-primary confirmDatapackageMetadataReplace" style="">
+                        <input type="submit" form="upload-metadata-form" value="${action.getText('button.replace')}" id="datapackageMetadataReplace" name="datapackageMetadataReplace" class="btn btn-sm btn-outline-gbif-primary confirmDatapackageMetadataReplace" style="">
                         <button id="datapackageMetadataCancel" type="button" class="btn btn-sm btn-outline-secondary " data-bs-dismiss="modal"><@s.text name="button.cancel"/></button>
                     <#else>
-                        <input type="submit" form="upload-metadata-form" value="Replace" id="emlReplace" name="emlReplace" class="btn btn-sm btn-outline-gbif-primary confirmEmlReplace" style="">
+                        <input type="submit" form="upload-metadata-form" value="${action.getText('button.replace')}" id="emlReplace" name="emlReplace" class="btn btn-sm btn-outline-gbif-primary confirmEmlReplace" style="display:none;">
                         <button id="emlCancel" type="button" class="btn btn-sm btn-outline-secondary " data-bs-dismiss="modal"><@s.text name="button.cancel"/></button>
                     </#if>
                 </div>
