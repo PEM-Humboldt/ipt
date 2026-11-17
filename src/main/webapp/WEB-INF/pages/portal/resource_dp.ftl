@@ -58,7 +58,6 @@
         }
     </style>
 
-    <script src="${baseURL}/js/jquery/jquery-3.7.0.min.js"></script>
     <script src="${baseURL}/js/jquery/jquery.dataTables-1.13.6.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -346,7 +345,7 @@
                         <div class="mt-3 overflow-x-auto">
                             <#if (dpMetadata.description)?has_content>
                                 <p>
-                                    <@dpMetadata.description?interpret />
+                                    ${dpMetadata.description?no_esc}
                                 </p>
                             <#else>
                                 <p><@s.text name='portal.resource.no.description'/></p>
@@ -611,6 +610,10 @@
                             <div class="table-responsive">
                                 <table class="text-smaller table table-sm table-borderless">
                                     <tr>
+                                        <th class="col-4"><@s.text name='portal.resource.project.id'/></th>
+                                        <td>${dpMetadata.project.id!}</td>
+                                    </tr>
+                                    <tr>
                                         <th class="col-4"><@s.text name='portal.resource.project.title'/></th>
                                         <td>${dpMetadata.project.title!}</td>
                                     </tr>
@@ -731,7 +734,8 @@
             question : "<@s.text name='portal.resource.confirm.delete.version'/></br></br><@s.text name='portal.resource.confirm.delete.version.warning.citation'/></br></br><@s.text name='portal.resource.confirm.delete.version.warning.undone'/>",
             yesAnswer : "<@s.text name='basic.yes'/>",
             cancelAnswer : "<@s.text name='basic.no'/>",
-            buttonType: "danger"
+            buttonType: "danger",
+            baseUrl: "${baseURL}"
         });
 
         $(function() {

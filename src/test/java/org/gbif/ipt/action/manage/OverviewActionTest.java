@@ -48,12 +48,14 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.commons.collections4.ListValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
@@ -78,9 +80,13 @@ public class OverviewActionTest extends IptBaseTest {
     throws IOException, ParserConfigurationException, SAXException, AlreadyExistingException, ImportException {
 
     ResourceManager mockResourceManager = mock(ResourceManager.class);
-    ListValuedMap<String, Date> processFailures = new ArrayListValuedHashMap<>();
-    processFailures.put("res1", new Date());
-    processFailures.put("res1", new Date());
+    Map<String, List<Date>> processFailures = new ConcurrentHashMap<>();
+    processFailures
+        .computeIfAbsent("res1", k -> new CopyOnWriteArrayList<>())
+        .add(new Date());
+    processFailures
+        .computeIfAbsent("res1", k -> new CopyOnWriteArrayList<>())
+        .add(new Date());
     when(mockResourceManager.getProcessFailures()).thenReturn(processFailures);
 
     // mock returning eml-1.0.xml
@@ -234,7 +240,7 @@ public class OverviewActionTest extends IptBaseTest {
     Resource r = new Resource();
     r.setStatus(PublicationStatus.DELETED);
     action.setResource(r);
-    action.setDelete("true");
+    action.setDeleteFlag("true");
     assertEquals("input", action.delete());
     assertEquals(1, action.getActionWarnings().size());
   }
@@ -249,7 +255,7 @@ public class OverviewActionTest extends IptBaseTest {
     r.setDoi(DOIUtils.mintDOI(DOIRegistrationAgency.DATACITE, Constants.TEST_DOI_PREFIX));
     r.setStatus(PublicationStatus.PUBLIC);
     action.setResource(r);
-    action.setDelete("true");
+    action.setDeleteFlag("true");
     assertNull(action.getOrganisationWithPrimaryDoiAccount());
     assertEquals("input", action.delete());
     assertEquals(1, action.getActionErrors().size());

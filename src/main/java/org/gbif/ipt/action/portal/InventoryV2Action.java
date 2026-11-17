@@ -22,6 +22,7 @@ import org.gbif.ipt.model.voc.PublicationStatus;
 import org.gbif.ipt.service.manage.ResourceManager;
 import org.gbif.ipt.utils.ResourceUtils;
 
+import jakarta.inject.Inject;
 import java.io.File;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -32,14 +33,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.struts2.json.annotations.JSON;
-
-import com.opensymphony.xwork2.ActionSupport;
+import org.apache.struts2.ActionSupport;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -89,7 +88,7 @@ public class InventoryV2Action extends ActionSupport {
 
     boolean statusIsPresent = parsedStatus != null;
 
-    resources = statusIsPresent? resourceManager.list(parsedStatus) : resourceManager.listPublishedPublicVersions();
+    resources = statusIsPresent ? resourceManager.list(parsedStatus) : resourceManager.listPublishedPublicVersions();
 
     if (StringUtils.isNotEmpty(type)) {
       resources = resources.stream()
@@ -108,24 +107,13 @@ public class InventoryV2Action extends ActionSupport {
     String dp = resource.getDataPackageIdentifier();
     String t = type.toLowerCase();
 
-    switch (t) {
-      case "camtrap":
-      case "camtrapdp":
-      case "camtrap-dp":
-        return "camtrap-dp".equalsIgnoreCase(archiveType);
-
-      case "coldp":
-        return "coldp".equalsIgnoreCase(archiveType);
-
-      case "dwca":
-        return dp == null && resource.getCoreRowType() != null;
-
-      case "datapackage":
-        return "camtrap-dp".equalsIgnoreCase(dp) || "coldp".equalsIgnoreCase(dp);
-
-      default:
-        return false;
-    }
+    return switch (t) {
+      case "camtrap", "camtrapdp", "camtrap-dp" -> "camtrap-dp".equalsIgnoreCase(archiveType);
+      case "coldp" -> "coldp".equalsIgnoreCase(archiveType);
+      case "dwca" -> dp == null && resource.getCoreRowType() != null;
+      case "datapackage" -> "camtrap-dp".equalsIgnoreCase(dp) || "coldp".equalsIgnoreCase(dp);
+      default -> false;
+    };
   }
 
   @JSON(name = "resources")
@@ -136,35 +124,26 @@ public class InventoryV2Action extends ActionSupport {
   /**
    * Class representing dataset item returned in inventory response serialized into JSON.
    */
+  @Setter
   public static class DatasetItemV2 {
     @Getter
-    @Setter
     private String id;
     @Getter
-    @Setter
     private String gbifKey;
     @Getter
-    @Setter
     private String title;
     @Getter
-    @Setter
     private ResourceFormatType format;
     @Getter
-    @Setter
     private BigDecimal version;
-    @Setter
     private Date lastPublished;
     @Getter
-    @Setter
     private int records;
     @Getter
-    @Setter
     private List<InventoryArchiveInfo> archive = new ArrayList<>();
     @Getter
-    @Setter
     private List<InventoryMetadataInfo> metadata = new ArrayList<>();
     @Getter
-    @Setter
     private Map<String, Object> additionalProperties = new HashMap<>();
 
     /**
