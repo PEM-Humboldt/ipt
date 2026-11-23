@@ -1855,9 +1855,9 @@ public class ResourceManagerImpl extends BaseManager implements ResourceManager,
     List<Resource> result = new ArrayList<Resource>();
     for (Resource r : resources.values()) {
       Eml eml = r.getEml();
-      if (eml != null){
+      if (eml != null && eml.getIntellectualRights() != null){
         for (String intellectualRights : intellectualRightsList) {
-          if (Objects.equals(eml.getIntellectualRights(), intellectualRights)) {
+          if (eml.getIntellectualRights().contains(intellectualRights)) {
             result.add(r);
             break;
           }
