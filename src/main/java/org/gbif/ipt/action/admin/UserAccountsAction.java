@@ -38,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.ResourceBundle;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.RandomStringGenerator;
@@ -269,8 +270,11 @@ public class UserAccountsAction extends POSTAction {
         LOG.error("An exception occurred while retrieving user: {}", e.getMessage(), e);
       }
     }
-    List<String> intellectualRightsListForIAvHUsers = Arrays.asList(getText("eml.intellectualRights.license.text.temporalRestriction"), getText("eml.intellectualRights.license.text.internalNotification"));
-    List<String> intellectualRightsListForAllButIAvHUsers = Arrays.asList(getText("eml.intellectualRights.license.text.internal"));
+    ResourceBundle licencesBundle = ResourceBundle.getBundle("org.gbif.metadata.eml.licenses");
+
+    List<String> intellectualRightsListForIAvHUsers = Arrays.asList(licencesBundle.getString("license.text.rt"));
+    List<String> intellectualRightsListForAllButIAvHUsers = Arrays.asList(licencesBundle.getString("license.text.liiavh"));
+
     restrictedResourcesForIAvHUsers = resourceManager.list(intellectualRightsListForIAvHUsers);
     restrictedResourcesForAllButIAvHUsers = resourceManager.list(intellectualRightsListForAllButIAvHUsers);
   }
